@@ -35,7 +35,12 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // ── Protect /dashboard and all nested routes ────────────────────────────
-  if (!user && pathname.startsWith('/dashboard')) {
+  // /dashboard/reset-password is exempt: invited users land here before their
+  // session cookie is fully established (invite token is exchanged client-side).
+  // The page itself calls supabase.auth.updateUser which enforces auth.
+  const DASHBOARD_PUBLIC = ['/dashboard/reset-password']
+
+  if (!user && pathname.startsWith('/dashboard') && !DASHBOARD_PUBLIC.includes(pathname)) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/login'
     // Preserve the intended destination so we can redirect back after login.
