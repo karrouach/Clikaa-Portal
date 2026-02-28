@@ -1,6 +1,17 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+/**
+ * Routes under /dashboard that must remain accessible even before the
+ * server-side session cookie is fully established.
+ *
+ * /dashboard/reset-password — invited users land here to set a password.
+ *   The PKCE exchange in /auth/callback sets the cookie, but as a safety net
+ *   this route is whitelisted so users aren't bounced to /login if the
+ *   cookie propagation is slightly delayed.
+ */
+const DASHBOARD_PUBLIC = ['/dashboard/reset-password']
+
 export async function middleware(request: NextRequest) {
   // Start with a passthrough response so we can mutate cookies on it.
   let supabaseResponse = NextResponse.next({ request })
@@ -35,12 +46,11 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // ── Protect /dashboard and all nested routes ────────────────────────────
-  // /dashboard/reset-password is exempt: invited users land here before their
-  // session cookie is fully established (invite token is exchanged client-side).
-  // The page itself calls supabase.auth.updateUser which enforces auth.
-  const DASHBOARD_PUBLIC = ['/dashboard/reset-password']
-
-  if (!user && pathname.startsWith('/dashboard') && !DASHBOARD_PUBLIC.includes(pathname)) {
+  if (
+    !user &&
+    pathname.startsWith('/dashboard') &&
+    !DASHBOARD_PUBLIC.includes(pathname)
+  ) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/login'
     // Preserve the intended destination so we can redirect back after login.
@@ -49,7 +59,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Redirect authenticated users away from the login page ───────────────
-  // NOTE: /accept-invite is intentionally NOT included here — an invited user
+  // NOTE: /accept-invite is intentionally NOT included — an invited user
   // arrives authenticated but still needs to complete the password-setup step.
   if (user && pathname === '/login') {
     const redirectUrl = request.nextUrl.clone()
