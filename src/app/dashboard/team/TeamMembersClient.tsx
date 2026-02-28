@@ -155,7 +155,11 @@ export function TeamMembersClient({ members, currentUserId }: Props) {
                               </span>
                             )}
                           </p>
-                          <p className="text-xs text-zinc-400">{member.email}</p>
+                          {member.title ? (
+                            <p className="text-xs text-zinc-500">{member.title}</p>
+                          ) : (
+                            <p className="text-xs text-zinc-400">{member.email}</p>
+                          )}
                         </div>
                       </div>
                     </td>

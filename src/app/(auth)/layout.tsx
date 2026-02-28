@@ -11,10 +11,9 @@ export const metadata: Metadata = {
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
-      {/* Wordmark */}
+      {/* Logo */}
       <div className="mb-12">
-        <span className="text-xl font-semibold tracking-tight text-black">CLIKAA</span>
-        <span className="ml-1.5 text-xs tracking-widest text-zinc-400 uppercase">Portal</span>
+        <img src="/logo.svg" alt="Clikaa" className="h-7 w-auto" draggable={false} />
       </div>
 
       {/* Page content (login card or accept-invite card) */}

@@ -18,7 +18,7 @@ export async function middleware(request: NextRequest) {
   // ── Bypass all /auth/* routes completely ───────────────────────────────────
   // /auth/callback and /auth/confirm must run without any interception.
   // Calling getUser() here can interfere with the token-exchange / OTP flow.
-  if (pathname.startsWith('/auth/')) {
+  if (pathname.startsWith('/auth')) {
     return NextResponse.next()
   }
 

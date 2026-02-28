@@ -15,9 +15,11 @@ export type UpdateProfileResult = {
 // ─────────────────────────────────────────────────────────────────────────────
 export async function updateProfile({
   fullName,
+  title,
   avatarUrl,
 }: {
   fullName: string
+  title?: string | null
   avatarUrl?: string
 }): Promise<UpdateProfileResult> {
   const trimmed = fullName.trim()
@@ -29,8 +31,9 @@ export async function updateProfile({
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorised.' }
 
-  const update: Record<string, string> = { full_name: trimmed }
+  const update: Record<string, string | null> = { full_name: trimmed }
   if (avatarUrl) update.avatar_url = avatarUrl
+  if (title !== undefined) update.title = title ?? null
 
   const { error } = await supabase
     .from('profiles')

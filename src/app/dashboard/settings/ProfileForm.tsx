@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 interface ProfileFormProps {
   userId: string
   initialFullName: string
+  initialTitle: string | null
   email: string
   role: string
   initialAvatarUrl: string | null
@@ -20,11 +21,13 @@ const MAX_AVATAR_BYTES = 2 * 1024 * 1024 // 2 MB
 export function ProfileForm({
   userId,
   initialFullName,
+  initialTitle,
   email,
   role,
   initialAvatarUrl,
 }: ProfileFormProps) {
   const [fullName, setFullName]           = useState(initialFullName)
+  const [title, setTitle]                 = useState(initialTitle ?? '')
   const [avatarSrc, setAvatarSrc]         = useState<string | null>(initialAvatarUrl)
   const [pendingAvatarUrl, setPendingAvatarUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading]     = useState(false)
@@ -93,6 +96,7 @@ export function ProfileForm({
     startTransition(async () => {
       const result = await updateProfile({
         fullName,
+        title: title.trim() || null,
         avatarUrl: pendingAvatarUrl ?? undefined,
       })
       if (result.error) {
@@ -182,6 +186,30 @@ export function ProfileForm({
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Jane Smith"
+            className="
+              w-full h-10 px-0 py-2
+              border-0 border-b border-zinc-200
+              bg-transparent text-sm text-black placeholder:text-zinc-400
+              focus:outline-none focus:border-black
+              transition-colors duration-150
+            "
+          />
+        </div>
+
+        {/* Title */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="title"
+            className="block text-xs font-medium text-zinc-700 tracking-wide uppercase"
+          >
+            Title
+          </label>
+          <input
+            id="title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Senior Designer, Project Manager"
             className="
               w-full h-10 px-0 py-2
               border-0 border-b border-zinc-200

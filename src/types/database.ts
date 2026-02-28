@@ -18,6 +18,7 @@ export type Database = {
           full_name: string
           avatar_url: string | null
           role: 'admin' | 'client'
+          title: string | null
           created_at: string
         }
         Insert: {
@@ -26,6 +27,7 @@ export type Database = {
           full_name?: string
           avatar_url?: string | null
           role?: 'admin' | 'client'
+          title?: string | null
           created_at?: string
         }
         Update: {
@@ -34,6 +36,7 @@ export type Database = {
           full_name?: string
           avatar_url?: string | null
           role?: 'admin' | 'client'
+          title?: string | null
           created_at?: string
         }
         Relationships: []

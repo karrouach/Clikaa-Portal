@@ -1,32 +1,50 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import type { EmailOtpType } from '@supabase/supabase-js'
+import type { Database } from '@/types/database'
 
 /**
  * Supabase Auth callback — handles both auth flows:
  *
- * 1. OTP / token_hash flow (used by Supabase SSR invite & recovery emails)
- *    URL shape: /auth/callback?token_hash=XXX&type=invite
- *    Handler:   supabase.auth.verifyOtp({ token_hash, type })
+ * PRIORITY 1 — OTP / token_hash (Supabase SSR invite & recovery emails)
+ *   URL shape: /auth/callback?token_hash=XXX&type=invite
+ *   After verifyOtp the client automatically sets the session cookie.
+ *   → Redirect to /dashboard/reset-password so the user sets a password.
  *
- * 2. PKCE code flow (OAuth, some magic-link configs)
- *    URL shape: /auth/callback?code=XXX
- *    Handler:   supabase.auth.exchangeCodeForSession(code)
+ * PRIORITY 2 — PKCE code exchange (OAuth, magic-link via some configs)
+ *   URL shape: /auth/callback?code=XXX
+ *   → Redirect to /dashboard (or /dashboard/reset-password on first sign-in).
  *
- * ─── Required Supabase Dashboard config ────────────────────────────────────
- * Authentication → URL Configuration → Redirect URLs — add:
- *   https://<your-domain>/auth/callback
- *   http://localhost:3000/auth/callback
- *
- * The email templates use {{ .ConfirmationURL }} which Supabase constructs
- * using the Site URL. Set Site URL to your domain root or /auth/callback.
- * ────────────────────────────────────────────────────────────────────────────
+ * The middleware is configured to bypass ALL /auth/* routes so this
+ * handler can set cookies without interception.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl
-  const supabase = await createClient()
+  // ── Build a cookie-aware Supabase SSR client ─────────────────────────────
+  // We create it inline here (rather than via the shared createClient helper)
+  // so the session cookie is written directly into this response's cookie jar.
+  const cookieStore = await cookies()
 
-  // ── Branch 1: OTP / token_hash (invite, recovery, signup, magic-link) ────
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  const { searchParams } = request.nextUrl
+
+  // ── Branch 1: OTP / token_hash (invite, recovery, magic-link) ────────────
   const token_hash = searchParams.get('token_hash')
   const type       = searchParams.get('type') as EmailOtpType | null
 
@@ -34,21 +52,13 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.verifyOtp({ token_hash, type })
 
     if (error) {
-      return NextResponse.redirect(
-        `${origin}/login?error=invalid_invite`
-      )
+      // Expired or already-used token — send back to login with a hint.
+      return NextResponse.redirect(new URL('/login?error=invalid_link', request.url))
     }
 
-    // Invite and password-recovery both need the user to set a new password.
-    if (type === 'invite' || type === 'recovery') {
-      return NextResponse.redirect(`${origin}/dashboard/reset-password`)
-    }
-
-    // Any other verified OTP type (signup, magiclink, etc.) → dashboard.
-    const next = searchParams.get('next')
-    return NextResponse.redirect(
-      `${origin}${next?.startsWith('/') ? next : '/dashboard'}`
-    )
+    // verifyOtp succeeded → session cookie is now set.
+    // Both invite and recovery require the user to choose a new password.
+    return NextResponse.redirect(new URL('/dashboard/reset-password', request.url))
   }
 
   // ── Branch 2: PKCE code exchange ──────────────────────────────────────────
@@ -60,32 +70,35 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       return NextResponse.redirect(
-        `${origin}/login?error=auth_callback_failed`
+        new URL('/login?error=auth_callback_failed', request.url)
       )
     }
 
-    // Explicit destination always wins.
+    // Explicit ?next= destination always wins.
     if (next?.startsWith('/')) {
-      return NextResponse.redirect(`${origin}${next}`)
+      return NextResponse.redirect(new URL(next, request.url))
     }
 
-    // Detect first-time sign-in: last_sign_in_at ≈ created_at (within 30 s).
+    // Detect first sign-in (created_at ≈ last_sign_in_at within 30 s) →
+    // the user needs to set a permanent password.
     const user = data?.user
     if (user) {
       const createdMs  = new Date(user.created_at).getTime()
-      const lastSignIn = user.last_sign_in_at
+      const lastMs     = user.last_sign_in_at
         ? new Date(user.last_sign_in_at).getTime()
         : createdMs
-      const isFirstSignIn = Math.abs(lastSignIn - createdMs) < 30_000
-
-      if (isFirstSignIn) {
-        return NextResponse.redirect(`${origin}/dashboard/reset-password`)
+      if (Math.abs(lastMs - createdMs) < 30_000) {
+        return NextResponse.redirect(
+          new URL('/dashboard/reset-password', request.url)
+        )
       }
     }
 
-    return NextResponse.redirect(`${origin}/dashboard`)
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // ── No recognisable params — send to login with an error hint ─────────────
-  return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`)
+  // ── No recognisable params ────────────────────────────────────────────────
+  return NextResponse.redirect(
+    new URL('/login?error=auth_callback_failed', request.url)
+  )
 }
