@@ -70,15 +70,14 @@ export default async function WorkspacePage({ params }: Props) {
     email: user.email ?? '',
   }
 
+  // The workspace layout (-mx-6 -my-8, flex-col, h-[calc(100vh-3.5rem)]) provides
+  // the full-viewport-height container. KanbanBoard uses h-full to fill it.
   return (
-    // Bleed to the viewport edge: counteract the layout's px-6 py-8 container
-    <div className="-mx-6 -my-8 flex flex-col h-[calc(100vh-3.5rem)]">
-      <KanbanBoard
-        workspaceId={workspaceId}
-        workspaceName={workspace.name}
-        initialTasks={tasks ?? []}
-        currentUserProfile={currentUserProfile}
-      />
-    </div>
+    <KanbanBoard
+      workspaceId={workspaceId}
+      workspaceName={workspace.name}
+      initialTasks={tasks ?? []}
+      currentUserProfile={currentUserProfile}
+    />
   )
 }

@@ -1,25 +1,37 @@
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
-import { Users } from 'lucide-react'
+import { TeamMembersClient } from './TeamMembersClient'
 
 export const metadata: Metadata = { title: 'My Team' }
 
-export default function TeamPage() {
+export default async function TeamPage() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  // Admin gate — only admins should see this page.
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (currentProfile?.role !== 'admin') redirect('/dashboard')
+
+  // Fetch all admin (team) profiles, ordered by join date.
+  const { data: members } = await supabase
+    .from('profiles')
+    .select('id, email, full_name, avatar_url, role, created_at')
+    .eq('role', 'admin')
+    .order('created_at', { ascending: true })
+
   return (
     <div className="animate-fade-in">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-black tracking-tight">My Team</h1>
-        <p className="mt-1 text-sm text-zinc-500">View and manage your team members across all workspaces.</p>
-      </div>
-
-      <div className="flex flex-col items-center justify-center py-24 text-center">
-        <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mb-4">
-          <Users size={20} strokeWidth={1.5} className="text-zinc-400" />
-        </div>
-        <h2 className="text-sm font-medium text-zinc-900 mb-1">No team members yet</h2>
-        <p className="text-sm text-zinc-400 max-w-xs">
-          Team management is coming soon. Invite and manage your internal team from this page.
-        </p>
-      </div>
+      <TeamMembersClient members={members ?? []} currentUserId={user.id} />
     </div>
   )
 }

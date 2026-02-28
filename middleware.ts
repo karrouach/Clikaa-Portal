@@ -13,6 +13,15 @@ import { NextResponse, type NextRequest } from 'next/server'
 const DASHBOARD_PUBLIC = ['/dashboard/reset-password']
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // ── Bypass all /auth/* routes completely ───────────────────────────────────
+  // /auth/callback and /auth/confirm must run without any interception.
+  // Calling getUser() here can interfere with the token-exchange / OTP flow.
+  if (pathname.startsWith('/auth/')) {
+    return NextResponse.next()
+  }
+
   // Start with a passthrough response so we can mutate cookies on it.
   let supabaseResponse = NextResponse.next({ request })
 
@@ -42,8 +51,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
-  const { pathname } = request.nextUrl
 
   // ── Protect /dashboard and all nested routes ────────────────────────────
   if (

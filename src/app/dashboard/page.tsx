@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
-import { LayoutDashboard } from 'lucide-react'
+import { LayoutDashboard, TrendingUp } from 'lucide-react'
 import { NewWorkspaceButton } from '@/components/dashboard/CreateWorkspaceDialog'
 
 export const metadata: Metadata = { title: 'Dashboard' }
@@ -43,12 +43,46 @@ export default async function DashboardPage() {
     .filter(Boolean) as { id: string; name: string; slug: string; description: string | null }[]
 
   // Auto-redirect to the sole workspace for a cleaner single-workspace UX.
-  if (workspaces.length === 1) {
+  // Admins always see the overview (with stats), clients skip straight to their workspace.
+  if (!isAdmin && workspaces.length === 1) {
     redirect(`/dashboard/${workspaces[0].id}`)
   }
 
   return (
     <div className="animate-fade-in">
+
+      {/* ── Admin stat cards ──────────────────────────────────────────────── */}
+      {isAdmin && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="bg-white border border-zinc-100 p-6">
+            <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-3">
+              Active Projects
+            </p>
+            <p className="text-3xl font-semibold text-black tracking-tight">4</p>
+            <p className="mt-1.5 text-xs text-zinc-400 flex items-center gap-1">
+              <TrendingUp size={11} strokeWidth={1.5} className="text-emerald-500" />
+              Across all workspaces
+            </p>
+          </div>
+
+          <div className="bg-white border border-zinc-100 p-6">
+            <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-3">
+              Pending Invoices
+            </p>
+            <p className="text-3xl font-semibold text-black tracking-tight">$12,500</p>
+            <p className="mt-1.5 text-xs text-zinc-400">3 outstanding invoices</p>
+          </div>
+
+          <div className="bg-white border border-zinc-100 p-6">
+            <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-3">
+              Tasks Due
+            </p>
+            <p className="text-3xl font-semibold text-black tracking-tight">15</p>
+            <p className="mt-1.5 text-xs text-zinc-400">This week across all boards</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Page heading ──────────────────────────────────────────────────── */}
       <div className="mb-8 flex items-center justify-between">
         <div>
