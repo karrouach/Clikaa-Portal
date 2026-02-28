@@ -1,68 +1,91 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import type { EmailOtpType } from '@supabase/supabase-js'
 
 /**
- * Supabase Auth callback — PKCE code exchange.
+ * Supabase Auth callback — handles both auth flows:
  *
- * ALL Supabase auth flows (invite, magic link, OAuth, password reset) must
- * land here so that the session is established server-side (cookie-based).
- * Client-side implicit flows (hash fragments) bypass this route and result
- * in a localStorage-only session that the middleware cannot read.
+ * 1. OTP / token_hash flow (used by Supabase SSR invite & recovery emails)
+ *    URL shape: /auth/callback?token_hash=XXX&type=invite
+ *    Handler:   supabase.auth.verifyOtp({ token_hash, type })
+ *
+ * 2. PKCE code flow (OAuth, some magic-link configs)
+ *    URL shape: /auth/callback?code=XXX
+ *    Handler:   supabase.auth.exchangeCodeForSession(code)
  *
  * ─── Required Supabase Dashboard config ────────────────────────────────────
- * Authentication → URL Configuration:
+ * Authentication → URL Configuration → Redirect URLs — add:
+ *   https://<your-domain>/auth/callback
+ *   http://localhost:3000/auth/callback
  *
- *   Site URL:
- *     https://<your-domain>/auth/callback
- *
- *   Redirect URLs (add both):
- *     https://<your-domain>/auth/callback
- *     http://localhost:3000/auth/callback
- *
- * This ensures every invite / magic-link email uses /auth/callback as the
- * redirect target, so the PKCE code lands here and a proper cookie session
- * is created before the user reaches any dashboard route.
+ * The email templates use {{ .ConfirmationURL }} which Supabase constructs
+ * using the Site URL. Set Site URL to your domain root or /auth/callback.
  * ────────────────────────────────────────────────────────────────────────────
- *
- * Redirect priority after a successful exchange:
- *   1. `next` query param — explicit destination (e.g. ?next=/accept-invite)
- *   2. First-time sign-in detected — /dashboard/reset-password
- *   3. Default — /dashboard
  */
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams, origin } = request.nextUrl
+  const supabase = await createClient()
+
+  // ── Branch 1: OTP / token_hash (invite, recovery, signup, magic-link) ────
+  const token_hash = searchParams.get('token_hash')
+  const type       = searchParams.get('type') as EmailOtpType | null
+
+  if (token_hash && type) {
+    const { error } = await supabase.auth.verifyOtp({ token_hash, type })
+
+    if (error) {
+      return NextResponse.redirect(
+        `${origin}/login?error=invalid_invite`
+      )
+    }
+
+    // Invite and password-recovery both need the user to set a new password.
+    if (type === 'invite' || type === 'recovery') {
+      return NextResponse.redirect(`${origin}/dashboard/reset-password`)
+    }
+
+    // Any other verified OTP type (signup, magiclink, etc.) → dashboard.
+    const next = searchParams.get('next')
+    return NextResponse.redirect(
+      `${origin}${next?.startsWith('/') ? next : '/dashboard'}`
+    )
+  }
+
+  // ── Branch 2: PKCE code exchange ──────────────────────────────────────────
   const code = searchParams.get('code')
   const next = searchParams.get('next')
 
   if (code) {
-    const supabase = await createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (!error && data.user) {
-      // 1. Honour an explicit `next` destination (must be a relative path).
-      if (next?.startsWith('/')) {
-        return NextResponse.redirect(`${origin}${next}`)
-      }
+    if (error) {
+      return NextResponse.redirect(
+        `${origin}/login?error=auth_callback_failed`
+      )
+    }
 
-      // 2. Detect first-time sign-in: Supabase sets last_sign_in_at ≈ created_at
-      //    on the very first token exchange (invite acceptance).
-      //    If the two timestamps are within 30 seconds of each other the user
-      //    has never logged in before and needs to set a password.
-      const createdMs  = new Date(data.user.created_at).getTime()
-      const lastSignIn = data.user.last_sign_in_at
-        ? new Date(data.user.last_sign_in_at).getTime()
+    // Explicit destination always wins.
+    if (next?.startsWith('/')) {
+      return NextResponse.redirect(`${origin}${next}`)
+    }
+
+    // Detect first-time sign-in: last_sign_in_at ≈ created_at (within 30 s).
+    const user = data?.user
+    if (user) {
+      const createdMs  = new Date(user.created_at).getTime()
+      const lastSignIn = user.last_sign_in_at
+        ? new Date(user.last_sign_in_at).getTime()
         : createdMs
       const isFirstSignIn = Math.abs(lastSignIn - createdMs) < 30_000
 
       if (isFirstSignIn) {
         return NextResponse.redirect(`${origin}/dashboard/reset-password`)
       }
-
-      // 3. Default — existing user, go straight to the dashboard.
-      return NextResponse.redirect(`${origin}/dashboard`)
     }
+
+    return NextResponse.redirect(`${origin}/dashboard`)
   }
 
-  // Code missing or exchange failed — send to login with an error hint.
+  // ── No recognisable params — send to login with an error hint ─────────────
   return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`)
 }
