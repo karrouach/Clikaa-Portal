@@ -186,8 +186,18 @@ export function Sidebar({ profile, workspaces }: SidebarProps) {
       {/* ── User profile ─────────────────────────────────────────────────── */}
       <div className={cn('flex items-center gap-3 px-4 py-4 border-b border-white/5', isCollapsed && 'justify-center px-2')}>
         {/* Avatar */}
-        <div className="shrink-0 w-8 h-8 bg-white/15 flex items-center justify-center text-white text-xs font-semibold rounded-sm">
-          {initials}
+        <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden">
+          {profile.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt={initials}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-white/15 flex items-center justify-center text-white text-xs font-semibold">
+              {initials}
+            </div>
+          )}
         </div>
 
         <AnimatePresence initial={false}>
