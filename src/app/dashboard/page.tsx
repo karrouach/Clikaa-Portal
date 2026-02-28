@@ -2,17 +2,17 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { LayoutDashboard } from 'lucide-react'
+import { NewWorkspaceButton } from '@/components/dashboard/CreateWorkspaceDialog'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
 /**
- * /dashboard — smart redirect or overview.
+ * /dashboard — workspace overview.
  *
- * - If the user has exactly 1 workspace → redirect directly to it.
- * - If multiple (or none) → show the workspace overview below.
- *
- * In Phase 3, /dashboard/[workspaceId] will render the Kanban board.
- * This page acts as the entry point / hub.
+ * - Single workspace → redirect directly to it (for both roles).
+ * - Zero or multiple workspaces → show the overview below.
+ * - Admins see a "+ New Workspace" button.
+ * - Clients see a "your team will set things up" message when empty.
  */
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -22,6 +22,16 @@ export default async function DashboardPage() {
 
   if (!user) redirect('/login')
 
+  // Fetch profile for role check.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const isAdmin = profile?.role === 'admin'
+
+  // Fetch workspaces.
   const { data: memberships } = await supabase
     .from('workspace_members')
     .select('workspaces(id, name, slug, description)')
@@ -32,32 +42,58 @@ export default async function DashboardPage() {
     .map((m) => m.workspaces)
     .filter(Boolean) as { id: string; name: string; slug: string; description: string | null }[]
 
-  // Auto-redirect to the sole workspace for a cleaner single-client UX.
+  // Auto-redirect to the sole workspace for a cleaner single-workspace UX.
   if (workspaces.length === 1) {
     redirect(`/dashboard/${workspaces[0].id}`)
   }
 
-  // ── Multi-workspace overview ───────────────────────────────────────────────
   return (
     <div className="animate-fade-in">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-black tracking-tight">Workspaces</h1>
-        <p className="mt-1 text-sm text-zinc-500">Select a workspace to view its project board.</p>
+      {/* ── Page heading ──────────────────────────────────────────────────── */}
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-black tracking-tight">Workspaces</h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            {isAdmin
+              ? 'Manage your client workspaces.'
+              : 'Select a workspace to view its project board.'}
+          </p>
+        </div>
+
+        {/* Admin: new workspace button in the top-right of the heading */}
+        {isAdmin && <NewWorkspaceButton />}
       </div>
 
       {workspaces.length === 0 ? (
-        // ── Empty state ──────────────────────────────────────────────────────
+        // ── Empty state ────────────────────────────────────────────────────
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="w-12 h-12 border border-zinc-200 flex items-center justify-center mb-4">
             <LayoutDashboard size={20} strokeWidth={1.5} className="text-zinc-400" />
           </div>
-          <p className="text-sm font-medium text-black">No workspaces yet</p>
-          <p className="mt-1 text-sm text-zinc-500 max-w-xs">
-            Your Clikaa team will set up your workspace and send you an invite. Check your email.
-          </p>
+
+          {isAdmin ? (
+            // Admin empty state — prompt to create the first workspace.
+            <>
+              <p className="text-sm font-medium text-black">No workspaces yet</p>
+              <p className="mt-1 text-sm text-zinc-500 max-w-xs">
+                Create your first workspace to start building a board for a client.
+              </p>
+              <div className="mt-6">
+                <NewWorkspaceButton />
+              </div>
+            </>
+          ) : (
+            // Client empty state — passive message.
+            <>
+              <p className="text-sm font-medium text-black">No workspaces yet</p>
+              <p className="mt-1 text-sm text-zinc-500 max-w-xs">
+                Your Clikaa team will set up your workspace and send you an invite. Check your email.
+              </p>
+            </>
+          )}
         </div>
       ) : (
-        // ── Workspace grid ───────────────────────────────────────────────────
+        // ── Workspace grid ─────────────────────────────────────────────────
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {workspaces.map((ws) => (
             <a
