@@ -267,6 +267,57 @@ export type Database = {
           },
         ]
       }
+      workspace_assets: {
+        Row: {
+          id: string
+          workspace_id: string
+          file_name: string
+          storage_path: string
+          file_size: number
+          file_type: string
+          category: 'logos' | 'guidelines' | 'source_files' | 'other'
+          uploaded_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          file_name: string
+          storage_path: string
+          file_size?: number
+          file_type?: string
+          category?: 'logos' | 'guidelines' | 'source_files' | 'other'
+          uploaded_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          file_name?: string
+          storage_path?: string
+          file_size?: number
+          file_type?: string
+          category?: 'logos' | 'guidelines' | 'source_files' | 'other'
+          uploaded_by?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_assets_workspace_id_fkey'
+            columns: ['workspace_id']
+            isOneToOne: false
+            referencedRelation: 'workspaces'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'workspace_assets_uploaded_by_fkey'
+            columns: ['uploaded_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     // Required by @supabase/supabase-js v2.44+ GenericSchema contract.
     Views: {
@@ -291,6 +342,7 @@ export type Database = {
 
 // ─── Convenience row types ────────────────────────────────────────────────────
 export type Profile = Database['public']['Tables']['profiles']['Row']
+export type WorkspaceAsset = Database['public']['Tables']['workspace_assets']['Row']
 export type Workspace = Database['public']['Tables']['workspaces']['Row']
 export type WorkspaceMember = Database['public']['Tables']['workspace_members']['Row']
 export type Task = Database['public']['Tables']['tasks']['Row']

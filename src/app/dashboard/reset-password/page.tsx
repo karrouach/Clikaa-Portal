@@ -55,7 +55,7 @@ function ResetPasswordContent() {
   if (done) {
     return (
       <div className="w-full max-w-sm mx-auto px-4">
-        <div className="flex items-center gap-2.5 p-3 bg-green-50 border border-green-100 text-green-700 text-sm">
+        <div className="flex items-center gap-2.5 p-3 bg-green-50 border border-green-100 rounded-lg text-green-700 text-sm">
           <CheckCircle size={15} strokeWidth={1.5} className="shrink-0" />
           <span>Password set successfully. Redirecting…</span>
         </div>
@@ -83,7 +83,7 @@ function ResetPasswordContent() {
 
       {/* Error */}
       {error && (
-        <div className="mb-6 flex items-start gap-2.5 p-3 bg-red-50 border border-red-100 text-red-700 text-sm">
+        <div className="mb-6 flex items-start gap-2.5 p-3 bg-red-50 border border-red-100 rounded-lg text-red-700 text-sm">
           <AlertCircle size={15} strokeWidth={1.5} className="mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -150,7 +150,7 @@ function ResetPasswordContent() {
             disabled={isPending}
             className="
               w-full h-11 flex items-center justify-center gap-2
-              bg-black text-white text-sm font-medium tracking-wide
+              bg-black text-white text-sm font-medium tracking-wide rounded-lg
               hover:bg-zinc-800 active:bg-zinc-900
               transition-colors duration-150
               disabled:opacity-60 disabled:cursor-not-allowed

@@ -91,7 +91,7 @@ export function CreateTaskDialog({ workspaceId, onTaskCreated, asFab = false }: 
           onClick={() => setOpen(true)}
           className="
             flex items-center gap-1.5 h-9 px-4
-            bg-black text-white text-sm font-medium
+            bg-black text-white text-sm font-medium rounded-lg
             hover:bg-zinc-800 active:bg-zinc-900
             transition-colors duration-150
           "
@@ -115,7 +115,7 @@ export function CreateTaskDialog({ workspaceId, onTaskCreated, asFab = false }: 
           <form ref={formRef} onSubmit={handleSubmit} className="mt-6 space-y-6">
             {/* Error banner */}
             {error && (
-              <div className="flex items-start gap-2.5 p-3 bg-red-50 border border-red-100 text-red-700 text-sm">
+              <div className="flex items-start gap-2.5 p-3 bg-red-50 border border-red-100 rounded-lg text-red-700 text-sm">
                 <AlertCircle size={14} strokeWidth={1.5} className="mt-0.5 shrink-0" />
                 {error}
               </div>
@@ -194,7 +194,7 @@ export function CreateTaskDialog({ workspaceId, onTaskCreated, asFab = false }: 
                 disabled={isPending}
                 className="
                   flex items-center gap-2 h-9 px-5
-                  bg-black text-white text-sm font-medium
+                  bg-black text-white text-sm font-medium rounded-lg
                   hover:bg-zinc-800 transition-colors
                   disabled:opacity-60 disabled:cursor-not-allowed
                 "

@@ -16,7 +16,7 @@ function SubmitButton() {
       disabled={pending}
       className="
         w-full h-11 flex items-center justify-center gap-2
-        bg-black text-white text-sm font-medium tracking-wide
+        bg-black text-white text-sm font-medium tracking-wide rounded-lg
         hover:bg-zinc-800 active:bg-zinc-900
         transition-colors duration-150
         disabled:opacity-60 disabled:cursor-not-allowed
@@ -60,7 +60,7 @@ export function LoginForm() {
 
       {/* Error banner */}
       {(state?.error || callbackError) && (
-        <div className="mb-6 flex items-start gap-2.5 p-3 bg-red-50 border border-red-100 text-red-700 text-sm">
+        <div className="mb-6 flex items-start gap-2.5 p-3 bg-red-50 border border-red-100 rounded-lg text-red-700 text-sm">
           <AlertCircle size={15} strokeWidth={1.5} className="mt-0.5 shrink-0" />
           <span>
             {state?.error ??

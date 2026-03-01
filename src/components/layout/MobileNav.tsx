@@ -47,7 +47,7 @@ export function MobileNav({ profile, workspaces }: Props) {
   // ── Shared link class helper ─────────────────────────────────────────────
   function navClass(active: boolean) {
     return cn(
-      'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
+      'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors rounded-lg',
       active
         ? 'bg-white/15 text-white'
         : 'text-zinc-400 hover:bg-white/[0.08] hover:text-zinc-200'
@@ -172,7 +172,7 @@ export function MobileNav({ profile, workspaces }: Props) {
                           href={`/dashboard/${ws.id}`}
                           onClick={close}
                           className={cn(
-                            'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors border-l-2',
+                            'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors border-l-2 rounded-lg',
                             active
                               ? 'bg-white/15 text-white border-white'
                               : 'text-zinc-400 hover:bg-white/[0.08] hover:text-zinc-200 border-transparent'
@@ -211,7 +211,7 @@ export function MobileNav({ profile, workspaces }: Props) {
                           href={`/dashboard/${ws.id}`}
                           onClick={close}
                           className={cn(
-                            'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors border-l-2',
+                            'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors border-l-2 rounded-lg',
                             active
                               ? 'bg-white/15 text-white border-white'
                               : 'text-zinc-400 hover:bg-white/[0.08] hover:text-zinc-200 border-transparent'

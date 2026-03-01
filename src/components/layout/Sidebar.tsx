@@ -73,7 +73,7 @@ function NavLink({
       href={href}
       title={isCollapsed ? label : undefined}
       className={cn(
-        'flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150 group relative',
+        'flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150 group relative rounded-lg',
         isActive
           ? 'bg-white/15 text-white'
           : 'text-zinc-400 hover:bg-white/8 hover:text-zinc-200'
@@ -122,10 +122,10 @@ function WorkspaceItem({
       href={`/dashboard/${workspace.id}`}
       title={isCollapsed ? workspace.name : undefined}
       className={cn(
-        'flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150 group relative',
+        'flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150 group relative rounded-lg border-l-2',
         isActive
-          ? 'bg-white/15 text-white border-l-2 border-white'
-          : 'text-zinc-400 hover:bg-white/8 hover:text-zinc-200 border-l-2 border-transparent'
+          ? 'bg-white/15 text-white border-white'
+          : 'text-zinc-400 hover:bg-white/8 hover:text-zinc-200 border-transparent'
       )}
     >
       <span

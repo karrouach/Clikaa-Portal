@@ -41,7 +41,7 @@ export function KanbanCard({ task, index, onClick }: KanbanCardProps) {
           onClick={() => onClick?.(task)}
           className={cn(
             // Base
-            'bg-white border border-zinc-100 p-3.5 select-none',
+            'bg-white border border-zinc-100 rounded-lg p-3.5 select-none',
             'transition-all duration-150',
             // Cursor
             onClick ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing',

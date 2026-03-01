@@ -55,7 +55,7 @@ export function Header({ profile }: HeaderProps) {
       <div className="flex items-center gap-3">
         {/* Notification bell — placeholder for Phase 4 */}
         <button
-          className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-black hover:bg-zinc-50 transition-colors rounded-sm"
+          className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-black hover:bg-zinc-100 transition-colors rounded-lg"
           aria-label="Notifications"
         >
           <Bell size={16} strokeWidth={1.5} />
@@ -66,7 +66,7 @@ export function Header({ profile }: HeaderProps) {
 
         {/* User badge */}
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-black flex items-center justify-center text-white text-[10px] font-semibold rounded-sm">
+          <div className="w-7 h-7 bg-black flex items-center justify-center text-white text-[10px] font-semibold rounded-lg">
             {initials}
           </div>
           <span className="text-xs text-zinc-500 hidden sm:block">
@@ -82,7 +82,7 @@ export function Header({ profile }: HeaderProps) {
             flex items-center gap-1.5 px-3 h-7 text-xs text-zinc-500
             hover:text-black hover:bg-zinc-50
             border border-transparent hover:border-zinc-200
-            transition-all duration-150 rounded-sm
+            transition-all duration-150 rounded-lg
             disabled:opacity-50 disabled:cursor-not-allowed
           "
           aria-label="Sign out"

@@ -23,7 +23,7 @@ interface KanbanColumnProps {
  */
 export function KanbanColumn({ columnId, label, dotClass, tasks, onCardClick }: KanbanColumnProps) {
   return (
-    <div className="flex flex-col w-[85vw] md:w-72 shrink-0 max-h-full snap-center">
+    <div className="flex flex-col w-[85vw] md:w-72 shrink-0 max-h-full snap-center rounded-xl overflow-hidden">
       {/* ── Column header ─────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
@@ -45,7 +45,7 @@ export function KanbanColumn({ columnId, label, dotClass, tasks, onCardClick }: 
             {...provided.droppableProps}
             className={cn(
               // Base column body
-              'flex-1 overflow-y-auto rounded-sm p-2 space-y-2 transition-colors duration-150',
+              'flex-1 overflow-y-auto p-2 space-y-2 transition-colors duration-150',
               // Resting state
               'bg-zinc-50',
               // Active drop target — subtle highlight so the user sees where the card will land

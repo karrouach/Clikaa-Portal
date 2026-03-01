@@ -141,7 +141,7 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
         </div>
 
         {/* ── Overall Progress ─────────────────────────────────────────── */}
-        <div className="bg-white border border-zinc-100">
+        <div className="bg-white border border-zinc-100 rounded-xl">
           <div className="px-6 py-4 border-b border-zinc-100">
             <h2 className="text-sm font-semibold text-black">Overall Progress</h2>
           </div>
@@ -193,7 +193,7 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
           {/* Timeline */}
-          <div className="bg-white border border-zinc-100">
+          <div className="bg-white border border-zinc-100 rounded-xl">
             <div className="px-6 py-4 border-b border-zinc-100 flex items-center gap-2">
               <Calendar size={13} strokeWidth={1.5} className="text-zinc-400" />
               <h2 className="text-sm font-semibold text-black">Project Timeline</h2>
@@ -241,7 +241,7 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
           </div>
 
           {/* Team */}
-          <div className="bg-white border border-zinc-100">
+          <div className="bg-white border border-zinc-100 rounded-xl">
             <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-black">
                 Team
@@ -305,7 +305,7 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
         </div>
 
         {/* ── Recent Activity ───────────────────────────────────────────── */}
-        <div className="bg-white border border-zinc-100">
+        <div className="bg-white border border-zinc-100 rounded-xl">
           <div className="px-6 py-4 border-b border-zinc-100 flex items-center gap-2">
             <Clock size={13} strokeWidth={1.5} className="text-zinc-400" />
             <h2 className="text-sm font-semibold text-black">Recent Activity</h2>
