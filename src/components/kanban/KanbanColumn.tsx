@@ -23,7 +23,7 @@ interface KanbanColumnProps {
  */
 export function KanbanColumn({ columnId, label, dotClass, tasks, onCardClick }: KanbanColumnProps) {
   return (
-    <div className="flex flex-col w-72 shrink-0 max-h-full">
+    <div className="flex flex-col w-[85vw] md:w-72 shrink-0 max-h-full snap-center">
       {/* ── Column header ─────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">

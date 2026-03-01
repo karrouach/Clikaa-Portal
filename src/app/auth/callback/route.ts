@@ -89,7 +89,8 @@ export async function GET(request: NextRequest) {
 
     // verifyOtp succeeded — both invite and recovery require the user to
     // choose / reset their password before accessing the dashboard.
-    return go('/dashboard/reset-password')
+    // Pass the flow type so the reset-password page can tailor its UI.
+    return go(`/dashboard/reset-password?type=${type}`)
   }
 
   // ── Branch 2: PKCE code exchange ──────────────────────────────────────────
@@ -116,9 +117,8 @@ export async function GET(request: NextRequest) {
     // Detect recovery (password reset) via the type query param.
     const isRecovery = type === 'recovery'
 
-    if (isInvite || isRecovery) {
-      return go('/dashboard/reset-password')
-    }
+    if (isInvite)   return go('/dashboard/reset-password?type=invite')
+    if (isRecovery) return go('/dashboard/reset-password?type=recovery')
 
     // Fallback: first sign-in detection.
     // created_at ≈ last_sign_in_at within 30 s → first ever login.
@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
         ? new Date(user.last_sign_in_at).getTime()
         : createdMs
       if (Math.abs(lastMs - createdMs) < 30_000) {
-        return go('/dashboard/reset-password')
+        return go('/dashboard/reset-password?type=invite')
       }
     }
 

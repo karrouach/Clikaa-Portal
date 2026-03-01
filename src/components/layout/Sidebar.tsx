@@ -172,7 +172,7 @@ export function Sidebar({ profile, workspaces }: SidebarProps) {
       variants={sidebarVariants}
       animate={isCollapsed ? 'collapsed' : 'expanded'}
       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-      className="relative flex flex-col bg-[#111111] border-r border-white/5 shrink-0 overflow-hidden"
+      className="hidden md:flex relative flex-col bg-[#111111] border-r border-white/5 shrink-0 overflow-hidden"
     >
       {/* ── Top: Brand + collapse toggle ──────────────────────────────────── */}
       <div className="flex items-center justify-between h-14 px-4 border-b border-white/5">

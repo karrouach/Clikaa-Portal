@@ -30,7 +30,7 @@ export function Header({ profile }: HeaderProps) {
   }
 
   return (
-    <header className="h-14 border-b border-zinc-100 bg-white flex items-center justify-between px-6 shrink-0">
+    <header className="hidden md:flex h-14 border-b border-zinc-100 bg-white items-center justify-between px-6 shrink-0">
       {/* Left: Breadcrumbs */}
       <nav aria-label="Breadcrumb">
         <ol className="flex items-center gap-2 text-sm">

@@ -4,6 +4,7 @@ import { headers } from 'next/headers'
 import type { WorkspaceWithRole } from '@/types/database'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Header } from '@/components/layout/Header'
+import { MobileNav } from '@/components/layout/MobileNav'
 
 /**
  * Dashboard shell layout — server component.
@@ -71,15 +72,18 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-50">
-      {/* ── Sidebar ──────────────────────────────────────────────────────── */}
+      {/* ── Mobile top nav — md:hidden ────────────────────────────────────── */}
+      <MobileNav profile={profile} workspaces={workspaces} />
+
+      {/* ── Sidebar — hidden on mobile ────────────────────────────────────── */}
       <Sidebar profile={profile} workspaces={workspaces} />
 
       {/* ── Main area ────────────────────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden pt-14 md:pt-0">
         <Header profile={profile} />
 
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto px-6 py-8">{children}</div>
+          <div className="max-w-7xl mx-auto px-4 py-6 md:px-6 md:py-8">{children}</div>
         </main>
       </div>
     </div>

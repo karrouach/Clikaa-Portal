@@ -1,17 +1,27 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 
-export default function ResetPasswordPage() {
+// ─── Inner component (needs useSearchParams → must be inside Suspense) ────────
+
+function ResetPasswordContent() {
   const router = useRouter()
-  const [password, setPassword] = useState('')
-  const [confirm, setConfirm] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+
+  // The callback route passes ?type=invite or ?type=recovery so we can
+  // tailor the heading and sub-heading to the user's context.
+  const type = searchParams.get('type') // 'invite' | 'recovery' | null
+  const isInvite   = type === 'invite'
+  const isRecovery = type === 'recovery'
+
+  const [password,  setPassword]  = useState('')
+  const [confirm,   setConfirm]   = useState('')
+  const [error,     setError]     = useState<string | null>(null)
   const [isPending, setIsPending] = useState(false)
-  const [done, setDone] = useState(false)
+  const [done,      setDone]      = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -40,9 +50,11 @@ export default function ResetPasswordPage() {
     setTimeout(() => router.push('/dashboard'), 2000)
   }
 
+  // ── Success state ────────────────────────────────────────────────────────
+
   if (done) {
     return (
-      <div className="max-w-sm">
+      <div className="w-full max-w-sm mx-auto px-4">
         <div className="flex items-center gap-2.5 p-3 bg-green-50 border border-green-100 text-green-700 text-sm">
           <CheckCircle size={15} strokeWidth={1.5} className="shrink-0" />
           <span>Password set successfully. Redirecting…</span>
@@ -51,13 +63,21 @@ export default function ResetPasswordPage() {
     )
   }
 
+  // ── Form ─────────────────────────────────────────────────────────────────
+
   return (
-    <div className="max-w-sm">
-      {/* Heading */}
+    <div className="w-full max-w-sm mx-auto px-4">
+      {/* Heading — changes based on invite vs recovery */}
       <div className="mb-8">
-        <h1 className="text-xl font-semibold text-black tracking-tight">Set your password</h1>
+        <h1 className="text-xl font-semibold text-black tracking-tight">
+          {isInvite   ? 'Welcome to Clikaa'    :
+           isRecovery ? 'Reset your password'  :
+                        'Set your password'}
+        </h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Create a password to secure your account.
+          {isInvite
+            ? 'Please set a secure password to access your workspace.'
+            : 'Create a new password to secure your account.'}
         </p>
       </div>
 
@@ -142,11 +162,21 @@ export default function ResetPasswordPage() {
                 Saving…
               </>
             ) : (
-              'Set password'
+              isInvite ? 'Set password & enter portal' : 'Set password'
             )}
           </button>
         </div>
       </form>
     </div>
+  )
+}
+
+// ─── Page (Suspense boundary required for useSearchParams) ────────────────────
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }

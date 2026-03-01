@@ -5,9 +5,10 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 const TABS = [
-  { label: 'Board',    segment: null },       // /dashboard/[id]
-  { label: 'Files',    segment: 'files' },    // /dashboard/[id]/files
-  { label: 'Settings', segment: 'settings' }, // /dashboard/[id]/settings
+  { label: 'Board',    segment: null },        // /dashboard/[id]
+  { label: 'Details',  segment: 'details' },   // /dashboard/[id]/details
+  { label: 'Files',    segment: 'files' },     // /dashboard/[id]/files
+  { label: 'Settings', segment: 'settings' },  // /dashboard/[id]/settings
 ]
 
 export function WorkspaceSubNav({ workspaceId }: { workspaceId: string }) {
