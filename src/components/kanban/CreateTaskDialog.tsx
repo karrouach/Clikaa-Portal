@@ -21,6 +21,7 @@ const fieldClass =
 interface CreateTaskDialogProps {
   workspaceId: string
   onTaskCreated: (task: Task) => void
+  asFab?: boolean
 }
 
 /**
@@ -30,7 +31,7 @@ interface CreateTaskDialogProps {
  * Calls the `createTask` server action directly.
  * On success: injects the returned task into the board via onTaskCreated.
  */
-export function CreateTaskDialog({ workspaceId, onTaskCreated }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ workspaceId, onTaskCreated, asFab = false }: CreateTaskDialogProps) {
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -70,18 +71,35 @@ export function CreateTaskDialog({ workspaceId, onTaskCreated }: CreateTaskDialo
   return (
     <>
       {/* ── Trigger ─────────────────────────────────────────────────────── */}
-      <button
-        onClick={() => setOpen(true)}
-        className="
-          flex items-center gap-1.5 h-9 px-4
-          bg-black text-white text-sm font-medium
-          hover:bg-zinc-800 active:bg-zinc-900
-          transition-colors duration-150
-        "
-      >
-        <Plus size={14} strokeWidth={1.5} />
-        New Task
-      </button>
+      {asFab ? (
+        // Floating action button — mobile only
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Add task"
+          className="
+            fixed bottom-20 right-4 z-30
+            w-14 h-14 rounded-full
+            bg-black text-white shadow-lg
+            flex items-center justify-center
+            active:bg-zinc-800 transition-colors
+          "
+        >
+          <Plus size={22} strokeWidth={1.5} />
+        </button>
+      ) : (
+        <button
+          onClick={() => setOpen(true)}
+          className="
+            flex items-center gap-1.5 h-9 px-4
+            bg-black text-white text-sm font-medium
+            hover:bg-zinc-800 active:bg-zinc-900
+            transition-colors duration-150
+          "
+        >
+          <Plus size={14} strokeWidth={1.5} />
+          New Task
+        </button>
+      )}
 
       {/* ── Dialog ──────────────────────────────────────────────────────── */}
       <Dialog open={open} onOpenChange={handleOpenChange}>

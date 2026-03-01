@@ -16,7 +16,7 @@ export function WorkspaceSubNav({ workspaceId }: { workspaceId: string }) {
   const base = `/dashboard/${workspaceId}`
 
   return (
-    <nav className="flex items-end gap-0">
+    <nav className="flex items-end gap-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {TABS.map(({ label, segment }) => {
         const href = segment ? `${base}/${segment}` : base
         const isActive = segment

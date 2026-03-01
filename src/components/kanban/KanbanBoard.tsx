@@ -233,7 +233,7 @@ export function KanbanBoard({
     <>
       <div className="flex flex-col h-full">
         {/* ── Board header ─────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-zinc-100 shrink-0">
+        <div className="flex items-center justify-between px-4 md:px-6 py-4 bg-white border-b border-zinc-100 shrink-0">
           <div>
             <h1 className="text-base font-semibold text-black tracking-tight">
               {workspaceName}
@@ -243,10 +243,13 @@ export function KanbanBoard({
             </p>
           </div>
 
-          <CreateTaskDialog
-            workspaceId={workspaceId}
-            onTaskCreated={handleTaskCreated}
-          />
+          {/* Desktop "New Task" button — hidden on mobile (FAB used instead) */}
+          <div className="hidden md:block">
+            <CreateTaskDialog
+              workspaceId={workspaceId}
+              onTaskCreated={handleTaskCreated}
+            />
+          </div>
         </div>
 
         {/* ── Columns ──────────────────────────────────────────────────── */}
@@ -267,6 +270,17 @@ export function KanbanBoard({
           </DragDropContext>
         </div>
       </div>
+
+      {/* ── Mobile FAB — admin only, md:hidden via asFab ─────────────────── */}
+      {currentUserProfile.role === 'admin' && (
+        <div className="md:hidden">
+          <CreateTaskDialog
+            workspaceId={workspaceId}
+            onTaskCreated={handleTaskCreated}
+            asFab
+          />
+        </div>
+      )}
 
       {/* ── Task detail sheet — always mounted, open controlled by state ── */}
       <TaskDetailSheet

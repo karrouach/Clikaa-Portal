@@ -30,7 +30,7 @@ export default async function WorkspaceLayout({ children, params }: Props) {
   if (!workspace) notFound()
 
   return (
-    <div className="-mx-6 -my-8 flex flex-col h-[calc(100vh-3.5rem)]">
+    <div className="-mx-4 -my-6 md:-mx-6 md:-my-8 flex flex-col h-[calc(100vh-7.5rem)] md:h-[calc(100vh-3.5rem)]">
 
       {/* ── Sub-navigation bar ──────────────────────────────────────────── */}
       <div className="shrink-0 flex items-end justify-between px-6 bg-white border-b border-zinc-100">

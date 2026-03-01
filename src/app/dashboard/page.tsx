@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { LayoutDashboard, TrendingUp } from 'lucide-react'
 import { NewWorkspaceButton } from '@/components/dashboard/CreateWorkspaceDialog'
+import { GreetingHeader } from '@/components/layout/GreetingHeader'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
@@ -22,14 +23,15 @@ export default async function DashboardPage() {
 
   if (!user) redirect('/login')
 
-  // Fetch profile for role check.
+  // Fetch profile for role check and greeting.
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, full_name, email')
     .eq('id', user.id)
     .single()
 
   const isAdmin = profile?.role === 'admin'
+  const displayName = profile?.full_name || profile?.email?.split('@')[0] || 'there'
 
   // Fetch workspaces.
   const { data: memberships } = await supabase
@@ -50,6 +52,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="animate-fade-in">
+
+      {/* ── Greeting ──────────────────────────────────────────────────────── */}
+      <GreetingHeader name={displayName} />
 
       {/* ── Admin stat cards ──────────────────────────────────────────────── */}
       {isAdmin && (
