@@ -22,8 +22,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Forward the current pathname as a request header so server component
+  // layouts can read it via headers('x-pathname') — used by the dashboard
+  // layout to distinguish /dashboard/reset-password from other routes.
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-pathname', pathname)
+
   // Start with a passthrough response so we can mutate cookies on it.
-  let supabaseResponse = NextResponse.next({ request })
+  let supabaseResponse = NextResponse.next({
+    request: { headers: requestHeaders },
+  })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,8 +44,14 @@ export async function middleware(request: NextRequest) {
         setAll(cookiesToSet) {
           // 1. Stamp cookies onto the request so subsequent server code can read them.
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          // 2. Re-create the response with the updated request, then stamp onto it too.
-          supabaseResponse = NextResponse.next({ request })
+          // 2. Sync the updated cookie jar back into requestHeaders so the
+          //    forwarded request headers (including x-pathname) stay in sync.
+          requestHeaders.set(
+            'cookie',
+            request.cookies.getAll().map(({ name, value }) => `${name}=${value}`).join('; ')
+          )
+          // 3. Re-create the response with the updated request + headers.
+          supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )

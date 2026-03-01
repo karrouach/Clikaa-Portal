@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import type { WorkspaceWithRole } from '@/types/database'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Header } from '@/components/layout/Header'
@@ -30,8 +31,25 @@ export default async function DashboardLayout({
     .eq('id', user.id)
     .single()
 
-  // If the profile doesn't exist (trigger failure), sign out gracefully.
   if (!profile) {
+    // /dashboard/reset-password is reached immediately after an invite or
+    // recovery OTP is verified. The DB trigger that creates the profiles row
+    // fires synchronously but in rare cases (e.g. cold start) may not have
+    // committed yet by the time this layout runs.
+    //
+    // Read the forwarded x-pathname header (set by middleware) to detect this
+    // path without coupling to URL parsing heuristics.
+    const headersList = await headers()
+    const currentPath = headersList.get('x-pathname') ?? ''
+
+    if (currentPath.includes('reset-password')) {
+      // Render the reset-password page without the full dashboard shell.
+      // The page only needs an active session, not a populated profile.
+      return <>{children}</>
+    }
+
+    // For all other routes, a missing profile is a fatal state — sign out
+    // and return to login so the user can re-authenticate cleanly.
     await supabase.auth.signOut()
     redirect('/login')
   }
