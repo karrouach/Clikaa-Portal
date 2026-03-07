@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { Task, TaskStatus, TaskPriority } from '@/types/database'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -16,6 +17,8 @@ export async function createTask(formData: FormData): Promise<CreateTaskResult> 
   const description = ((formData.get('description') as string) || '').trim() || null
   const priority = (formData.get('priority') as TaskPriority) || 'medium'
   const workspaceId = formData.get('workspace_id') as string
+  const dueDate = (formData.get('due_date') as string) || null
+  const assigneeId = (formData.get('assignee_id') as string) || null
 
   if (!title) return { error: 'Task title is required.' }
   if (!workspaceId) return { error: 'Workspace ID is missing.' }
@@ -49,6 +52,8 @@ export async function createTask(formData: FormData): Promise<CreateTaskResult> 
       status: 'todo',
       position,
       created_by: user.id,
+      due_date: dueDate || null,
+      assignee_id: assigneeId || null,
     })
     .select('*')
     .single()
@@ -115,6 +120,35 @@ export async function updateTaskStatus({
     .eq('id', taskId)
 
   if (error) return { error: error.message }
+
+  // ── Notify client/designer members when a task moves to "review" ──────────
+  if (status === 'review') {
+    const { data: task } = await supabase
+      .from('tasks')
+      .select('title, workspace_id')
+      .eq('id', taskId)
+      .single()
+
+    if (task) {
+      const admin = createAdminClient()
+      const { data: members } = await admin
+        .from('workspace_members')
+        .select('user_id')
+        .eq('workspace_id', task.workspace_id)
+        .in('role', ['client', 'designer'])
+
+      if (members && members.length > 0) {
+        await admin.from('notifications').insert(
+          members.map((m) => ({
+            user_id: m.user_id,
+            message: `Task "${task.title}" is ready for your review.`,
+            link: `/dashboard/${task.workspace_id}`,
+          }))
+        )
+      }
+    }
+  }
+
   return {}
 }
 

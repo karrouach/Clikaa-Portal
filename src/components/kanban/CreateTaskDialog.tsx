@@ -9,10 +9,27 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { createTask } from '@/app/dashboard/task-actions'
+import { getInitials } from '@/lib/utils'
 import type { Task } from '@/types/database'
 
-// ─── Field styles (matches the editorial bottom-border auth inputs) ────────
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type MemberOption = {
+  id: string
+  full_name: string
+  email: string
+  avatar_url?: string | null
+}
+
+// ─── Field styles ─────────────────────────────────────────────────────────────
 const fieldClass =
   'w-full bg-transparent text-sm text-black placeholder:text-zinc-400 ' +
   'border-0 border-b border-zinc-200 focus:outline-none focus:border-black ' +
@@ -22,26 +39,25 @@ interface CreateTaskDialogProps {
   workspaceId: string
   onTaskCreated: (task: Task) => void
   asFab?: boolean
+  members?: MemberOption[]
 }
 
-/**
- * CreateTaskDialog — floating dialog triggered by the "New Task" button.
- *
- * Form fields: Title (required), Description (optional), Priority (select).
- * Calls the `createTask` server action directly.
- * On success: injects the returned task into the board via onTaskCreated.
- */
-export function CreateTaskDialog({ workspaceId, onTaskCreated, asFab = false }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ workspaceId, onTaskCreated, asFab = false, members }: CreateTaskDialogProps) {
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
+
+  // Controlled assignee state (Radix Select is not a native form element)
+  const [assigneeId, setAssigneeId] = useState('__none__')
+  const selectedMember = (members ?? []).find((m) => m.id === assigneeId)
 
   function handleOpenChange(next: boolean) {
     if (!isPending) {
       setOpen(next)
       if (!next) {
         setError(null)
+        setAssigneeId('__none__')
         formRef.current?.reset()
       }
     }
@@ -51,6 +67,8 @@ export function CreateTaskDialog({ workspaceId, onTaskCreated, asFab = false }: 
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     formData.set('workspace_id', workspaceId)
+    // Inject the controlled Select value into FormData
+    formData.set('assignee_id', assigneeId === '__none__' ? '' : assigneeId)
     setError(null)
 
     startTransition(async () => {
@@ -68,11 +86,12 @@ export function CreateTaskDialog({ workspaceId, onTaskCreated, asFab = false }: 
     })
   }
 
+  const hasMembers = members && members.length > 0
+
   return (
     <>
       {/* ── Trigger ─────────────────────────────────────────────────────── */}
       {asFab ? (
-        // Floating action button — mobile only
         <button
           onClick={() => setOpen(true)}
           aria-label="Add task"
@@ -157,26 +176,96 @@ export function CreateTaskDialog({ workspaceId, onTaskCreated, asFab = false }: 
               />
             </div>
 
-            {/* Priority */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="task-priority"
-                className="block text-[11px] font-medium text-zinc-600 uppercase tracking-widest"
-              >
-                Priority
-              </label>
-              <select
-                id="task-priority"
-                name="priority"
-                defaultValue="medium"
-                className={`${fieldClass} h-9 cursor-pointer appearance-none`}
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
+            {/* Priority + Due Date row */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Priority */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="task-priority"
+                  className="block text-[11px] font-medium text-zinc-600 uppercase tracking-widest"
+                >
+                  Priority
+                </label>
+                <select
+                  id="task-priority"
+                  name="priority"
+                  defaultValue="medium"
+                  className={`${fieldClass} h-9 cursor-pointer appearance-none`}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+
+              {/* Due Date */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="task-due-date"
+                  className="block text-[11px] font-medium text-zinc-600 uppercase tracking-widest"
+                >
+                  Due Date
+                </label>
+                <input
+                  id="task-due-date"
+                  name="due_date"
+                  type="date"
+                  className={`${fieldClass} h-9 py-1`}
+                />
+              </div>
             </div>
+
+            {/* Assignee — Avatar-enhanced Select */}
+            {hasMembers && (
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-medium text-zinc-600 uppercase tracking-widest">
+                  Assignee
+                </label>
+                <Select value={assigneeId} onValueChange={setAssigneeId}>
+                  <SelectTrigger className="h-9">
+                    {/* Custom trigger display: avatar + name for selected member */}
+                    {assigneeId !== '__none__' && selectedMember ? (
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Avatar className="h-5 w-5 shrink-0">
+                          {selectedMember.avatar_url && (
+                            <AvatarImage src={selectedMember.avatar_url} />
+                          )}
+                          <AvatarFallback className="text-[8px] bg-zinc-100 text-zinc-600">
+                            {getInitials(selectedMember.full_name || selectedMember.email)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm truncate">
+                          {selectedMember.full_name || selectedMember.email}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-zinc-400">Unassigned</span>
+                    )}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {/* Unassigned option */}
+                    <SelectItem value="__none__">
+                      <span className="text-zinc-400">Unassigned</span>
+                    </SelectItem>
+                    {/* Member options with avatars */}
+                    {members.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-5 w-5 shrink-0">
+                            {m.avatar_url && <AvatarImage src={m.avatar_url} />}
+                            <AvatarFallback className="text-[8px] bg-zinc-100 text-zinc-600">
+                              {getInitials(m.full_name || m.email)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>{m.full_name || m.email}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-3 pt-1 border-t border-zinc-100">

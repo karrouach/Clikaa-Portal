@@ -17,7 +17,7 @@ export type Database = {
           email: string
           full_name: string
           avatar_url: string | null
-          role: 'admin' | 'client'
+          role: 'admin' | 'client' | 'designer'
           title: string | null
           created_at: string
         }
@@ -26,7 +26,7 @@ export type Database = {
           email: string
           full_name?: string
           avatar_url?: string | null
-          role?: 'admin' | 'client'
+          role?: 'admin' | 'client' | 'designer'
           title?: string | null
           created_at?: string
         }
@@ -35,7 +35,7 @@ export type Database = {
           email?: string
           full_name?: string
           avatar_url?: string | null
-          role?: 'admin' | 'client'
+          role?: 'admin' | 'client' | 'designer'
           title?: string | null
           created_at?: string
         }
@@ -76,21 +76,21 @@ export type Database = {
           id: string
           workspace_id: string
           user_id: string
-          role: 'admin' | 'client'
+          role: 'admin' | 'client' | 'designer'
           created_at: string
         }
         Insert: {
           id?: string
           workspace_id: string
           user_id: string
-          role?: 'admin' | 'client'
+          role?: 'admin' | 'client' | 'designer'
           created_at?: string
         }
         Update: {
           id?: string
           workspace_id?: string
           user_id?: string
-          role?: 'admin' | 'client'
+          role?: 'admin' | 'client' | 'designer'
           created_at?: string
         }
         Relationships: [
@@ -116,7 +116,7 @@ export type Database = {
           workspace_id: string
           title: string
           description: string | null
-          status: 'todo' | 'in_progress' | 'review' | 'done'
+          status: 'todo' | 'in_progress' | 'review' | 'done' | 'pending'
           priority: 'low' | 'medium' | 'high' | 'urgent'
           position: number
           assignee_id: string | null
@@ -130,7 +130,7 @@ export type Database = {
           workspace_id: string
           title: string
           description?: string | null
-          status?: 'todo' | 'in_progress' | 'review' | 'done'
+          status?: 'todo' | 'in_progress' | 'review' | 'done' | 'pending'
           priority?: 'low' | 'medium' | 'high' | 'urgent'
           position?: number
           assignee_id?: string | null
@@ -144,7 +144,7 @@ export type Database = {
           workspace_id?: string
           title?: string
           description?: string | null
-          status?: 'todo' | 'in_progress' | 'review' | 'done'
+          status?: 'todo' | 'in_progress' | 'review' | 'done' | 'pending'
           priority?: 'low' | 'medium' | 'high' | 'urgent'
           position?: number
           assignee_id?: string | null
@@ -267,6 +267,41 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          message: string
+          link: string | null
+          read_status: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          message: string
+          link?: string | null
+          read_status?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          message?: string
+          link?: string | null
+          read_status?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'notifications_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       workspace_assets: {
         Row: {
           id: string
@@ -342,6 +377,7 @@ export type Database = {
 
 // ─── Convenience row types ────────────────────────────────────────────────────
 export type Profile = Database['public']['Tables']['profiles']['Row']
+export type Notification = Database['public']['Tables']['notifications']['Row']
 export type WorkspaceAsset = Database['public']['Tables']['workspace_assets']['Row']
 export type Workspace = Database['public']['Tables']['workspaces']['Row']
 export type WorkspaceMember = Database['public']['Tables']['workspace_members']['Row']
@@ -352,7 +388,7 @@ export type Attachment = Database['public']['Tables']['attachments']['Row']
 // ─── Domain union types ───────────────────────────────────────────────────────
 export type TaskStatus = Task['status']
 export type TaskPriority = Task['priority']
-export type UserRole = Profile['role']
+export type UserRole = 'admin' | 'client' | 'designer'
 
 // ─── Extended/joined types used in the UI ────────────────────────────────────
 export type WorkspaceWithRole = {

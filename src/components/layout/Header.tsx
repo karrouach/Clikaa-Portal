@@ -2,10 +2,11 @@
 
 import { usePathname } from 'next/navigation'
 import { useTransition } from 'react'
-import { LogOut, Loader2, Bell } from 'lucide-react'
+import { LogOut, Loader2 } from 'lucide-react'
 import type { Profile } from '@/types/database'
 import { signOut } from '@/app/actions'
 import { getInitials } from '@/lib/utils'
+import { NotificationBell } from './NotificationBell'
 
 interface HeaderProps {
   profile: Profile
@@ -53,13 +54,8 @@ export function Header({ profile }: HeaderProps) {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
-        {/* Notification bell — placeholder for Phase 4 */}
-        <button
-          className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-black hover:bg-zinc-100 transition-colors rounded-lg"
-          aria-label="Notifications"
-        >
-          <Bell size={16} strokeWidth={1.5} />
-        </button>
+        {/* Notification bell */}
+        <NotificationBell userId={profile.id} />
 
         {/* Divider */}
         <div className="w-px h-5 bg-zinc-100" />

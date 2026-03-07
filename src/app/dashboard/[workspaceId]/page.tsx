@@ -61,6 +61,17 @@ export default async function WorkspacePage({ params }: Props) {
     .eq('workspace_id', workspaceId)
     .order('position', { ascending: true })
 
+  // ── Workspace members — for assignee select in CreateTaskDialog ───────────
+  const { data: memberships } = await supabase
+    .from('workspace_members')
+    .select('user_id, profiles(id, full_name, email)')
+    .eq('workspace_id', workspaceId)
+
+  const workspaceMembers = (memberships ?? [])
+    .map((m) => m.profiles as unknown as { id: string; full_name: string; email: string } | null)
+    .filter(Boolean)
+    .map((p) => ({ id: p!.id, full_name: p!.full_name, email: p!.email }))
+
   // Fallback profile shape for safety (should never be null for a logged-in user)
   const currentUserProfile = profile ?? {
     id: user.id,
@@ -78,6 +89,7 @@ export default async function WorkspacePage({ params }: Props) {
       workspaceName={workspace.name}
       initialTasks={tasks ?? []}
       currentUserProfile={currentUserProfile}
+      workspaceMembers={workspaceMembers}
     />
   )
 }

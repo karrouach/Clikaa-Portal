@@ -7,7 +7,7 @@ import { updateTaskPosition } from '@/app/dashboard/task-actions'
 import type { Task, TaskStatus } from '@/types/database'
 import type { CurrentUserProfile } from './TaskDetailSheet'
 import { KanbanColumn } from './KanbanColumn'
-import { CreateTaskDialog } from './CreateTaskDialog'
+import { CreateTaskDialog, type MemberOption } from './CreateTaskDialog'
 import { TaskDetailSheet } from './TaskDetailSheet'
 
 // ─── Column definitions ────────────────────────────────────────────────────
@@ -16,10 +16,11 @@ export const KANBAN_COLUMNS: {
   label: string
   dotClass: string
 }[] = [
-  { id: 'todo', label: 'To Do', dotClass: 'bg-zinc-400' },
+  { id: 'todo',        label: 'To Do',       dotClass: 'bg-zinc-400' },
+  { id: 'pending',     label: 'Pending',     dotClass: 'bg-amber-400' },
   { id: 'in_progress', label: 'In Progress', dotClass: 'bg-blue-500' },
-  { id: 'review', label: 'Review', dotClass: 'bg-violet-500' },
-  { id: 'done', label: 'Done', dotClass: 'bg-emerald-500' },
+  { id: 'review',      label: 'Review',      dotClass: 'bg-violet-500' },
+  { id: 'done',        label: 'Done',        dotClass: 'bg-emerald-500' },
 ]
 
 // ─── Fractional-index position calculator ─────────────────────────────────
@@ -42,6 +43,7 @@ interface KanbanBoardProps {
   workspaceName: string
   initialTasks: Task[]
   currentUserProfile: CurrentUserProfile
+  workspaceMembers?: MemberOption[]
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -60,6 +62,7 @@ export function KanbanBoard({
   workspaceName,
   initialTasks,
   currentUserProfile,
+  workspaceMembers = [],
 }: KanbanBoardProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
 
@@ -76,6 +79,7 @@ export function KanbanBoard({
   // ── Group + sort tasks by status (memoised) ────────────────────────────
   const sortedByStatus = useMemo<Record<TaskStatus, Task[]>>(() => {
     const groups: Record<TaskStatus, Task[]> = {
+      pending: [],
       todo: [],
       in_progress: [],
       review: [],
@@ -248,6 +252,7 @@ export function KanbanBoard({
             <CreateTaskDialog
               workspaceId={workspaceId}
               onTaskCreated={handleTaskCreated}
+              members={workspaceMembers}
             />
           </div>
         </div>
@@ -277,6 +282,7 @@ export function KanbanBoard({
           <CreateTaskDialog
             workspaceId={workspaceId}
             onTaskCreated={handleTaskCreated}
+            members={workspaceMembers}
             asFab
           />
         </div>

@@ -6,21 +6,18 @@ import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react'
 import { signIn, type LoginState } from './actions'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
 // ─── Submit button with pending state via useFormStatus ──────────────────────
 function SubmitButton() {
   const { pending } = useFormStatus()
   return (
-    <button
+    <Button
       type="submit"
       disabled={pending}
-      className="
-        w-full h-11 flex items-center justify-center gap-2
-        bg-black text-white text-sm font-medium tracking-wide rounded-lg
-        hover:bg-zinc-800 active:bg-zinc-900
-        transition-colors duration-150
-        disabled:opacity-60 disabled:cursor-not-allowed
-      "
+      rounded="md"
+      className="w-full h-11 text-sm font-medium tracking-wide"
     >
       {pending ? (
         <>
@@ -33,7 +30,7 @@ function SubmitButton() {
           <ArrowRight size={14} strokeWidth={1.5} />
         </>
       )}
-    </button>
+    </Button>
   )
 }
 
@@ -76,20 +73,14 @@ export function LoginForm() {
           <label htmlFor="email" className="block text-xs font-medium text-zinc-700 tracking-wide uppercase">
             Email address
           </label>
-          <input
+          <Input
             id="email"
             name="email"
             type="email"
             autoComplete="email"
             required
             placeholder="you@company.com"
-            className="
-              w-full h-10 px-0 py-2
-              border-0 border-b border-zinc-200
-              bg-transparent text-sm text-black placeholder:text-zinc-400
-              focus:outline-none focus:border-black
-              transition-colors duration-150
-            "
+            underline
           />
         </div>
 
@@ -98,20 +89,14 @@ export function LoginForm() {
           <label htmlFor="password" className="block text-xs font-medium text-zinc-700 tracking-wide uppercase">
             Password
           </label>
-          <input
+          <Input
             id="password"
             name="password"
             type="password"
             autoComplete="current-password"
             required
             placeholder="••••••••"
-            className="
-              w-full h-10 px-0 py-2
-              border-0 border-b border-zinc-200
-              bg-transparent text-sm text-black placeholder:text-zinc-400
-              focus:outline-none focus:border-black
-              transition-colors duration-150
-            "
+            underline
           />
         </div>
 

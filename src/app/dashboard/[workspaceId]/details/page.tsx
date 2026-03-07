@@ -44,6 +44,7 @@ function timeAgo(iso: string): string {
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
   todo:        'To Do',
+  pending:     'Pending',
   in_progress: 'In Progress',
   review:      'Review',
   done:        'Done',
@@ -51,6 +52,7 @@ const STATUS_LABEL: Record<TaskStatus, string> = {
 
 const STATUS_BADGE: Record<TaskStatus, string> = {
   todo:        'bg-zinc-100 text-zinc-500',
+  pending:     'bg-amber-50 text-amber-700',
   in_progress: 'bg-blue-50 text-blue-700',
   review:      'bg-purple-50 text-purple-700',
   done:        'bg-green-50 text-green-700',
@@ -172,6 +174,7 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
                 {(
                   [
                     ['todo',        allTasks.filter(t => t.status === 'todo').length],
+                    ['pending',     allTasks.filter(t => t.status === 'pending').length],
                     ['in_progress', allTasks.filter(t => t.status === 'in_progress').length],
                     ['review',      allTasks.filter(t => t.status === 'review').length],
                     ['done',        done],

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import confetti from 'canvas-confetti'
 import type { Task, TaskStatus } from '@/types/database'
 import {
   Sheet,
@@ -21,13 +22,13 @@ import { AttachmentPanel } from './AttachmentPanel'
 import { updateTaskStatus, deleteTask } from '@/app/dashboard/task-actions'
 import { updateTaskTitle, updateTaskDescription } from '@/app/dashboard/comment-actions'
 import { formatDate } from '@/lib/utils'
-import { Loader2, Trash2 } from 'lucide-react'
+import { CheckCircle2, Loader2, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface CurrentUserProfile {
   id: string
-  role: 'admin' | 'client'
+  role: 'admin' | 'client' | 'designer'
   full_name: string
   avatar_url: string | null
   email: string
@@ -44,10 +45,11 @@ interface TaskDetailSheetProps {
 
 // ─── Status options ───────────────────────────────────────────────────────────
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
-  { value: 'todo', label: 'To Do' },
+  { value: 'todo',        label: 'To Do' },
+  { value: 'pending',     label: 'Pending' },
   { value: 'in_progress', label: 'In Progress' },
-  { value: 'review', label: 'Review' },
-  { value: 'done', label: 'Done' },
+  { value: 'review',      label: 'Review' },
+  { value: 'done',        label: 'Done' },
 ]
 
 // ─── Priority badge map ───────────────────────────────────────────────────────
@@ -279,7 +281,9 @@ export function TaskDetailSheet({
   onTaskDeleted,
 }: TaskDetailSheetProps) {
   const [isDeleting, startDeleteTransition] = useTransition()
+  const [isApproving, startApproveTransition] = useTransition()
   const isAdmin = currentUserProfile.role === 'admin'
+  const isClient = currentUserProfile.role === 'client'
 
   // ── Status change — optimistic, with revert on error ──────────────────────
   function handleStatusChange(status: string) {
@@ -295,6 +299,29 @@ export function TaskDetailSheet({
         console.error('[TaskDetail] Status update failed:', error)
         onTaskUpdated(original) // Revert
       }
+    })
+  }
+
+  // ── Client approve — moves to Done + fires confetti ───────────────────────
+  function handleApprove() {
+    if (!task) return
+    const original = task
+    const optimistic = { ...task, status: 'done' as TaskStatus }
+    onTaskUpdated(optimistic)
+
+    startApproveTransition(async () => {
+      const { error } = await updateTaskStatus({ taskId: task.id, status: 'done' })
+      if (error) {
+        onTaskUpdated(original)
+        return
+      }
+      // Fire confetti on success
+      confetti({
+        particleCount: 160,
+        spread: 90,
+        origin: { y: 0.55 },
+        colors: ['#000000', '#10b981', '#ffffff', '#71717a', '#f59e0b'],
+      })
     })
   }
 
@@ -379,6 +406,28 @@ export function TaskDetailSheet({
                     </div>
                   </div>
                 </div>
+
+                {/* ── Client Approve Design button ─────────────────────────── */}
+                {isClient && task.status === 'review' && (
+                  <button
+                    onClick={handleApprove}
+                    disabled={isApproving}
+                    className="
+                      w-full h-11 flex items-center justify-center gap-2
+                      bg-emerald-500 text-white text-sm font-semibold rounded-lg
+                      hover:bg-emerald-600 active:bg-emerald-700
+                      transition-colors duration-150
+                      disabled:opacity-60 disabled:cursor-not-allowed
+                    "
+                  >
+                    {isApproving ? (
+                      <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
+                    ) : (
+                      <CheckCircle2 size={16} strokeWidth={1.5} />
+                    )}
+                    {isApproving ? 'Approving…' : 'Approve Design'}
+                  </button>
+                )}
 
                 {/* ── Description ──────────────────────────────────────────── */}
                 <div className="space-y-1.5">

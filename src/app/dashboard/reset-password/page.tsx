@@ -4,6 +4,8 @@ import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
 // ─── Inner component (needs useSearchParams → must be inside Suspense) ────────
 
@@ -98,7 +100,7 @@ function ResetPasswordContent() {
           >
             New password
           </label>
-          <input
+          <Input
             id="password"
             type="password"
             required
@@ -107,13 +109,7 @@ function ResetPasswordContent() {
             placeholder="Min. 8 characters"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="
-              w-full h-10 px-0 py-2
-              border-0 border-b border-zinc-200
-              bg-transparent text-sm text-black placeholder:text-zinc-400
-              focus:outline-none focus:border-black
-              transition-colors duration-150
-            "
+            underline
           />
         </div>
 
@@ -125,7 +121,7 @@ function ResetPasswordContent() {
           >
             Confirm password
           </label>
-          <input
+          <Input
             id="confirm"
             type="password"
             required
@@ -133,28 +129,17 @@ function ResetPasswordContent() {
             placeholder="Repeat your password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            className="
-              w-full h-10 px-0 py-2
-              border-0 border-b border-zinc-200
-              bg-transparent text-sm text-black placeholder:text-zinc-400
-              focus:outline-none focus:border-black
-              transition-colors duration-150
-            "
+            underline
           />
         </div>
 
         {/* Submit */}
         <div className="pt-2">
-          <button
+          <Button
             type="submit"
             disabled={isPending}
-            className="
-              w-full h-11 flex items-center justify-center gap-2
-              bg-black text-white text-sm font-medium tracking-wide rounded-lg
-              hover:bg-zinc-800 active:bg-zinc-900
-              transition-colors duration-150
-              disabled:opacity-60 disabled:cursor-not-allowed
-            "
+            rounded="md"
+            className="w-full h-11 text-sm font-medium tracking-wide"
           >
             {isPending ? (
               <>
@@ -164,7 +149,7 @@ function ResetPasswordContent() {
             ) : (
               isInvite ? 'Set password & enter portal' : 'Set password'
             )}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

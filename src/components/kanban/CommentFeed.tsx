@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { addComment } from '@/app/dashboard/comment-actions'
 import type { CommentWithAuthor } from '@/types/database'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Textarea } from '@/components/ui/textarea'
 import { getInitials, formatRelativeTime } from '@/lib/utils'
 import { Send, Loader2 } from 'lucide-react'
 
@@ -224,19 +225,15 @@ export function CommentFeed({ taskId, currentUserProfile }: CommentFeedProps) {
           </Avatar>
 
           {/* Textarea */}
-          <textarea
+          <Textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={1}
             placeholder="Add a comment… (⌘↵ to send)"
             disabled={isPending}
-            className="
-              flex-1 bg-transparent text-sm text-black placeholder:text-zinc-400
-              border-0 border-b border-zinc-200 focus:outline-none focus:border-black
-              transition-colors duration-150 resize-none py-1
-              disabled:opacity-50
-            "
+            underline
+            className="flex-1 py-1"
             style={{ minHeight: '32px', maxHeight: '120px' }}
           />
 
@@ -246,7 +243,7 @@ export function CommentFeed({ taskId, currentUserProfile }: CommentFeedProps) {
             disabled={!body.trim() || isPending}
             className="
               flex items-center justify-center w-7 h-7 mb-0.5 shrink-0
-              bg-black text-white
+              bg-black text-white rounded-lg
               hover:bg-zinc-800 transition-colors duration-150
               disabled:opacity-30 disabled:cursor-not-allowed
             "

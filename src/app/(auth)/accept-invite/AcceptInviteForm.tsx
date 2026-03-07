@@ -5,20 +5,17 @@ import { useFormStatus } from 'react-dom'
 import { motion } from 'framer-motion'
 import { AlertCircle, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react'
 import { setPassword, type AcceptInviteState } from './actions'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
 function SubmitButton() {
   const { pending } = useFormStatus()
   return (
-    <button
+    <Button
       type="submit"
       disabled={pending}
-      className="
-        w-full h-11 flex items-center justify-center gap-2
-        bg-black text-white text-sm font-medium tracking-wide
-        hover:bg-zinc-800 active:bg-zinc-900
-        transition-colors duration-150
-        disabled:opacity-60 disabled:cursor-not-allowed
-      "
+      rounded="md"
+      className="w-full h-11 text-sm font-medium tracking-wide"
     >
       {pending ? (
         <>
@@ -31,7 +28,7 @@ function SubmitButton() {
           <ArrowRight size={14} strokeWidth={1.5} />
         </>
       )}
-    </button>
+    </Button>
   )
 }
 
@@ -78,7 +75,7 @@ export default function AcceptInviteForm({ initialFullName, email }: Props) {
           <label htmlFor="full_name" className="block text-xs font-medium text-zinc-700 tracking-wide uppercase">
             Full name
           </label>
-          <input
+          <Input
             id="full_name"
             name="full_name"
             type="text"
@@ -86,13 +83,7 @@ export default function AcceptInviteForm({ initialFullName, email }: Props) {
             required
             defaultValue={initialFullName}
             placeholder="Jane Smith"
-            className="
-              w-full h-10 px-0 py-2
-              border-0 border-b border-zinc-200
-              bg-transparent text-sm text-black placeholder:text-zinc-400
-              focus:outline-none focus:border-black
-              transition-colors duration-150
-            "
+            underline
           />
         </div>
 
@@ -101,7 +92,7 @@ export default function AcceptInviteForm({ initialFullName, email }: Props) {
           <label htmlFor="password" className="block text-xs font-medium text-zinc-700 tracking-wide uppercase">
             Password
           </label>
-          <input
+          <Input
             id="password"
             name="password"
             type="password"
@@ -109,13 +100,7 @@ export default function AcceptInviteForm({ initialFullName, email }: Props) {
             required
             minLength={8}
             placeholder="Minimum 8 characters"
-            className="
-              w-full h-10 px-0 py-2
-              border-0 border-b border-zinc-200
-              bg-transparent text-sm text-black placeholder:text-zinc-400
-              focus:outline-none focus:border-black
-              transition-colors duration-150
-            "
+            underline
           />
         </div>
 
@@ -124,20 +109,14 @@ export default function AcceptInviteForm({ initialFullName, email }: Props) {
           <label htmlFor="confirm_password" className="block text-xs font-medium text-zinc-700 tracking-wide uppercase">
             Confirm password
           </label>
-          <input
+          <Input
             id="confirm_password"
             name="confirm_password"
             type="password"
             autoComplete="new-password"
             required
             placeholder="••••••••"
-            className="
-              w-full h-10 px-0 py-2
-              border-0 border-b border-zinc-200
-              bg-transparent text-sm text-black placeholder:text-zinc-400
-              focus:outline-none focus:border-black
-              transition-colors duration-150
-            "
+            underline
           />
         </div>
 

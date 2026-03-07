@@ -46,7 +46,27 @@ export async function inviteTeamMember({
 
   const admin = createAdminClient()
 
-  // 1. Send invite email via Supabase Auth admin API.
+  // A. Check if this email already has a portal account.
+  const { data: existing } = await admin
+    .from('profiles')
+    .select('id')
+    .eq('email', trimEmail)
+    .maybeSingle()
+
+  if (existing) {
+    // User already exists — just promote to admin. No invite email needed.
+    const { error: updateErr } = await admin
+      .from('profiles')
+      .update({ full_name: trimName, role: 'admin' })
+      .eq('id', existing.id)
+
+    if (updateErr) return { error: updateErr.message }
+
+    revalidatePath('/dashboard/team')
+    return {}
+  }
+
+  // B. New user — send invite email via Supabase Auth admin API.
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
     trimEmail,
     { data: { full_name: trimName } }
@@ -54,7 +74,7 @@ export async function inviteTeamMember({
 
   if (inviteError) return { error: inviteError.message }
 
-  // 2. The trigger created the profile with role='client'.
+  // C. The trigger created the profile with role='client'.
   //    Promote to 'admin' now (admin client bypasses RLS).
   const { error: promoteError } = await admin
     .from('profiles')
