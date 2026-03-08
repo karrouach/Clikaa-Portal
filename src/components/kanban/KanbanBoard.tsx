@@ -296,6 +296,7 @@ export function KanbanBoard({
         currentUserProfile={currentUserProfile}
         onTaskUpdated={handleTaskUpdated}
         onTaskDeleted={handleTaskDeleted}
+        workspaceMembers={workspaceMembers}
       />
     </>
   )

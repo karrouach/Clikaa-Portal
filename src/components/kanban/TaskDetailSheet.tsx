@@ -21,9 +21,11 @@ import { CommentFeed } from './CommentFeed'
 import { AttachmentPanel } from './AttachmentPanel'
 import { updateTaskStatus, deleteTask } from '@/app/dashboard/task-actions'
 import { updateTaskTitle, updateTaskDescription } from '@/app/dashboard/comment-actions'
-import { formatDate } from '@/lib/utils'
-import { CheckCircle2, Loader2, Trash2 } from 'lucide-react'
+import { formatDate, getInitials } from '@/lib/utils'
+import { CheckCircle2, Loader2, Trash2, CalendarIcon, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import type { MemberOption } from './CreateTaskDialog'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface CurrentUserProfile {
@@ -41,6 +43,7 @@ interface TaskDetailSheetProps {
   currentUserProfile: CurrentUserProfile
   onTaskUpdated: (task: Task) => void
   onTaskDeleted: (taskId: string) => void
+  workspaceMembers?: MemberOption[]
 }
 
 // ─── Status options ───────────────────────────────────────────────────────────
@@ -279,11 +282,17 @@ export function TaskDetailSheet({
   currentUserProfile,
   onTaskUpdated,
   onTaskDeleted,
+  workspaceMembers = [],
 }: TaskDetailSheetProps) {
   const [isDeleting, startDeleteTransition] = useTransition()
   const [isApproving, startApproveTransition] = useTransition()
   const isAdmin = currentUserProfile.role === 'admin'
   const isClient = currentUserProfile.role === 'client'
+
+  // Resolve assignee from workspaceMembers list
+  const assignee = task?.assignee_id
+    ? workspaceMembers.find((m) => m.id === task.assignee_id) ?? null
+    : null
 
   // ── Status change — optimistic, with revert on error ──────────────────────
   function handleStatusChange(status: string) {
@@ -406,6 +415,68 @@ export function TaskDetailSheet({
                     </div>
                   </div>
                 </div>
+
+                {/* ── Dates + Assignee ─────────────────────────────────────── */}
+                {(task.start_date || task.due_date || task.assignee_id) && (
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Start Date */}
+                    {task.start_date && (
+                      <div className="space-y-1.5">
+                        <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest flex items-center gap-1">
+                          <CalendarIcon size={10} strokeWidth={1.5} />
+                          Start Date
+                        </p>
+                        <p className="text-sm text-black">
+                          {new Date(task.start_date).toLocaleDateString('en-GB', {
+                            day: 'numeric', month: 'short', year: 'numeric',
+                          })}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Due Date */}
+                    {task.due_date && (
+                      <div className="space-y-1.5">
+                        <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest flex items-center gap-1">
+                          <CalendarIcon size={10} strokeWidth={1.5} />
+                          Due Date
+                        </p>
+                        <p className="text-sm text-black">
+                          {new Date(task.due_date).toLocaleDateString('en-GB', {
+                            day: 'numeric', month: 'short', year: 'numeric',
+                          })}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Assignee */}
+                    {task.assignee_id && (
+                      <div className="space-y-1.5 col-span-2">
+                        <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest flex items-center gap-1">
+                          <User size={10} strokeWidth={1.5} />
+                          Assignee
+                        </p>
+                        {assignee ? (
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6 shrink-0">
+                              {assignee.avatar_url && (
+                                <AvatarImage src={assignee.avatar_url} />
+                              )}
+                              <AvatarFallback className="text-[9px] bg-zinc-100 text-zinc-600">
+                                {getInitials(assignee.full_name || assignee.email)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm text-black">
+                              {assignee.full_name || assignee.email}
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-zinc-400">Unknown member</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* ── Client Approve Design button ─────────────────────────── */}
                 {isClient && task.status === 'review' && (

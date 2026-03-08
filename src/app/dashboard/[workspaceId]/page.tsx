@@ -64,13 +64,26 @@ export default async function WorkspacePage({ params }: Props) {
   // ── Workspace members — for assignee select in CreateTaskDialog ───────────
   const { data: memberships } = await supabase
     .from('workspace_members')
-    .select('user_id, profiles(id, full_name, email)')
+    .select('user_id, profiles(id, full_name, email, avatar_url)')
     .eq('workspace_id', workspaceId)
 
   const workspaceMembers = (memberships ?? [])
-    .map((m) => m.profiles as unknown as { id: string; full_name: string; email: string } | null)
+    .map(
+      (m) =>
+        m.profiles as unknown as {
+          id: string
+          full_name: string
+          email: string
+          avatar_url: string | null
+        } | null
+    )
     .filter(Boolean)
-    .map((p) => ({ id: p!.id, full_name: p!.full_name, email: p!.email }))
+    .map((p) => ({
+      id: p!.id,
+      full_name: p!.full_name,
+      email: p!.email,
+      avatar_url: p!.avatar_url ?? null,
+    }))
 
   // Fallback profile shape for safety (should never be null for a logged-in user)
   const currentUserProfile = profile ?? {

@@ -22,11 +22,10 @@ export default async function TeamPage() {
 
   if (currentProfile?.role !== 'admin') redirect('/dashboard')
 
-  // Fetch all admin (team) profiles, ordered by join date.
+  // Fetch all portal members (admin + designer + client), ordered by join date.
   const { data: members } = await supabase
     .from('profiles')
     .select('id, email, full_name, avatar_url, role, title, created_at')
-    .eq('role', 'admin')
     .order('created_at', { ascending: true })
 
   return (

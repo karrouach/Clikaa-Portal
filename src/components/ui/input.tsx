@@ -13,16 +13,18 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         type={type}
         className={cn(
           // Base
-          'w-full bg-transparent text-sm text-black placeholder:text-zinc-400',
+          'w-full bg-background text-sm text-foreground placeholder:text-muted-foreground',
           'transition-colors duration-150',
-          'focus:outline-none',
           'disabled:cursor-not-allowed disabled:opacity-50',
           // Style variants
           underline
-            ? // Editorial: bottom border only
-              'h-10 px-0 py-2 border-0 border-b border-zinc-200 focus:border-black'
-            : // Standard: full border
-              'h-10 px-3 border border-zinc-200 hover:border-zinc-300 focus:border-black',
+            ? // Editorial: bottom border only (auth forms)
+              'h-10 px-0 py-2 border-0 border-b border-input rounded-none ' +
+              'focus-visible:outline-none focus-visible:border-foreground'
+            : // Standard: rounded, modern ring focus
+              'h-10 px-3 rounded-md border border-input ' +
+              'hover:border-foreground/30 ' +
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
           className
         )}
         ref={ref}

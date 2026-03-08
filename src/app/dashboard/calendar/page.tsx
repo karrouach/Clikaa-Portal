@@ -10,6 +10,7 @@ export const metadata: Metadata = { title: 'Calendar' }
 // ─── Status colour map ────────────────────────────────────────────────────────
 const STATUS_CHIP: Record<string, string> = {
   todo:        'bg-zinc-100   text-zinc-600',
+  pending:     'bg-amber-50   text-amber-700',
   in_progress: 'bg-blue-50    text-blue-700',
   review:      'bg-violet-50  text-violet-700',
   done:        'bg-emerald-50 text-emerald-700',
@@ -17,6 +18,7 @@ const STATUS_CHIP: Record<string, string> = {
 
 const STATUS_DOT: Record<string, string> = {
   todo:        'bg-zinc-300',
+  pending:     'bg-amber-400',
   in_progress: 'bg-blue-400',
   review:      'bg-violet-400',
   done:        'bg-emerald-400',
@@ -80,21 +82,29 @@ export default async function CalendarPage({ searchParams }: Props) {
   const rangeStart = `${year}-${padDate(month)}-01`
   const rangeEnd   = `${year}-${padDate(month)}-${padDate(totalDays)}`
 
-  // ── Fetch tasks with due_date in this month ─────────────────────────────
-  // Admin RLS allows fetching across all workspaces.
+  // ── Fetch tasks that overlap with this month ────────────────────────────
+  // Covers three cases:
+  //   1. due_date falls within the month
+  //   2. start_date falls within the month
+  //   3. task spans across the entire month (start_date < rangeStart AND due_date > rangeEnd)
   const { data: rawTasks } = await supabase
     .from('tasks')
-    .select('id, title, status, due_date, workspace_id, workspaces(name)')
-    .not('due_date', 'is', null)
-    .gte('due_date', rangeStart)
-    .lte('due_date', rangeEnd)
-    .order('due_date', { ascending: true })
+    .select('id, title, status, start_date, due_date, workspace_id, workspaces(name)')
+    .or(
+      [
+        `and(due_date.gte.${rangeStart},due_date.lte.${rangeEnd})`,
+        `and(start_date.gte.${rangeStart},start_date.lte.${rangeEnd})`,
+        `and(start_date.lte.${rangeStart},due_date.gte.${rangeEnd})`,
+      ].join(',')
+    )
+    .order('due_date', { ascending: true, nullsFirst: false })
 
   type CalendarTask = {
     id: string
     title: string
     status: string
-    due_date: string
+    start_date: string | null
+    due_date: string | null
     workspace_id: string
     workspaceName: string
   }
@@ -104,16 +114,36 @@ export default async function CalendarPage({ searchParams }: Props) {
     id:            t.id,
     title:         t.title,
     status:        t.status,
-    due_date:      t.due_date!,
+    start_date:    t.start_date ?? null,
+    due_date:      t.due_date ?? null,
     workspace_id:  t.workspace_id,
     workspaceName: (t.workspaces as { name: string } | null)?.name ?? 'Unknown',
   }))
 
-  // Group by date string (YYYY-MM-DD)
+  // ── Group by date — span each task across start_date → due_date ──────────
   const byDate: Record<string, CalendarTask[]> = {}
+
   for (const task of tasks) {
-    if (!byDate[task.due_date]) byDate[task.due_date] = []
-    byDate[task.due_date].push(task)
+    // Determine the span start/end, clamped to the visible month
+    const spanStart = task.start_date ?? task.due_date
+    const spanEnd   = task.due_date   ?? task.start_date
+    if (!spanStart || !spanEnd) continue
+
+    const clampedStart = spanStart < rangeStart ? rangeStart : spanStart
+    const clampedEnd   = spanEnd   > rangeEnd   ? rangeEnd   : spanEnd
+
+    const cur = new Date(clampedStart + 'T00:00:00')
+    const end = new Date(clampedEnd   + 'T00:00:00')
+
+    while (cur <= end) {
+      const dateStr = cur.toISOString().slice(0, 10)
+      if (!byDate[dateStr]) byDate[dateStr] = []
+      // Avoid duplicates if a task spans multiple days
+      if (!byDate[dateStr].some((t) => t.id === task.id)) {
+        byDate[dateStr].push(task)
+      }
+      cur.setDate(cur.getDate() + 1)
+    }
   }
 
   // ── Navigation URLs ──────────────────────────────────────────────────────

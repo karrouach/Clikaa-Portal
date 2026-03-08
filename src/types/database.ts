@@ -121,6 +121,7 @@ export type Database = {
           position: number
           assignee_id: string | null
           created_by: string
+          start_date: string | null
           due_date: string | null
           created_at: string
           updated_at: string
@@ -135,6 +136,7 @@ export type Database = {
           position?: number
           assignee_id?: string | null
           created_by: string
+          start_date?: string | null
           due_date?: string | null
           created_at?: string
           updated_at?: string
@@ -149,6 +151,7 @@ export type Database = {
           position?: number
           assignee_id?: string | null
           created_by?: string
+          start_date?: string | null
           due_date?: string | null
           created_at?: string
           updated_at?: string

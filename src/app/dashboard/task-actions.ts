@@ -17,6 +17,7 @@ export async function createTask(formData: FormData): Promise<CreateTaskResult> 
   const description = ((formData.get('description') as string) || '').trim() || null
   const priority = (formData.get('priority') as TaskPriority) || 'medium'
   const workspaceId = formData.get('workspace_id') as string
+  const startDate = (formData.get('start_date') as string) || null
   const dueDate = (formData.get('due_date') as string) || null
   const assigneeId = (formData.get('assignee_id') as string) || null
 
@@ -52,6 +53,7 @@ export async function createTask(formData: FormData): Promise<CreateTaskResult> 
       status: 'todo',
       position,
       created_by: user.id,
+      start_date: startDate || null,
       due_date: dueDate || null,
       assignee_id: assigneeId || null,
     })

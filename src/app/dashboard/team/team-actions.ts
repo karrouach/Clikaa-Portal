@@ -31,9 +31,11 @@ async function requireAdmin() {
 export async function inviteTeamMember({
   email,
   fullName,
+  role = 'admin',
 }: {
   email: string
   fullName: string
+  role?: 'admin' | 'designer' | 'client'
 }): Promise<TeamActionResult> {
   const trimEmail = email.trim().toLowerCase()
   const trimName = fullName.trim()
@@ -54,10 +56,10 @@ export async function inviteTeamMember({
     .maybeSingle()
 
   if (existing) {
-    // User already exists — just promote to admin. No invite email needed.
+    // User already exists — update name + role. No invite email needed.
     const { error: updateErr } = await admin
       .from('profiles')
-      .update({ full_name: trimName, role: 'admin' })
+      .update({ full_name: trimName, role })
       .eq('id', existing.id)
 
     if (updateErr) return { error: updateErr.message }
@@ -75,10 +77,10 @@ export async function inviteTeamMember({
   if (inviteError) return { error: inviteError.message }
 
   // C. The trigger created the profile with role='client'.
-  //    Promote to 'admin' now (admin client bypasses RLS).
+  //    Set the chosen role now (admin client bypasses RLS).
   const { error: promoteError } = await admin
     .from('profiles')
-    .update({ full_name: trimName, role: 'admin' })
+    .update({ full_name: trimName, role })
     .eq('id', invited.user.id)
 
   if (promoteError) return { error: promoteError.message }
@@ -92,7 +94,7 @@ export async function inviteTeamMember({
 // ──────────────────────────────────────────────────────────────────────────
 export async function updateTeamRole(
   userId: string,
-  role: 'admin' | 'client'
+  role: 'admin' | 'client' | 'designer'
 ): Promise<TeamActionResult> {
   const caller = await requireAdmin()
   if (!caller) return { error: 'Unauthorised — admins only.' }

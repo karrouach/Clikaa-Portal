@@ -10,12 +10,34 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { inviteTeamMember, removeTeamMember } from './team-actions'
 import type { Profile } from '@/types/database'
 import { cn } from '@/lib/utils'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+type InviteRole = 'admin' | 'designer' | 'client'
+
+const ROLE_OPTIONS: { value: InviteRole; label: string; description: string }[] = [
+  { value: 'admin',    label: 'Admin',    description: 'Full portal access' },
+  { value: 'designer', label: 'Designer', description: 'Internal team member' },
+  { value: 'client',   label: 'Client',   description: 'External client access' },
+]
+
+const ROLE_BADGE: Record<string, string> = {
+  admin:    'bg-zinc-900 text-white',
+  designer: 'bg-violet-100 text-violet-700',
+  client:   'bg-zinc-100 text-zinc-600',
+}
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface Props {
@@ -28,6 +50,7 @@ export function TeamMembersClient({ members, currentUserId }: Props) {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteName, setInviteName] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState<InviteRole>('admin')
   const [inviteSuccess, setInviteSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
@@ -37,7 +60,7 @@ export function TeamMembersClient({ members, currentUserId }: Props) {
     setError(null)
     setInviteSuccess(false)
     startTransition(async () => {
-      const result = await inviteTeamMember({ email: inviteEmail, fullName: inviteName })
+      const result = await inviteTeamMember({ email: inviteEmail, fullName: inviteName, role: inviteRole })
       if (result.error) {
         setError(result.error)
       } else {
@@ -175,8 +198,11 @@ export function TeamMembersClient({ members, currentUserId }: Props) {
 
                     {/* Role badge */}
                     <td className="px-6 py-3.5">
-                      <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium bg-zinc-900 text-white">
-                        Admin
+                      <span className={cn(
+                        'inline-flex items-center px-2 py-0.5 text-[10px] font-medium capitalize',
+                        ROLE_BADGE[member.role] ?? 'bg-zinc-100 text-zinc-600'
+                      )}>
+                        {member.role}
                       </span>
                     </td>
 
@@ -213,6 +239,7 @@ export function TeamMembersClient({ members, currentUserId }: Props) {
             setInviteOpen(open)
             setError(null)
             setInviteSuccess(false)
+            if (!open) { setInviteName(''); setInviteEmail(''); setInviteRole('admin') }
           }
         }}
       >
@@ -274,6 +301,27 @@ export function TeamMembersClient({ members, currentUserId }: Props) {
                   onKeyDown={(e) => e.key === 'Enter' && !isPending && handleInvite()}
                   disabled={isPending}
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wide text-zinc-600">
+                  Role
+                </Label>
+                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as InviteRole)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{opt.label}</span>
+                          <span className="text-xs text-zinc-400">{opt.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <p className="text-xs text-zinc-400">
