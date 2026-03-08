@@ -12,19 +12,19 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         type={type}
         className={cn(
-          // Base
-          'w-full bg-background text-sm text-foreground placeholder:text-muted-foreground',
+          // Base — explicit light-mode values, always pristine white
+          'w-full rounded-[var(--radius)] text-sm text-zinc-900 placeholder:text-zinc-500',
           'transition-colors duration-150',
           'disabled:cursor-not-allowed disabled:opacity-50',
           // Style variants
           underline
-            ? // Editorial: bottom border only (auth forms)
-              'h-10 px-0 py-2 border-0 border-b border-input rounded-none ' +
-              'focus-visible:outline-none focus-visible:border-foreground'
-            : // Standard: rounded, modern ring focus
-              'h-10 px-3 rounded-md border border-input ' +
-              'hover:border-foreground/30 ' +
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            ? // Editorial: transparent, bottom border only, no radius (auth forms)
+              'h-10 px-0 py-2 bg-transparent border-0 border-b border-zinc-200 rounded-none ' +
+              'focus-visible:outline-none focus-visible:border-zinc-900'
+            : // Standard: white background, ring focus
+              'h-10 px-3 bg-white border border-zinc-200 ' +
+              'hover:border-zinc-300 ' +
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2',
           className
         )}
         ref={ref}

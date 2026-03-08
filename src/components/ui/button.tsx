@@ -29,13 +29,13 @@ const buttonVariants = cva(
       rounded: {
         none: 'rounded-none',
         sm: 'rounded-sm',
-        md: 'rounded-md',
+        md: 'rounded-[var(--radius)]',
       },
     },
     defaultVariants: {
       variant: 'default',
       size: 'default',
-      rounded: 'none',
+      rounded: 'md',
     },
   }
 )

@@ -22,11 +22,11 @@ const SelectTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       'flex items-center justify-between gap-1.5',
-      'h-8 px-3 w-full',
-      'bg-transparent text-sm text-black',
-      'border border-zinc-200 hover:border-zinc-300',
+      'h-8 px-3 w-full rounded-[var(--radius)]',
+      'bg-background text-sm text-foreground',
+      'border border-input hover:border-foreground/30',
       'transition-colors duration-150',
-      'focus:outline-none focus:border-black',
+      'focus:outline-none focus:border-foreground',
       'disabled:cursor-not-allowed disabled:opacity-50',
       '[&>span]:truncate',
       className
@@ -52,8 +52,8 @@ const SelectContent = React.forwardRef<
       position={position}
       sideOffset={4}
       className={cn(
-        'relative z-50 min-w-[8rem] overflow-hidden',
-        'bg-white border border-zinc-200',
+        'relative z-50 min-w-[8rem] overflow-hidden rounded-[var(--radius)]',
+        'bg-popover border border-border text-popover-foreground',
         'shadow-lg shadow-black/10',
         // Popper positioning
         position === 'popper' &&
@@ -100,10 +100,10 @@ const SelectItem = React.forwardRef<
     ref={ref}
     className={cn(
       'relative flex items-center px-8 py-1.5',
-      'text-sm text-black',
+      'text-sm text-foreground',
       'cursor-pointer select-none outline-none',
       'transition-colors duration-100',
-      'focus:bg-zinc-50',
+      'focus:bg-accent focus:text-accent-foreground',
       'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className
     )}

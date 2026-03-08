@@ -18,6 +18,8 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { createTask } from '@/app/dashboard/task-actions'
 import { getInitials } from '@/lib/utils'
 import type { Task } from '@/types/database'
@@ -41,11 +43,13 @@ function toIso(d: Date): string {
   return d.toISOString().slice(0, 10)
 }
 
-// ─── Field styles ─────────────────────────────────────────────────────────────
-const fieldClass =
-  'w-full bg-transparent text-sm text-black placeholder:text-zinc-400 ' +
-  'border-0 border-b border-zinc-200 focus:outline-none focus:border-black ' +
-  'transition-colors duration-150'
+// ─── Native select style (underline variant matching Input underline) ──────────
+const selectClass =
+  'w-full bg-transparent text-sm text-foreground ' +
+  'h-10 px-0 border-0 border-b border-input rounded-none ' +
+  'focus-visible:outline-none focus-visible:border-foreground ' +
+  'transition-colors duration-150 cursor-pointer appearance-none ' +
+  'disabled:cursor-not-allowed disabled:opacity-50'
 
 interface CreateTaskDialogProps {
   workspaceId: string
@@ -172,14 +176,14 @@ export function CreateTaskDialog({
               >
                 Title <span className="text-red-400 normal-case tracking-normal">*</span>
               </label>
-              <input
+              <Input
+                underline
                 id="task-title"
                 name="title"
                 type="text"
                 required
                 autoFocus
                 placeholder="What needs to be done?"
-                className={`${fieldClass} h-9 py-1`}
               />
             </div>
 
@@ -191,12 +195,12 @@ export function CreateTaskDialog({
               >
                 Description
               </label>
-              <textarea
+              <Textarea
+                underline
                 id="task-description"
                 name="description"
                 rows={3}
                 placeholder="Add any relevant context, links, or details…"
-                className={`${fieldClass} resize-none py-1`}
               />
             </div>
 
@@ -212,7 +216,7 @@ export function CreateTaskDialog({
                 id="task-priority"
                 name="priority"
                 defaultValue="medium"
-                className={`${fieldClass} h-9 cursor-pointer appearance-none`}
+                className={selectClass}
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>

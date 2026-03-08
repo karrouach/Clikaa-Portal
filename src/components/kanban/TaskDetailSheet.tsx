@@ -88,7 +88,7 @@ function EditableTitle({
 
   if (!isAdmin) {
     return (
-      <h2 className="text-base font-semibold text-black leading-snug pr-8">
+      <h2 className="text-base font-semibold text-zinc-900 leading-snug pr-8">
         {value}
       </h2>
     )
@@ -133,11 +133,12 @@ function EditableTitle({
           rows={2}
           disabled={isPending}
           className="
-            w-full bg-transparent text-base font-semibold text-black
-            resize-none focus:outline-none leading-snug
-            border-0 border-b border-zinc-300 focus:border-black
-            transition-colors pb-0.5
-            disabled:opacity-60
+            w-full bg-transparent text-base font-semibold text-zinc-900
+            resize-none leading-snug pb-0.5
+            border-0 border-b border-zinc-200
+            focus-visible:outline-none focus-visible:border-zinc-900
+            transition-colors duration-150
+            disabled:opacity-60 disabled:cursor-not-allowed
           "
         />
         {isPending && (
@@ -157,7 +158,7 @@ function EditableTitle({
       title="Click to edit title"
       className="block w-full text-left pr-8 group"
     >
-      <h2 className="text-base font-semibold text-black leading-snug group-hover:text-zinc-700 transition-colors">
+      <h2 className="text-base font-semibold text-zinc-900 leading-snug group-hover:text-zinc-600 transition-colors">
         {value}
       </h2>
       <p className="text-[10px] text-zinc-400 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -231,11 +232,13 @@ function EditableDescription({
           placeholder="Add a description…"
           disabled={isPending}
           className="
-            w-full bg-transparent text-sm text-black placeholder:text-zinc-400
-            resize-none focus:outline-none leading-relaxed
-            border border-zinc-200 focus:border-black
-            transition-colors px-3 py-2
-            disabled:opacity-60
+            w-full bg-white text-sm text-zinc-900 placeholder:text-zinc-500
+            resize-none leading-relaxed px-3 py-2
+            rounded-md border border-zinc-200
+            hover:border-zinc-300
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2
+            transition-colors duration-150
+            disabled:opacity-60 disabled:cursor-not-allowed
           "
         />
         {isPending && (
@@ -426,7 +429,7 @@ export function TaskDetailSheet({
                           <CalendarIcon size={10} strokeWidth={1.5} />
                           Start Date
                         </p>
-                        <p className="text-sm text-black">
+                        <p className="text-sm text-zinc-900">
                           {new Date(task.start_date).toLocaleDateString('en-GB', {
                             day: 'numeric', month: 'short', year: 'numeric',
                           })}
@@ -441,7 +444,7 @@ export function TaskDetailSheet({
                           <CalendarIcon size={10} strokeWidth={1.5} />
                           Due Date
                         </p>
-                        <p className="text-sm text-black">
+                        <p className="text-sm text-zinc-900">
                           {new Date(task.due_date).toLocaleDateString('en-GB', {
                             day: 'numeric', month: 'short', year: 'numeric',
                           })}
@@ -466,7 +469,7 @@ export function TaskDetailSheet({
                                 {getInitials(assignee.full_name || assignee.email)}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="text-sm text-black">
+                            <span className="text-sm text-zinc-900">
                               {assignee.full_name || assignee.email}
                             </span>
                           </div>

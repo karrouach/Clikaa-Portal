@@ -50,7 +50,7 @@ const SheetContent = React.forwardRef<
         'fixed right-0 top-0 z-50 h-full',
         // Width — comfortable for task detail
         'w-full max-w-[480px]',
-        // Aesthetic — clean white, sharp edges
+        // Aesthetic — always pristine white, sharp edges
         'bg-white shadow-2xl shadow-black/15',
         // Flex layout so header/body/footer stack correctly
         'flex flex-col',
@@ -123,7 +123,7 @@ const SheetTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn('text-sm font-semibold text-black tracking-tight pr-8', className)}
+    className={cn('text-sm font-semibold text-zinc-900 tracking-tight pr-8', className)}
     {...props}
   />
 ))

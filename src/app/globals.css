@@ -41,7 +41,7 @@
     --ring: 0 0% 6.7%;                /* focus ring = black */
 
     /* ── Border radius ──────────────────────────────────────────────────── */
-    --radius: 0.75rem;                /* 12px — rounded-lg = 12px, md = 10px, sm = 8px */
+    --radius: 0.5rem;                 /* 8px — rounded-lg = 8px, md = 6px, sm = 4px */
   }
 
   /* ── Dark mode — synced automatically from OS preference via next-themes ─ */
@@ -88,23 +88,32 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Soft focus ring — subtle shadow instead of harsh 2px ring */
-  :focus-visible {
-    @apply outline-none ring-1 ring-ring/50 ring-offset-1 ring-offset-background;
+  /* Soft focus ring for interactive elements (buttons, links, etc.)
+     Inputs and textareas manage their own focus-visible styles. */
+  :focus-visible:not(input):not(textarea):not(select) {
+    @apply outline-none ring-2 ring-ring/50 ring-offset-2 ring-offset-background;
+  }
+
+  /* ── Text selection ──────────────────────────────────────────────────────
+     Use the primary colour for selection highlights so contrast is always
+     perfect in both light mode (dark bg) and dark mode (light bg).
+  */
+  ::selection {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
   }
 
   /* ── Autofill override ────────────────────────────────────────────────────
-     Chrome/Safari paint a yellow/blue tint on autofilled inputs. We suppress
-     that tint so inputs blend with our surface colour.
+     Chrome/Safari force a coloured background on autofilled inputs. We
+     override it with a large inset box-shadow so no tint bleeds through.
   */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
   input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px hsl(var(--background)) inset !important;
+    -webkit-box-shadow: 0 0 0 30px hsl(var(--background)) inset !important;
     -webkit-text-fill-color: hsl(var(--foreground)) !important;
-    caret-color: hsl(var(--foreground));
-    transition: background-color 9999s ease-in-out 0s;
+    transition: background-color 5000s ease-in-out 0s;
   }
 
   /* Scrollbar — subtle and minimal */
