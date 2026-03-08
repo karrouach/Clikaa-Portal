@@ -45,8 +45,9 @@ export function KanbanCard({ task, index, onClick }: KanbanCardProps) {
             'transition-all duration-150',
             // Cursor
             onClick ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing',
-            // Resting hover — barely perceptible lift
-            !snapshot.isDragging && 'hover:border-zinc-200 hover:shadow-sm',
+            // Resting hover — premium lift with shadow and subtle upward translate
+            !snapshot.isDragging &&
+              'hover:border-zinc-200 hover:-translate-y-0.5 hover:shadow-md',
             // Active drag — elevated with slight rotation for tactile feel
             snapshot.isDragging &&
               'border-zinc-200 shadow-xl !rotate-[1deg] !scale-[1.02] opacity-95'

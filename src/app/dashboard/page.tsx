@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { LayoutDashboard, TrendingUp, ClipboardList, CalendarClock, HeadphonesIcon } from 'lucide-react'
 import { NewWorkspaceButton } from '@/components/dashboard/CreateWorkspaceDialog'
 import { GreetingHeader } from '@/components/layout/GreetingHeader'
+import { OnboardingChecklist } from '@/components/dashboard/OnboardingChecklist'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
@@ -115,6 +116,14 @@ export default async function DashboardPage() {
             <p className="mt-1.5 text-xs text-zinc-400">This week across all boards</p>
           </div>
         </div>
+      )}
+
+      {/* ── Client: Onboarding checklist ──────────────────────────────────── */}
+      {!isAdmin && workspaces.length > 0 && (
+        <OnboardingChecklist
+          hasFullName={!!(profile?.full_name?.trim())}
+          firstWorkspaceId={workspaces[0]?.id ?? null}
+        />
       )}
 
       {/* ── Client: Project Health widget ─────────────────────────────────── */}

@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 const TABS = [
-  { label: 'Board',    segment: null },        // /dashboard/[id]
+  { label: 'Strategy', segment: 'strategy' },  // /dashboard/[id]/strategy
+  { label: 'Board',    segment: null },         // /dashboard/[id]
   { label: 'Details',  segment: 'details' },   // /dashboard/[id]/details
   { label: 'Files',    segment: 'files' },     // /dashboard/[id]/files
   { label: 'Settings', segment: 'settings' },  // /dashboard/[id]/settings
@@ -16,7 +17,7 @@ export function WorkspaceSubNav({ workspaceId }: { workspaceId: string }) {
   const base = `/dashboard/${workspaceId}`
 
   return (
-    <nav className="flex items-end gap-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <nav className="flex items-end gap-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-webkit-overflow-scrolling:touch]">
       {TABS.map(({ label, segment }) => {
         const href = segment ? `${base}/${segment}` : base
         const isActive = segment

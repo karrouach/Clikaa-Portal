@@ -53,3 +53,19 @@ export async function createWorkspace(
   // ── 3. Redirect to the new board ──────────────────────────────────────────
   redirect(`/dashboard/${workspace.id}`)
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// updateWorkspaceGoals  — saves project goals into the workspace description.
+// Used by the Strategy page GoalsEditor (admin users only).
+// ─────────────────────────────────────────────────────────────────────────────
+export async function updateWorkspaceGoals(
+  workspaceId: string,
+  goals: string
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('workspaces')
+    .update({ description: goals })
+    .eq('id', workspaceId)
+  return { error: error?.message ?? null }
+}

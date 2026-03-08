@@ -22,7 +22,9 @@ import {
   Download,
   X,
   Loader2,
+  FolderOpen,
 } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024 // 50 MB
 
@@ -244,7 +246,12 @@ export function AttachmentPanel({
           <span className="text-xs text-zinc-400">Loading…</span>
         </div>
       ) : attachments.length === 0 && uploading.size === 0 ? (
-        <p className="text-xs text-zinc-400 py-1">No files attached yet.</p>
+        <EmptyState
+          icon={FolderOpen}
+          heading="No files uploaded yet"
+          subtext="When you upload brand assets, they will appear here."
+          className="py-6"
+        />
       ) : (
         <ul className="space-y-0.5">
           {/* Existing attachments */}

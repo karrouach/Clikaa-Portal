@@ -7,6 +7,7 @@ import type { Profile } from '@/types/database'
 import { signOut } from '@/app/actions'
 import { getInitials } from '@/lib/utils'
 import { NotificationBell } from './NotificationBell'
+import { CommandMenu } from './CommandMenu'
 
 interface HeaderProps {
   profile: Profile
@@ -54,6 +55,12 @@ export function Header({ profile }: HeaderProps) {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
+        {/* Command palette search */}
+        <CommandMenu />
+
+        {/* Divider */}
+        <div className="w-px h-5 bg-zinc-100" />
+
         {/* Notification bell */}
         <NotificationBell userId={profile.id} />
 
