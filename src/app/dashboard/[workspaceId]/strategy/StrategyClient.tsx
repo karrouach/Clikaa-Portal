@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useTransition, useEffect } from 'react'
-import { Check, Loader2, Save } from 'lucide-react'
+import { Check, Loader2, Save, X } from 'lucide-react'
 import { updateWorkspaceGoals } from '@/app/dashboard/workspace-actions'
+import { cn } from '@/lib/utils'
 
 // ─── GoalsEditor ──────────────────────────────────────────────────────────────
 
@@ -114,11 +115,12 @@ const DEFAULT_PALETTE: ColorSwatch[] = [
 export function BrandColors({ workspaceId }: BrandColorsProps) {
   const storageKey = `clikaa_brand_${workspaceId}`
 
-  const [colors, setColors] = useState<ColorSwatch[]>([
+  const [colors, setColors]           = useState<ColorSwatch[]>([
     { name: 'Primary',   hex: '#111111' },
     { name: 'Secondary', hex: '#F6F4EF' },
   ])
-  const [mounted, setMounted] = useState(false)
+  const [mounted, setMounted]         = useState(false)
+  const [removingIndex, setRemoving]  = useState<number | null>(null)
 
   // Hydrate from localStorage after mount (avoids SSR mismatch)
   useEffect(() => {
@@ -156,33 +158,69 @@ export function BrandColors({ workspaceId }: BrandColorsProps) {
     save([...colors, { ...next }])
   }
 
+  function handleRemoveColor(index: number) {
+    if (colors.length <= 1) return
+    setRemoving(index)
+    setTimeout(() => {
+      save(colors.filter((_, i) => i !== index))
+      setRemoving(null)
+    }, 180)
+  }
+
   if (!mounted) return null
 
   return (
     <div className="flex flex-wrap gap-6 items-start">
       {colors.map((color, i) => (
-        <label
+        <div
           key={i}
-          className="flex flex-col gap-2 cursor-pointer group"
-          title={`Change ${color.name.toLowerCase()} brand colour`}
+          className={cn(
+            'flex flex-col gap-2 group/swatch transition-all duration-200 ease-in-out',
+            removingIndex === i ? 'opacity-0 scale-90' : 'opacity-100 scale-100'
+          )}
         >
-          <div
-            className="w-16 h-16 rounded-xl border border-zinc-200 group-hover:border-zinc-300 transition-colors duration-150 relative overflow-hidden"
-            style={{ backgroundColor: color.hex }}
-          >
-            <input
-              type="color"
-              value={color.hex}
-              onChange={(e) => handleChangeHex(i, e.target.value)}
-              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-              aria-label={`${color.name} colour picker`}
-            />
+          {/* Swatch + delete button */}
+          <div className="relative">
+            <label
+              className="block w-16 h-16 rounded-xl border border-zinc-200 group-hover/swatch:border-zinc-300 transition-colors duration-150 relative overflow-hidden cursor-pointer"
+              title={`Change ${color.name.toLowerCase()} brand colour`}
+              style={{ backgroundColor: color.hex }}
+            >
+              <input
+                type="color"
+                value={color.hex}
+                onChange={(e) => handleChangeHex(i, e.target.value)}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                aria-label={`${color.name} colour picker`}
+              />
+            </label>
+
+            {/* Delete button — visible on hover, hidden when only 1 swatch remains */}
+            {colors.length > 1 && (
+              <button
+                onClick={() => handleRemoveColor(i)}
+                title={`Remove ${color.name}`}
+                aria-label={`Remove ${color.name}`}
+                className="
+                  absolute -top-2 -right-2 w-5 h-5
+                  bg-white border border-zinc-200 rounded-full
+                  flex items-center justify-center
+                  text-zinc-400 hover:text-red-500 hover:border-red-200
+                  shadow-sm transition-all duration-150
+                  opacity-0 group-hover/swatch:opacity-100
+                  scale-75 group-hover/swatch:scale-100
+                "
+              >
+                <X size={9} strokeWidth={2.5} />
+              </button>
+            )}
           </div>
+
           <div>
             <p className="text-xs font-medium text-zinc-700">{color.name}</p>
             <p className="text-[11px] text-zinc-400 font-mono uppercase">{color.hex}</p>
           </div>
-        </label>
+        </div>
       ))}
 
       {/* Add Color button */}
