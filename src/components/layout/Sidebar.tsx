@@ -73,7 +73,8 @@ function NavLink({
       href={href}
       title={isCollapsed ? label : undefined}
       className={cn(
-        'flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150 group relative rounded-lg',
+        'flex items-center gap-3 py-2.5 text-sm transition-all duration-150 group relative rounded-lg',
+        isCollapsed ? 'px-0 justify-center' : 'px-3',
         isActive
           ? 'bg-white/15 text-white'
           : 'text-zinc-400 hover:bg-white/8 hover:text-zinc-200'
@@ -122,10 +123,11 @@ function WorkspaceItem({
       href={`/dashboard/${workspace.id}`}
       title={isCollapsed ? workspace.name : undefined}
       className={cn(
-        'flex items-center gap-3 px-3 py-2.5 text-sm transition-all duration-150 group relative rounded-lg border-l-2',
+        'flex items-center gap-3 py-2.5 text-sm transition-all duration-150 group relative rounded-lg',
+        isCollapsed ? 'px-0 justify-center' : 'px-3 border-l-2',
         isActive
-          ? 'bg-white/15 text-white border-white'
-          : 'text-zinc-400 hover:bg-white/8 hover:text-zinc-200 border-transparent'
+          ? ['bg-white/15 text-white', !isCollapsed && 'border-white']
+          : ['text-zinc-400 hover:bg-white/8 hover:text-zinc-200', !isCollapsed && 'border-transparent']
       )}
     >
       <span
@@ -184,18 +186,14 @@ export function Sidebar({ profile, workspaces }: SidebarProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="overflow-hidden flex items-center gap-2"
+              className="overflow-hidden"
             >
-              {/* Logo — invert dark paths to white for the dark sidebar */}
               <img
                 src="/logo.svg"
-                alt="Clikaa"
-                className="h-5 w-auto brightness-0 invert"
+                alt="Clikaa Portal"
+                className="h-5 w-auto"
                 draggable={false}
               />
-              <span className="text-[10px] tracking-widest text-zinc-500 uppercase whitespace-nowrap">
-                Portal
-              </span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -249,7 +247,7 @@ export function Sidebar({ profile, workspaces }: SidebarProps) {
       </div>
 
       {/* ── Nav ───────────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto py-3 space-y-4">
+      <div className={cn('flex-1 py-3 space-y-4', isCollapsed ? 'overflow-hidden' : 'overflow-y-auto')}>
 
         {isAdmin ? (
           <>

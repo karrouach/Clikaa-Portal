@@ -13,9 +13,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
       {/* Logo + page content — left-aligned within the card width */}
       <div className="w-full max-w-sm">
-        <div className="mb-10 flex items-center gap-2">
-          <img src="/logo.svg" alt="Clikaa" className="h-7 w-auto" draggable={false} />
-          <span className="text-sm font-medium text-zinc-400 tracking-wide">Portal</span>
+        <div className="mb-10">
+          <img src="/logo-light.svg" alt="Clikaa Portal" className="h-7 w-auto" draggable={false} />
         </div>
 
         {children}
