@@ -1,9 +1,10 @@
 'use client'
 
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTransition } from 'react'
 import { LogOut, Loader2 } from 'lucide-react'
-import type { Profile } from '@/types/database'
+import type { Profile, WorkspaceWithRole } from '@/types/database'
 import { signOut } from '@/app/actions'
 import { getInitials } from '@/lib/utils'
 import { NotificationBell } from './NotificationBell'
@@ -11,19 +12,32 @@ import { CommandMenu } from './CommandMenu'
 
 interface HeaderProps {
   profile: Profile
+  workspaces: WorkspaceWithRole[]
 }
+
+// Human-readable labels for known route segments
+const SEGMENT_LABELS: Record<string, string> = {
+  strategy: 'Strategy',
+  files:    'Files',
+  details:  'Details',
+  settings: 'Settings',
+  invoices: 'Invoices',
+  team:     'My Team',
+  calendar: 'Calendar',
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * Top header bar — displays breadcrumbs and user actions.
  * Client component so we can read the current pathname.
  */
-export function Header({ profile }: HeaderProps) {
+export function Header({ profile, workspaces }: HeaderProps) {
   const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
   const initials = getInitials(profile.full_name || profile.email)
 
-  // ── Build breadcrumb segments from the current path ─────────────────────
-  const breadcrumbs = buildBreadcrumbs(pathname)
+  const breadcrumbs = buildBreadcrumbs(pathname, workspaces)
 
   function handleSignOut() {
     startTransition(async () => {
@@ -36,20 +50,28 @@ export function Header({ profile }: HeaderProps) {
       {/* Left: Breadcrumbs */}
       <nav aria-label="Breadcrumb">
         <ol className="flex items-center gap-2 text-sm">
-          {breadcrumbs.map((crumb, i) => (
-            <li key={crumb.label} className="flex items-center gap-2">
-              {i > 0 && <span className="text-zinc-300">/</span>}
-              <span
-                className={
-                  i === breadcrumbs.length - 1
-                    ? 'text-black font-medium'
-                    : 'text-zinc-400'
-                }
-              >
-                {crumb.label}
-              </span>
-            </li>
-          ))}
+          {breadcrumbs.map((crumb, i) => {
+            const isLast = i === breadcrumbs.length - 1
+            return (
+              <li key={i} className="flex items-center gap-2">
+                {i > 0 && (
+                  <span className="text-zinc-300 font-light select-none">/</span>
+                )}
+                {crumb.href && !isLast ? (
+                  <Link
+                    href={crumb.href}
+                    className="text-[#6B7280] font-medium hover:text-zinc-900 transition-colors duration-150"
+                  >
+                    {crumb.label}
+                  </Link>
+                ) : (
+                  <span className={isLast ? 'text-black font-semibold' : 'text-[#6B7280] font-medium'}>
+                    {crumb.label}
+                  </span>
+                )}
+              </li>
+            )
+          })}
         </ol>
       </nav>
 
@@ -105,26 +127,36 @@ export function Header({ profile }: HeaderProps) {
 // ─── Breadcrumb builder ────────────────────────────────────────────────────
 type Breadcrumb = { label: string; href?: string }
 
-function buildBreadcrumbs(pathname: string): Breadcrumb[] {
+function buildBreadcrumbs(pathname: string, workspaces: WorkspaceWithRole[]): Breadcrumb[] {
   const segments = pathname.replace(/^\/dashboard\/?/, '').split('/').filter(Boolean)
 
-  const crumbs: Breadcrumb[] = [{ label: 'Dashboard', href: '/dashboard' }]
+  // Root dashboard
+  if (segments.length === 0) {
+    return [{ label: 'Dashboard' }]
+  }
 
-  // Map known segment patterns to readable labels.
-  segments.forEach((segment, i) => {
-    const isLast = i === segments.length - 1
+  const [first, ...rest] = segments
 
-    // UUID-looking segments are workspace/task IDs — show placeholder until
-    // Phase 3 passes workspace name from the page component.
-    const isId = /^[0-9a-f-]{36}$/i.test(segment)
+  // Workspace context — first segment is a UUID
+  if (UUID_RE.test(first)) {
+    const workspace = workspaces.find((w) => w.id === first)
+    const wsLabel   = workspace?.name ?? '…'
+    const tabSegment = rest[0] ?? null
+    const tabLabel   = tabSegment
+      ? (SEGMENT_LABELS[tabSegment] ?? capitalize(tabSegment.replace(/-/g, ' ')))
+      : 'Board'
 
-    crumbs.push({
-      label: isId ? '…' : capitalize(segment.replace(/-/g, ' ')),
-      href: isLast ? undefined : `/dashboard/${segments.slice(0, i + 1).join('/')}`,
-    })
-  })
+    return [
+      { label: wsLabel, href: `/dashboard/${first}` },
+      { label: tabLabel },
+    ]
+  }
 
-  return crumbs
+  // Top-level dashboard sub-pages (invoices, team, calendar, settings…)
+  return [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: SEGMENT_LABELS[first] ?? capitalize(first.replace(/-/g, ' ')) },
+  ]
 }
 
 function capitalize(str: string): string {
