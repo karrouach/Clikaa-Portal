@@ -38,7 +38,7 @@
     /* ── Borders / inputs ───────────────────────────────────────────────── */
     --border: 0 0% 89.8%;             /* #E5E5E5 */
     --input: 0 0% 89.8%;
-    --ring: 0 0% 6.7%;                /* focus ring = black */
+    --ring: 0 0% 80%;                 /* focus ring = soft gray */
 
     /* ── Border radius ──────────────────────────────────────────────────── */
     --radius: 0.5rem;                 /* 8px — rounded-lg = 8px, md = 6px, sm = 4px */
@@ -91,7 +91,8 @@
   /* Soft focus ring for interactive elements (buttons, links, etc.)
      Inputs and textareas manage their own focus-visible styles. */
   :focus-visible:not(input):not(textarea):not(select) {
-    @apply outline-none ring-2 ring-ring/50 ring-offset-2 ring-offset-background;
+    @apply outline-none ring-1 ring-zinc-300/70 ring-offset-1 ring-offset-background;
+    transition: box-shadow 0.2s ease;
   }
 
   /* ── Text selection ──────────────────────────────────────────────────────

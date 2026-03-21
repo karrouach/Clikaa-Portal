@@ -47,9 +47,9 @@ export function GoalsEditor({ workspaceId, initialValue }: GoalsEditorProps) {
           text-sm text-zinc-900 placeholder:text-zinc-400
           px-3 py-2.5 resize-none leading-relaxed
           hover:border-zinc-300
-          focus-visible:outline-none focus-visible:ring-2
-          focus-visible:ring-zinc-900 focus-visible:ring-offset-2
-          transition-colors duration-150
+          focus-visible:outline-none focus-visible:border-zinc-300
+          focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.05)]
+          transition-all duration-200 ease-in-out
         "
       />
 
@@ -93,87 +93,115 @@ interface BrandColorsProps {
   workspaceId: string
 }
 
-const DEFAULT_COLORS = {
-  primary:   '#111111',
-  secondary: '#F6F4EF',
+interface ColorSwatch {
+  name: string
+  hex: string
 }
+
+const DEFAULT_PALETTE: ColorSwatch[] = [
+  { name: 'Primary',   hex: '#111111' },
+  { name: 'Secondary', hex: '#846C2E' },
+  { name: 'Accent 1',  hex: '#E5E7EB' },
+  { name: 'Accent 2',  hex: '#2C3E50' },
+  { name: 'Accent 3',  hex: '#F9F6F0' },
+]
 
 /**
  * Brand color swatches with color-picker inputs.
  * Colors are persisted to localStorage (keyed by workspaceId).
- * No database migration required.
+ * Supports a dynamic array of colors with an "Add Color" button.
  */
 export function BrandColors({ workspaceId }: BrandColorsProps) {
   const storageKey = `clikaa_brand_${workspaceId}`
 
-  const [colors, setColors] = useState(DEFAULT_COLORS)
+  const [colors, setColors] = useState<ColorSwatch[]>([
+    { name: 'Primary',   hex: '#111111' },
+    { name: 'Secondary', hex: '#F6F4EF' },
+  ])
   const [mounted, setMounted] = useState(false)
 
   // Hydrate from localStorage after mount (avoids SSR mismatch)
   useEffect(() => {
     try {
       const stored = localStorage.getItem(storageKey)
-      if (stored) setColors(JSON.parse(stored))
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        // Migrate legacy { primary, secondary } format → array
+        if (!Array.isArray(parsed)) {
+          setColors([
+            { name: 'Primary',   hex: parsed.primary   ?? '#111111' },
+            { name: 'Secondary', hex: parsed.secondary ?? '#F6F4EF' },
+          ])
+        } else {
+          setColors(parsed)
+        }
+      }
     } catch {
       // ignore
     }
     setMounted(true)
   }, [storageKey])
 
-  function handleChange(key: 'primary' | 'secondary', value: string) {
-    const next = { ...colors, [key]: value }
+  function save(next: ColorSwatch[]) {
     setColors(next)
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(next))
-    } catch {
-      // ignore
-    }
+    try { localStorage.setItem(storageKey, JSON.stringify(next)) } catch { /* ignore */ }
+  }
+
+  function handleChangeHex(index: number, hex: string) {
+    save(colors.map((c, i) => i === index ? { ...c, hex } : c))
+  }
+
+  function handleAddColor() {
+    const next = DEFAULT_PALETTE[colors.length] ?? { name: `Color ${colors.length + 1}`, hex: '#888888' }
+    save([...colors, { ...next }])
   }
 
   if (!mounted) return null
 
-  const swatches: { key: 'primary' | 'secondary'; label: string }[] = [
-    { key: 'primary',   label: 'Primary' },
-    { key: 'secondary', label: 'Secondary' },
-  ]
-
   return (
-    <div className="flex flex-wrap gap-6">
-      {swatches.map(({ key, label }) => (
+    <div className="flex flex-wrap gap-6 items-start">
+      {colors.map((color, i) => (
         <label
-          key={key}
+          key={i}
           className="flex flex-col gap-2 cursor-pointer group"
-          title={`Change ${label.toLowerCase()} brand colour`}
+          title={`Change ${color.name.toLowerCase()} brand colour`}
         >
-          {/* Swatch preview */}
           <div
-            className="
-              w-16 h-16 rounded-xl border border-zinc-200
-              group-hover:border-zinc-300 transition-colors duration-150
-              relative overflow-hidden
-            "
-            style={{ backgroundColor: colors[key] }}
+            className="w-16 h-16 rounded-xl border border-zinc-200 group-hover:border-zinc-300 transition-colors duration-150 relative overflow-hidden"
+            style={{ backgroundColor: color.hex }}
           >
             <input
               type="color"
-              value={colors[key]}
-              onChange={(e) => handleChange(key, e.target.value)}
+              value={color.hex}
+              onChange={(e) => handleChangeHex(i, e.target.value)}
               className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-              aria-label={`${label} colour picker`}
+              aria-label={`${color.name} colour picker`}
             />
           </div>
-
-          {/* Labels */}
           <div>
-            <p className="text-xs font-medium text-zinc-700">{label}</p>
-            <p className="text-[11px] text-zinc-400 font-mono uppercase">
-              {colors[key]}
-            </p>
+            <p className="text-xs font-medium text-zinc-700">{color.name}</p>
+            <p className="text-[11px] text-zinc-400 font-mono uppercase">{color.hex}</p>
           </div>
         </label>
       ))}
 
-      <p className="self-end text-[11px] text-zinc-400 pb-1">
+      {/* Add Color button */}
+      {colors.length < 8 && (
+        <button
+          onClick={handleAddColor}
+          title="Add a brand colour"
+          className="flex flex-col gap-2 group"
+        >
+          <div className="w-16 h-16 rounded-xl border-2 border-dashed border-zinc-200 group-hover:border-zinc-400 transition-colors duration-150 flex items-center justify-center text-zinc-300 group-hover:text-zinc-500">
+            <span className="text-xl leading-none select-none">+</span>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-zinc-400 group-hover:text-zinc-600 transition-colors">Add</p>
+          </div>
+        </button>
+      )}
+
+      <p className="self-end text-[11px] text-zinc-400 pb-1 w-full mt-1">
         Click a swatch to edit. Saved locally in your browser.
       </p>
     </div>

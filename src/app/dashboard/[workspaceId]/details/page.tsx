@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { UserPlus, Calendar, Clock } from 'lucide-react'
+import { Calendar, Clock } from 'lucide-react'
+import { InviteButton } from './InviteButton'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import type { TaskStatus } from '@/types/database'
@@ -252,10 +253,7 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
                   {members.length} member{members.length !== 1 ? 's' : ''}
                 </span>
               </h2>
-              <button className="flex items-center gap-1 text-xs text-zinc-400 hover:text-black transition-colors">
-                <UserPlus size={11} strokeWidth={1.5} />
-                Invite
-              </button>
+              <InviteButton workspaceId={workspaceId} />
             </div>
 
             <div className="divide-y divide-zinc-50">

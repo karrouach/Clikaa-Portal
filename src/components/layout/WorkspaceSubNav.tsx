@@ -7,8 +7,8 @@ import { cn } from '@/lib/utils'
 const TABS = [
   { label: 'Strategy', segment: 'strategy' },  // /dashboard/[id]/strategy
   { label: 'Board',    segment: null },         // /dashboard/[id]
-  { label: 'Details',  segment: 'details' },   // /dashboard/[id]/details
   { label: 'Files',    segment: 'files' },     // /dashboard/[id]/files
+  { label: 'Details',  segment: 'details' },   // /dashboard/[id]/details
   { label: 'Settings', segment: 'settings' },  // /dashboard/[id]/settings
 ]
 
