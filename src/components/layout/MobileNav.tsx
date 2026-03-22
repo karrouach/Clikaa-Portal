@@ -62,14 +62,13 @@ export function MobileNav({ profile, workspaces }: Props) {
     <>
       {/* ── Fixed top bar — mobile only ──────────────────────────────────── */}
       <div className="fixed top-0 left-0 right-0 h-14 z-40 md:hidden bg-[#111111] border-b border-white/5 flex items-center justify-between px-4">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/dashboard">
           <img
             src="/logo.svg"
-            alt="Clikaa"
-            className="h-5 w-auto brightness-0 invert"
+            alt="Clikaa Portal"
+            className="h-5 w-auto"
             draggable={false}
           />
-          <span className="text-[10px] tracking-widest text-zinc-500 uppercase">Portal</span>
         </Link>
 
         <button
@@ -93,15 +92,12 @@ export function MobileNav({ profile, workspaces }: Props) {
         >
           {/* Header */}
           <div className="flex items-center h-14 px-4 border-b border-white/5 shrink-0">
-            <div className="flex items-center gap-2">
-              <img
-                src="/logo.svg"
-                alt="Clikaa"
-                className="h-5 w-auto brightness-0 invert"
-                draggable={false}
-              />
-              <span className="text-[10px] tracking-widest text-zinc-500 uppercase">Portal</span>
-            </div>
+            <img
+              src="/logo.svg"
+              alt="Clikaa Portal"
+              className="h-5 w-auto"
+              draggable={false}
+            />
           </div>
 
           {/* User profile */}
