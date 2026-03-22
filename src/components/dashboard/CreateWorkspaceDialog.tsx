@@ -130,7 +130,7 @@ export function NewWorkspaceButton({ variant = 'default' }: NewWorkspaceButtonPr
                 hover:text-black transition-colors duration-150
               `
             : `
-                flex items-center gap-1.5 h-9 px-4
+                flex items-center gap-1.5 h-9 px-4 rounded-lg
                 bg-black text-white text-sm font-medium
                 hover:bg-zinc-800 active:bg-zinc-900
                 transition-colors duration-150

@@ -88,32 +88,36 @@ export default async function DashboardPage() {
 
       {/* ── Admin stat cards ──────────────────────────────────────────────── */}
       {isAdmin && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white border border-zinc-100 rounded-xl p-6">
-            <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
+          <div className="bg-white border border-zinc-100 rounded-xl p-4 md:p-6">
+            <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-2 md:mb-3">
               Active Projects
             </p>
-            <p className="text-3xl font-semibold text-black tracking-tight">4</p>
-            <p className="mt-1.5 text-xs text-zinc-400 flex items-center gap-1">
+            <p className="text-2xl md:text-3xl font-semibold text-black tracking-tight">4</p>
+            <p className="mt-1 md:mt-1.5 text-xs text-zinc-400 flex items-center gap-1">
               <TrendingUp size={11} strokeWidth={1.5} className="text-emerald-500" />
-              Across all workspaces
+              <span className="hidden sm:inline">Across all workspaces</span>
+              <span className="sm:hidden">All workspaces</span>
             </p>
           </div>
 
-          <div className="bg-white border border-zinc-100 rounded-xl p-6">
-            <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-3">
+          <div className="bg-white border border-zinc-100 rounded-xl p-4 md:p-6">
+            <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-2 md:mb-3">
               Pending Invoices
             </p>
-            <p className="text-3xl font-semibold text-black tracking-tight">$12,500</p>
-            <p className="mt-1.5 text-xs text-zinc-400">3 outstanding invoices</p>
+            <p className="text-2xl md:text-3xl font-semibold text-black tracking-tight">$12,500</p>
+            <p className="mt-1 md:mt-1.5 text-xs text-zinc-400">3 outstanding</p>
           </div>
 
-          <div className="bg-white border border-zinc-100 rounded-xl p-6">
-            <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-3">
+          <div className="bg-white border border-zinc-100 rounded-xl p-4 md:p-6 col-span-2 sm:col-span-1">
+            <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-2 md:mb-3">
               Tasks Due
             </p>
-            <p className="text-3xl font-semibold text-black tracking-tight">15</p>
-            <p className="mt-1.5 text-xs text-zinc-400">This week across all boards</p>
+            <p className="text-2xl md:text-3xl font-semibold text-black tracking-tight">15</p>
+            <p className="mt-1 md:mt-1.5 text-xs text-zinc-400">
+              <span className="hidden sm:inline">This week across all boards</span>
+              <span className="sm:hidden">This week</span>
+            </p>
           </div>
         </div>
       )}
@@ -128,28 +132,28 @@ export default async function DashboardPage() {
 
       {/* ── Client: Project Health widget ─────────────────────────────────── */}
       {!isAdmin && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
 
           {/* Active in Review */}
-          <div className="bg-white border border-zinc-100 rounded-xl p-6">
-            <div className="flex items-center gap-2 mb-3">
-              <ClipboardList size={13} strokeWidth={1.5} className="text-zinc-400" />
-              <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
-                Active Tasks in Review
+          <div className="bg-white border border-zinc-100 rounded-xl p-4 md:p-6">
+            <div className="flex items-center gap-1.5 mb-2 md:mb-3">
+              <ClipboardList size={12} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
+              <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest truncate">
+                In Review
               </p>
             </div>
-            <p className="text-3xl font-semibold text-black tracking-tight">{reviewCount}</p>
-            <p className="mt-1.5 text-xs text-zinc-400">
-              {reviewCount === 0 ? 'Nothing awaiting review' : 'Awaiting your feedback'}
+            <p className="text-2xl md:text-3xl font-semibold text-black tracking-tight">{reviewCount}</p>
+            <p className="mt-1 md:mt-1.5 text-xs text-zinc-400">
+              {reviewCount === 0 ? 'Nothing in review' : 'Awaiting feedback'}
             </p>
           </div>
 
           {/* Next Milestone */}
-          <div className="bg-white border border-zinc-100 rounded-xl p-6">
-            <div className="flex items-center gap-2 mb-3">
-              <CalendarClock size={13} strokeWidth={1.5} className="text-zinc-400" />
-              <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
-                Next Milestone
+          <div className="bg-white border border-zinc-100 rounded-xl p-4 md:p-6">
+            <div className="flex items-center gap-1.5 mb-2 md:mb-3">
+              <CalendarClock size={12} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
+              <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest truncate">
+                Next Due
               </p>
             </div>
             {nextMilestone ? (
@@ -157,20 +161,20 @@ export default async function DashboardPage() {
                 <p className="text-sm font-semibold text-black leading-snug line-clamp-2">
                   {nextMilestone.title}
                 </p>
-                <p className="mt-1.5 text-xs text-zinc-400">
-                  Due {formatDate(nextMilestone.due_date)}
+                <p className="mt-1 md:mt-1.5 text-xs text-zinc-400">
+                  {formatDate(nextMilestone.due_date)}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-3xl font-semibold text-black tracking-tight">—</p>
-                <p className="mt-1.5 text-xs text-zinc-400">No upcoming deadlines</p>
+                <p className="text-2xl md:text-3xl font-semibold text-black tracking-tight">—</p>
+                <p className="mt-1 md:mt-1.5 text-xs text-zinc-400">No deadlines</p>
               </>
             )}
           </div>
 
           {/* Clikaa Support */}
-          <div className="bg-black rounded-xl p-6 flex flex-col justify-between">
+          <div className="bg-black rounded-xl p-4 md:p-6 flex flex-col justify-between col-span-2 sm:col-span-1">
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <HeadphonesIcon size={13} strokeWidth={1.5} className="text-zinc-400" />

@@ -10,6 +10,10 @@ import {
   SheetBody,
 } from '@/components/ui/sheet'
 import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog'
+import {
   Select,
   SelectTrigger,
   SelectValue,
@@ -22,7 +26,7 @@ import { AttachmentPanel } from './AttachmentPanel'
 import { updateTaskStatus, deleteTask } from '@/app/dashboard/task-actions'
 import { updateTaskTitle, updateTaskDescription } from '@/app/dashboard/comment-actions'
 import { formatDate, getInitials } from '@/lib/utils'
-import { CheckCircle2, Loader2, Trash2, CalendarIcon, User } from 'lucide-react'
+import { CheckCircle2, Loader2, Trash2, CalendarIcon, User, PanelRight, Maximize2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import type { MemberOption } from './CreateTaskDialog'
@@ -45,6 +49,9 @@ interface TaskDetailSheetProps {
   onTaskDeleted: (taskId: string) => void
   workspaceMembers?: MemberOption[]
 }
+
+type LayoutMode = 'sidebar' | 'modal'
+const LAYOUT_KEY = 'clikaa_task_layout'
 
 // ─── Status options ───────────────────────────────────────────────────────────
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
@@ -81,14 +88,13 @@ function EditableTitle({
   const [draft, setDraft] = useState(value)
   const [isPending, startTransition] = useTransition()
 
-  // Keep draft in sync when the parent value changes (e.g. realtime update)
   if (!editing && draft !== value) {
     setDraft(value)
   }
 
   if (!isAdmin) {
     return (
-      <h2 className="text-base font-semibold text-zinc-900 leading-snug pr-8">
+      <h2 className="text-base font-semibold text-zinc-900 leading-snug pr-16">
         {value}
       </h2>
     )
@@ -107,28 +113,22 @@ function EditableTitle({
         if (!result.error && result.task) {
           onSaved(result.task.title)
         } else {
-          setDraft(value) // revert on error
+          setDraft(value)
         }
         setEditing(false)
       })
     }
 
     return (
-      <div className="relative pr-8">
+      <div className="relative pr-16">
         <textarea
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={save}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault()
-              save()
-            }
-            if (e.key === 'Escape') {
-              setDraft(value)
-              setEditing(false)
-            }
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); save() }
+            if (e.key === 'Escape') { setDraft(value); setEditing(false) }
           }}
           rows={2}
           disabled={isPending}
@@ -142,22 +142,14 @@ function EditableTitle({
           "
         />
         {isPending && (
-          <Loader2
-            size={12}
-            strokeWidth={1.5}
-            className="absolute right-0 top-1 animate-spin text-zinc-400"
-          />
+          <Loader2 size={12} strokeWidth={1.5} className="absolute right-0 top-1 animate-spin text-zinc-400" />
         )}
       </div>
     )
   }
 
   return (
-    <button
-      onClick={() => setEditing(true)}
-      title="Click to edit title"
-      className="block w-full text-left pr-8 group"
-    >
+    <button onClick={() => setEditing(true)} title="Click to edit title" className="block w-full text-left pr-16 group">
       <h2 className="text-base font-semibold text-zinc-900 leading-snug group-hover:text-zinc-600 transition-colors">
         {value}
       </h2>
@@ -169,7 +161,7 @@ function EditableTitle({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// EditableDescription — textarea for admins, plain text for clients
+// EditableDescription
 // ─────────────────────────────────────────────────────────────────────────────
 function EditableDescription({
   taskId,
@@ -186,16 +178,13 @@ function EditableDescription({
   const [draft, setDraft] = useState(value ?? '')
   const [isPending, startTransition] = useTransition()
 
-  // Sync draft when parent value changes (realtime)
   if (!editing && draft !== (value ?? '')) {
     setDraft(value ?? '')
   }
 
   if (!isAdmin) {
     return value ? (
-      <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-wrap">
-        {value}
-      </p>
+      <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-wrap">{value}</p>
     ) : (
       <p className="text-sm text-zinc-400 italic">No description provided.</p>
     )
@@ -204,10 +193,7 @@ function EditableDescription({
   if (editing) {
     function save() {
       const trimmed = draft.trim() || null
-      if (trimmed === value) {
-        setEditing(false)
-        return
-      }
+      if (trimmed === value) { setEditing(false); return }
       startTransition(async () => {
         await updateTaskDescription({ taskId, description: trimmed })
         onSaved(trimmed)
@@ -223,10 +209,7 @@ function EditableDescription({
           onChange={(e) => setDraft(e.target.value)}
           onBlur={save}
           onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              setDraft(value ?? '')
-              setEditing(false)
-            }
+            if (e.key === 'Escape') { setDraft(value ?? ''); setEditing(false) }
           }}
           rows={4}
           placeholder="Add a description…"
@@ -242,28 +225,16 @@ function EditableDescription({
           "
         />
         {isPending && (
-          <Loader2
-            size={12}
-            strokeWidth={1.5}
-            className="absolute right-2.5 bottom-2.5 animate-spin text-zinc-400"
-          />
+          <Loader2 size={12} strokeWidth={1.5} className="absolute right-2.5 bottom-2.5 animate-spin text-zinc-400" />
         )}
       </div>
     )
   }
 
   return (
-    <button
-      onClick={() => setEditing(true)}
-      className="block w-full text-left group"
-    >
+    <button onClick={() => setEditing(true)} className="block w-full text-left group">
       {value ? (
-        <p
-          className={cn(
-            'text-sm text-zinc-600 leading-relaxed whitespace-pre-wrap',
-            'group-hover:text-zinc-800 transition-colors'
-          )}
-        >
+        <p className={cn('text-sm text-zinc-600 leading-relaxed whitespace-pre-wrap', 'group-hover:text-zinc-800 transition-colors')}>
           {value}
         </p>
       ) : (
@@ -276,7 +247,7 @@ function EditableDescription({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TaskDetailSheet — right-side sheet for full task detail + communication
+// TaskDetailSheet — modal or sidebar, toggled by the user with localStorage
 // ─────────────────────────────────────────────────────────────────────────────
 export function TaskDetailSheet({
   task,
@@ -289,282 +260,251 @@ export function TaskDetailSheet({
 }: TaskDetailSheetProps) {
   const [isDeleting, startDeleteTransition] = useTransition()
   const [isApproving, startApproveTransition] = useTransition()
+
+  // Layout mode — persisted in localStorage
+  const [mode, setMode] = useState<LayoutMode>(() => {
+    if (typeof window === 'undefined') return 'sidebar'
+    return (localStorage.getItem(LAYOUT_KEY) as LayoutMode) ?? 'sidebar'
+  })
+
   const isAdmin = currentUserProfile.role === 'admin'
   const isClient = currentUserProfile.role === 'client'
-
-  // Resolve assignee from workspaceMembers list
   const assignee = task?.assignee_id
     ? workspaceMembers.find((m) => m.id === task.assignee_id) ?? null
     : null
 
-  // ── Status change — optimistic, with revert on error ──────────────────────
+  function toggleMode() {
+    const next: LayoutMode = mode === 'sidebar' ? 'modal' : 'sidebar'
+    setMode(next)
+    try { localStorage.setItem(LAYOUT_KEY, next) } catch { /* ignore */ }
+  }
+
   function handleStatusChange(status: string) {
     if (!task) return
     const newStatus = status as TaskStatus
     const original = task
-    const optimistic = { ...task, status: newStatus }
-
-    onTaskUpdated(optimistic) // Immediate optimistic update
-
+    onTaskUpdated({ ...task, status: newStatus })
     updateTaskStatus({ taskId: task.id, status: newStatus }).then(({ error }) => {
-      if (error) {
-        console.error('[TaskDetail] Status update failed:', error)
-        onTaskUpdated(original) // Revert
-      }
+      if (error) onTaskUpdated(original)
     })
   }
 
-  // ── Client approve — moves to Done + fires confetti ───────────────────────
   function handleApprove() {
     if (!task) return
     const original = task
-    const optimistic = { ...task, status: 'done' as TaskStatus }
-    onTaskUpdated(optimistic)
-
+    onTaskUpdated({ ...task, status: 'done' as TaskStatus })
     startApproveTransition(async () => {
       const { error } = await updateTaskStatus({ taskId: task.id, status: 'done' })
-      if (error) {
-        onTaskUpdated(original)
-        return
-      }
-      // Fire confetti on success
-      confetti({
-        particleCount: 160,
-        spread: 90,
-        origin: { y: 0.55 },
-        colors: ['#000000', '#10b981', '#ffffff', '#71717a', '#f59e0b'],
-      })
+      if (error) { onTaskUpdated(original); return }
+      confetti({ particleCount: 160, spread: 90, origin: { y: 0.55 }, colors: ['#000000', '#10b981', '#ffffff', '#71717a', '#f59e0b'] })
     })
   }
 
-  // ── Title saved ───────────────────────────────────────────────────────────
   function handleTitleSaved(title: string) {
     if (!task) return
     onTaskUpdated({ ...task, title })
   }
 
-  // ── Description saved ─────────────────────────────────────────────────────
   function handleDescriptionSaved(description: string | null) {
     if (!task) return
     onTaskUpdated({ ...task, description })
   }
 
-  // ── Delete (admin only) ───────────────────────────────────────────────────
   function handleDelete() {
     if (!task) return
     startDeleteTransition(async () => {
       const { error } = await deleteTask(task.id)
-      if (!error) {
-        onTaskDeleted(task.id)
-        onOpenChange(false)
-      }
+      if (!error) { onTaskDeleted(task.id); onOpenChange(false) }
     })
   }
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent>
-        {task ? (
-          <>
-            {/* ── Header ──────────────────────────────────────────────────── */}
-            <SheetHeader>
-              <EditableTitle
-                taskId={task.id}
-                value={task.title}
-                isAdmin={isAdmin}
-                onSaved={handleTitleSaved}
-              />
-              <p className="text-[11px] text-zinc-400 mt-1.5">
-                Created {formatDate(task.created_at)}
-              </p>
-            </SheetHeader>
+  // ── Shared layout-toggle button ──────────────────────────────────────────
+  const LayoutToggle = (
+    <button
+      onClick={toggleMode}
+      title={mode === 'sidebar' ? 'Switch to modal view' : 'Switch to sidebar view'}
+      className="absolute right-12 top-5 text-zinc-400 hover:text-black transition-colors duration-150"
+    >
+      {mode === 'sidebar'
+        ? <Maximize2 size={15} strokeWidth={1.5} />
+        : <PanelRight size={15} strokeWidth={1.5} />
+      }
+    </button>
+  )
 
-            {/* ── Body (scrollable) ────────────────────────────────────────── */}
-            <SheetBody>
-              <div className="space-y-6">
-                {/* ── Status + Priority ────────────────────────────────────── */}
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Status */}
-                  <div className="space-y-1.5">
-                    <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">
-                      Status
-                    </p>
-                    <Select
-                      value={task.status}
-                      onValueChange={handleStatusChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUS_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+  // ── Shared task body ──────────────────────────────────────────────────────
+  const taskBody = task ? (
+    <>
+      {/* ── Header ────────────────────────────────────────────────────────── */}
+      <SheetHeader>
+        {LayoutToggle}
+        <EditableTitle
+          taskId={task.id}
+          value={task.title}
+          isAdmin={isAdmin}
+          onSaved={handleTitleSaved}
+        />
+        <p className="text-[11px] text-zinc-400 mt-1.5">
+          Created {formatDate(task.created_at)}
+        </p>
+      </SheetHeader>
 
-                  {/* Priority (read-only) */}
-                  <div className="space-y-1.5">
-                    <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">
-                      Priority
-                    </p>
-                    <div className="flex items-center h-8">
-                      <Badge variant={PRIORITY_VARIANT[task.priority]}>
-                        {task.priority}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ── Dates + Assignee ─────────────────────────────────────── */}
-                {(task.start_date || task.due_date || task.assignee_id) && (
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Start Date */}
-                    {task.start_date && (
-                      <div className="space-y-1.5">
-                        <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest flex items-center gap-1">
-                          <CalendarIcon size={10} strokeWidth={1.5} />
-                          Start Date
-                        </p>
-                        <p className="text-sm text-zinc-900">
-                          {new Date(task.start_date).toLocaleDateString('en-GB', {
-                            day: 'numeric', month: 'short', year: 'numeric',
-                          })}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Due Date */}
-                    {task.due_date && (
-                      <div className="space-y-1.5">
-                        <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest flex items-center gap-1">
-                          <CalendarIcon size={10} strokeWidth={1.5} />
-                          Due Date
-                        </p>
-                        <p className="text-sm text-zinc-900">
-                          {new Date(task.due_date).toLocaleDateString('en-GB', {
-                            day: 'numeric', month: 'short', year: 'numeric',
-                          })}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Assignee */}
-                    {task.assignee_id && (
-                      <div className="space-y-1.5 col-span-2">
-                        <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest flex items-center gap-1">
-                          <User size={10} strokeWidth={1.5} />
-                          Assignee
-                        </p>
-                        {assignee ? (
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6 shrink-0">
-                              {assignee.avatar_url && (
-                                <AvatarImage src={assignee.avatar_url} />
-                              )}
-                              <AvatarFallback className="text-[9px] bg-zinc-100 text-zinc-600">
-                                {getInitials(assignee.full_name || assignee.email)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm text-zinc-900">
-                              {assignee.full_name || assignee.email}
-                            </span>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-zinc-400">Unknown member</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* ── Client Approve Design button ─────────────────────────── */}
-                {isClient && task.status === 'review' && (
-                  <button
-                    onClick={handleApprove}
-                    disabled={isApproving}
-                    className="
-                      w-full h-11 flex items-center justify-center gap-2
-                      bg-emerald-500 text-white text-sm font-semibold rounded-lg
-                      hover:bg-emerald-600 active:bg-emerald-700
-                      transition-colors duration-150
-                      disabled:opacity-60 disabled:cursor-not-allowed
-                    "
-                  >
-                    {isApproving ? (
-                      <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
-                    ) : (
-                      <CheckCircle2 size={16} strokeWidth={1.5} />
-                    )}
-                    {isApproving ? 'Approving…' : 'Approve Design'}
-                  </button>
-                )}
-
-                {/* ── Description ──────────────────────────────────────────── */}
-                <div className="space-y-1.5">
-                  <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">
-                    Description
-                  </p>
-                  <EditableDescription
-                    taskId={task.id}
-                    value={task.description}
-                    isAdmin={isAdmin}
-                    onSaved={handleDescriptionSaved}
-                  />
-                </div>
-
-                {/* ── Attachments ──────────────────────────────────────────── */}
-                <div className="space-y-2">
-                  <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">
-                    Attachments
-                  </p>
-                  <AttachmentPanel
-                    taskId={task.id}
-                    workspaceId={task.workspace_id}
-                    currentUserProfile={currentUserProfile}
-                  />
-                </div>
-
-                {/* ── Activity / Comments ───────────────────────────────────── */}
-                <div className="space-y-2">
-                  <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">
-                    Activity
-                  </p>
-                  <CommentFeed
-                    taskId={task.id}
-                    currentUserProfile={currentUserProfile}
-                  />
-                </div>
-
-                {/* ── Admin: Delete task ────────────────────────────────────── */}
-                {isAdmin && (
-                  <div className="pt-4 border-t border-zinc-100">
-                    <button
-                      onClick={handleDelete}
-                      disabled={isDeleting}
-                      className="
-                        flex items-center gap-1.5 text-xs text-zinc-400
-                        hover:text-red-500 transition-colors duration-150
-                        disabled:opacity-50 disabled:cursor-not-allowed
-                      "
-                    >
-                      {isDeleting ? (
-                        <Loader2 size={12} strokeWidth={1.5} className="animate-spin" />
-                      ) : (
-                        <Trash2 size={12} strokeWidth={1.5} />
-                      )}
-                      Delete task
-                    </button>
-                  </div>
-                )}
+      {/* ── Body (scrollable) ─────────────────────────────────────────────── */}
+      <SheetBody>
+        <div className="space-y-6">
+          {/* Status + Priority */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Status</p>
+              <Select value={task.status} onValueChange={handleStatusChange}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Priority</p>
+              <div className="flex items-center h-8">
+                <Badge variant={PRIORITY_VARIANT[task.priority]}>{task.priority}</Badge>
               </div>
-            </SheetBody>
-          </>
-        ) : null}
-      </SheetContent>
-    </Sheet>
+            </div>
+          </div>
+
+          {/* Dates + Assignee */}
+          {(task.start_date || task.due_date || task.assignee_id) && (
+            <div className="grid grid-cols-2 gap-4">
+              {task.start_date && (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest flex items-center gap-1">
+                    <CalendarIcon size={10} strokeWidth={1.5} />Start Date
+                  </p>
+                  <p className="text-sm text-zinc-900">
+                    {new Date(task.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+              )}
+              {task.due_date && (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest flex items-center gap-1">
+                    <CalendarIcon size={10} strokeWidth={1.5} />Due Date
+                  </p>
+                  <p className="text-sm text-zinc-900">
+                    {new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+              )}
+              {task.assignee_id && (
+                <div className="space-y-1.5 col-span-2">
+                  <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest flex items-center gap-1">
+                    <User size={10} strokeWidth={1.5} />Assignee
+                  </p>
+                  {assignee ? (
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6 shrink-0">
+                        {assignee.avatar_url && <AvatarImage src={assignee.avatar_url} />}
+                        <AvatarFallback className="text-[9px] bg-zinc-100 text-zinc-600">
+                          {getInitials(assignee.full_name || assignee.email)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm text-zinc-900">{assignee.full_name || assignee.email}</span>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-zinc-400">Unknown member</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Client Approve Design */}
+          {isClient && task.status === 'review' && (
+            <button
+              onClick={handleApprove}
+              disabled={isApproving}
+              className="
+                w-full h-11 flex items-center justify-center gap-2
+                bg-emerald-500 text-white text-sm font-semibold rounded-lg
+                hover:bg-emerald-600 active:bg-emerald-700
+                transition-colors duration-150
+                disabled:opacity-60 disabled:cursor-not-allowed
+              "
+            >
+              {isApproving
+                ? <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
+                : <CheckCircle2 size={16} strokeWidth={1.5} />
+              }
+              {isApproving ? 'Approving…' : 'Approve Design'}
+            </button>
+          )}
+
+          {/* Description */}
+          <div className="space-y-1.5">
+            <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Description</p>
+            <EditableDescription
+              taskId={task.id}
+              value={task.description}
+              isAdmin={isAdmin}
+              onSaved={handleDescriptionSaved}
+            />
+          </div>
+
+          {/* Attachments */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Attachments</p>
+            <AttachmentPanel
+              taskId={task.id}
+              workspaceId={task.workspace_id}
+              currentUserProfile={currentUserProfile}
+            />
+          </div>
+
+          {/* Activity / Comments */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Activity</p>
+            <CommentFeed taskId={task.id} currentUserProfile={currentUserProfile} />
+          </div>
+
+          {/* Admin: Delete */}
+          {isAdmin && (
+            <div className="pt-4 border-t border-zinc-100">
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-red-500 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting
+                  ? <Loader2 size={12} strokeWidth={1.5} className="animate-spin" />
+                  : <Trash2 size={12} strokeWidth={1.5} />
+                }
+                Delete task
+              </button>
+            </div>
+          )}
+        </div>
+      </SheetBody>
+    </>
+  ) : null
+
+  // ── Sidebar mode (default) ────────────────────────────────────────────────
+  if (mode === 'sidebar') {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent>
+          {taskBody}
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  // ── Modal mode ────────────────────────────────────────────────────────────
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[520px] p-0 max-h-[90vh] flex flex-col overflow-hidden">
+        {taskBody}
+      </DialogContent>
+    </Dialog>
   )
 }

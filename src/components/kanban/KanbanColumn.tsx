@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { Droppable } from '@hello-pangea/dnd'
 import type { Task, TaskStatus } from '@/types/database'
 import { KanbanCard } from './KanbanCard'
@@ -16,12 +17,10 @@ interface KanbanColumnProps {
 /**
  * KanbanColumn — a single status column on the board.
  *
- * Wraps @hello-pangea/dnd's Droppable, which:
- *  - Accepts dropped Draggable cards from any column.
- *  - Signals active drop zones via snapshot.isDraggingOver.
- *  - Injects placeholder space while a card is being dragged.
+ * Wrapped in React.memo so columns that receive no task changes do not
+ * re-render while the user drags a card in another column.
  */
-export function KanbanColumn({ columnId, label, dotClass, tasks, onCardClick }: KanbanColumnProps) {
+export const KanbanColumn = memo(function KanbanColumn({ columnId, label, dotClass, tasks, onCardClick }: KanbanColumnProps) {
   return (
     <div className="flex flex-col w-[85vw] md:w-72 shrink-0 max-h-full snap-center rounded-xl overflow-hidden">
       {/* ── Column header ─────────────────────────────────────────────── */}
@@ -77,4 +76,4 @@ export function KanbanColumn({ columnId, label, dotClass, tasks, onCardClick }: 
       </Droppable>
     </div>
   )
-}
+})

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { ProfileForm } from './ProfileForm'
+import { SignOutButton } from './SignOutButton'
 
 export const metadata: Metadata = { title: 'Settings' }
 
@@ -40,6 +41,11 @@ export default async function SettingsPage() {
           role={profile?.role ?? 'client'}
           initialAvatarUrl={profile?.avatar_url ?? null}
         />
+      </div>
+
+      {/* Sign out — shown on mobile where the top nav drawer is gone */}
+      <div className="mt-4 md:hidden">
+        <SignOutButton />
       </div>
     </div>
   )

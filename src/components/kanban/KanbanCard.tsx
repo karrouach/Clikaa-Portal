@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { Draggable, type DraggableProvided, type DraggableStateSnapshot } from '@hello-pangea/dnd'
 import type { Task, TaskPriority } from '@/types/database'
 import { Badge } from '@/components/ui/badge'
@@ -9,14 +10,9 @@ import { Calendar } from 'lucide-react'
 interface KanbanCardProps {
   task: Task
   index: number
-  /**
-   * onClick is wired up in Phase 4 to open the TaskDetailSheet.
-   * Optional so the card remains self-contained in Phase 3.
-   */
   onClick?: (task: Task) => void
 }
 
-// Priority badge variant map — keeps the card decoupled from the Badge internals
 const priorityVariant: Record<TaskPriority, 'low' | 'medium' | 'high' | 'urgent'> = {
   low: 'low',
   medium: 'medium',
@@ -27,10 +23,14 @@ const priorityVariant: Record<TaskPriority, 'low' | 'medium' | 'high' | 'urgent'
 /**
  * KanbanCard — individual task card, wrapped in @hello-pangea/dnd Draggable.
  *
- * The entire card surface acts as the drag handle for a simple, accessible UX.
- * On drag: slight rotation + elevation to give a "lifted" physical feel.
+ * Performance notes:
+ * - Wrapped in React.memo to prevent re-renders when sibling cards move.
+ * - Uses targeted CSS transitions (shadow + border) instead of transition-all
+ *   to avoid painting all properties on every frame during drag.
+ * - will-change: transform is applied during drag to promote the card to its
+ *   own compositor layer, enabling GPU-accelerated movement.
  */
-export function KanbanCard({ task, index, onClick }: KanbanCardProps) {
+export const KanbanCard = memo(function KanbanCard({ task, index, onClick }: KanbanCardProps) {
   return (
     <Draggable draggableId={task.id} index={index}>
       {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
@@ -39,38 +39,43 @@ export function KanbanCard({ task, index, onClick }: KanbanCardProps) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={() => onClick?.(task)}
+          style={{
+            ...provided.draggableProps.style,
+            // Promote to compositor layer while dragging for smooth GPU movement
+            willChange: snapshot.isDragging ? 'transform' : 'auto',
+          }}
           className={cn(
             // Base
             'bg-white border border-zinc-100 rounded-lg p-3.5 select-none',
-            'transition-all duration-150',
+            // Use targeted transitions — NOT transition-all (too expensive during drag)
+            'transition-[box-shadow,border-color,opacity] duration-150',
             // Cursor
             onClick ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing',
-            // Resting hover — premium lift with shadow and subtle upward translate
+            // Resting hover
             !snapshot.isDragging &&
               'hover:border-zinc-200 hover:-translate-y-0.5 hover:shadow-md',
             // Active drag — elevated with slight rotation for tactile feel
             snapshot.isDragging &&
-              'border-zinc-200 shadow-xl !rotate-[1deg] !scale-[1.02] opacity-95'
+              'border-zinc-200 shadow-2xl rotate-[1deg] scale-[1.02] opacity-95'
           )}
         >
-          {/* ── Title ──────────────────────────────────────────────────── */}
+          {/* ── Title ─────────────────────────────────────────────────────── */}
           <p className="text-sm font-medium text-black leading-snug break-words">
             {task.title}
           </p>
 
-          {/* ── Description preview ─────────────────────────────────────── */}
+          {/* ── Description preview ───────────────────────────────────────── */}
           {task.description && (
             <p className="mt-1.5 text-xs text-zinc-400 line-clamp-2 leading-relaxed">
               {task.description}
             </p>
           )}
 
-          {/* ── Footer: priority + date ──────────────────────────────────── */}
+          {/* ── Footer: priority + date ────────────────────────────────────── */}
           <div className="mt-3 flex items-center justify-between gap-2">
             <Badge variant={priorityVariant[task.priority]} className="shrink-0">
               {task.priority}
             </Badge>
-
             <span className="flex items-center gap-1 text-[11px] text-zinc-400 shrink-0">
               <Calendar size={10} strokeWidth={1.5} />
               {formatRelativeTime(task.created_at)}
@@ -80,4 +85,4 @@ export function KanbanCard({ task, index, onClick }: KanbanCardProps) {
       )}
     </Draggable>
   )
-}
+})

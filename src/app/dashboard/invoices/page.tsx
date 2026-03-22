@@ -87,62 +87,98 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-zinc-100 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-zinc-100 bg-zinc-50">
-              <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
-                Invoice
-              </th>
-              <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
-                Client
-              </th>
-              <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">
-                Project
-              </th>
-              <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden lg:table-cell">
-                Issued
-              </th>
-              <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden lg:table-cell">
-                Due
-              </th>
-              <th className="px-6 py-3 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
-                Amount
-              </th>
-              <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {INVOICES.map((inv) => (
-              <tr
-                key={inv.id}
-                className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/50 transition-colors"
+      {/* ── Mobile card list — sm:hidden ──────────────────────────────── */}
+      <div className="sm:hidden space-y-3">
+        {INVOICES.map((inv) => (
+          <div
+            key={inv.id}
+            className="bg-white border border-zinc-100 rounded-xl p-4"
+          >
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-black truncate">{inv.client}</p>
+                <p className="text-xs text-zinc-500 mt-0.5 truncate">{inv.project}</p>
+              </div>
+              <span
+                className={cn(
+                  'shrink-0 inline-flex items-center px-2 py-0.5 text-xs font-medium border rounded-full',
+                  STATUS_STYLES[inv.status]
+                )}
               >
-                <td className="px-6 py-4 font-mono text-xs text-zinc-500">{inv.id}</td>
-                <td className="px-6 py-4 font-medium text-black">{inv.client}</td>
-                <td className="px-6 py-4 text-zinc-500 hidden md:table-cell">{inv.project}</td>
-                <td className="px-6 py-4 text-zinc-400 hidden lg:table-cell">{inv.issued}</td>
-                <td className="px-6 py-4 text-zinc-400 hidden lg:table-cell">{inv.due}</td>
-                <td className="px-6 py-4 text-right font-medium text-black tabular-nums">
-                  {inv.amount}
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={cn(
-                      'inline-flex items-center px-2 py-0.5 text-xs font-medium border',
-                      STATUS_STYLES[inv.status]
-                    )}
-                  >
-                    {STATUS_LABELS[inv.status]}
-                  </span>
-                </td>
+                {STATUS_LABELS[inv.status]}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[11px] text-zinc-400">{inv.id}</span>
+              <span className="text-sm font-semibold text-black tabular-nums">{inv.amount}</span>
+            </div>
+            <div className="flex items-center gap-3 mt-2">
+              <span className="text-[11px] text-zinc-400">Issued {inv.issued}</span>
+              <span className="text-zinc-200">·</span>
+              <span className="text-[11px] text-zinc-400">Due {inv.due}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Desktop table — hidden on mobile ──────────────────────────── */}
+      <div className="hidden sm:block bg-white border border-zinc-100 overflow-hidden rounded-xl">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-zinc-100 bg-zinc-50">
+                <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">
+                  Invoice
+                </th>
+                <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">
+                  Client
+                </th>
+                <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell whitespace-nowrap">
+                  Project
+                </th>
+                <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden lg:table-cell whitespace-nowrap">
+                  Issued
+                </th>
+                <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden lg:table-cell whitespace-nowrap">
+                  Due
+                </th>
+                <th className="px-6 py-3 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">
+                  Status
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {INVOICES.map((inv) => (
+                <tr
+                  key={inv.id}
+                  className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/50 transition-colors"
+                >
+                  <td className="px-6 py-4 font-mono text-xs text-zinc-500 whitespace-nowrap">{inv.id}</td>
+                  <td className="px-6 py-4 font-medium text-black whitespace-nowrap">{inv.client}</td>
+                  <td className="px-6 py-4 text-zinc-500 hidden md:table-cell">{inv.project}</td>
+                  <td className="px-6 py-4 text-zinc-400 hidden lg:table-cell whitespace-nowrap">{inv.issued}</td>
+                  <td className="px-6 py-4 text-zinc-400 hidden lg:table-cell whitespace-nowrap">{inv.due}</td>
+                  <td className="px-6 py-4 text-right font-medium text-black tabular-nums whitespace-nowrap">
+                    {inv.amount}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={cn(
+                        'inline-flex items-center px-2 py-0.5 text-xs font-medium border',
+                        STATUS_STYLES[inv.status]
+                      )}
+                    >
+                      {STATUS_LABELS[inv.status]}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

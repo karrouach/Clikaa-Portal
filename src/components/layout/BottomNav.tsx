@@ -2,78 +2,84 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, KanbanSquare, FolderOpen, Settings } from 'lucide-react'
+import { LayoutDashboard, Receipt, Users, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-// Extract the workspace UUID from paths like /dashboard/[uuid] or /dashboard/[uuid]/files
-function extractWorkspaceId(pathname: string): string | null {
-  const match = pathname.match(/^\/dashboard\/([0-9a-f-]{36})/)
-  return match?.[1] ?? null
+interface BottomNavProps {
+  isAdmin: boolean
 }
 
-export function BottomNav() {
+export function BottomNav({ isAdmin }: BottomNavProps) {
   const pathname = usePathname()
-  const wsId = extractWorkspaceId(pathname)
 
-  const tabs = [
+  const adminTabs = [
     {
-      label: 'Overview',
+      label: 'Home',
       icon: LayoutDashboard,
-      href: '/dashboard' as string | null,
+      href: '/dashboard',
       isActive: pathname === '/dashboard',
-      enabled: true,
     },
     {
-      label: 'Board',
-      icon: KanbanSquare,
-      href: wsId ? `/dashboard/${wsId}` : null,
-      isActive: !!wsId && pathname === `/dashboard/${wsId}`,
-      enabled: !!wsId,
+      label: 'Invoices',
+      icon: Receipt,
+      href: '/dashboard/invoices',
+      isActive: pathname.startsWith('/dashboard/invoices'),
     },
     {
-      label: 'Files',
-      icon: FolderOpen,
-      href: wsId ? `/dashboard/${wsId}/files` : null,
-      isActive: !!wsId && pathname.startsWith(`/dashboard/${wsId}/files`),
-      enabled: !!wsId,
+      label: 'Team',
+      icon: Users,
+      href: '/dashboard/team',
+      isActive: pathname.startsWith('/dashboard/team'),
     },
     {
       label: 'Settings',
       icon: Settings,
-      href: '/dashboard/settings' as string | null,
+      href: '/dashboard/settings',
       isActive: pathname.startsWith('/dashboard/settings'),
-      enabled: true,
     },
   ]
 
+  const clientTabs = [
+    {
+      label: 'Home',
+      icon: LayoutDashboard,
+      href: '/dashboard',
+      isActive: pathname === '/dashboard',
+    },
+    {
+      label: 'Settings',
+      icon: Settings,
+      href: '/dashboard/settings',
+      isActive: pathname.startsWith('/dashboard/settings'),
+    },
+  ]
+
+  const tabs = isAdmin ? adminTabs : clientTabs
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/85 backdrop-blur-md border-t border-zinc-100 safe-bottom">
-      <div className="flex items-center justify-around h-16 px-1">
-        {tabs.map(({ label, icon: Icon, href, isActive, enabled }) =>
-          !enabled || !href ? (
-            // Disabled tab — greyed out, not tappable
-            <div
-              key={label}
-              className="flex flex-col items-center gap-1 flex-1 py-2 text-zinc-300 select-none"
-            >
-              <Icon size={20} strokeWidth={1.5} />
-              <span className="text-[10px] font-medium">{label}</span>
-            </div>
-          ) : (
-            <Link
-              key={label}
-              href={href}
-              className={cn(
-                'flex flex-col items-center gap-1 flex-1 py-2 transition-colors',
-                isActive ? 'text-black' : 'text-zinc-400'
-              )}
-            >
-              <Icon size={20} strokeWidth={1.5} />
-              <span className="text-[10px] font-medium">{label}</span>
-            </Link>
-          )
-        )}
+    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden" style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+      <div className={cn('flex items-center h-16 px-2', isAdmin ? 'justify-around' : 'justify-around')}>
+        {tabs.map(({ label, icon: Icon, href, isActive }) => (
+          <Link
+            key={label}
+            href={href}
+            className={cn(
+              'flex flex-col items-center gap-1 flex-1 py-2 transition-colors',
+              isActive ? 'text-black' : 'text-zinc-400 hover:text-zinc-600'
+            )}
+          >
+            <Icon
+              size={20}
+              strokeWidth={isActive ? 2 : 1.5}
+            />
+            <span className={cn('text-[10px]', isActive ? 'font-semibold' : 'font-medium')}>
+              {label}
+            </span>
+          </Link>
+        ))}
       </div>
+      {/* Safe area spacer for iPhone home indicator */}
+      <div className="h-safe-bottom" />
     </nav>
   )
 }

@@ -124,9 +124,9 @@ export function CreateTaskDialog({
           onClick={() => setOpen(true)}
           aria-label="Add task"
           className="
-            fixed bottom-20 right-4 z-30
+            fixed bottom-24 right-4 z-30
             w-14 h-14 rounded-full
-            bg-black text-white shadow-lg
+            bg-black text-white shadow-xl shadow-black/20
             flex items-center justify-center
             active:bg-zinc-800 transition-colors
           "

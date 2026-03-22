@@ -5,6 +5,7 @@ import type { WorkspaceWithRole } from '@/types/database'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Header } from '@/components/layout/Header'
 import { MobileNav } from '@/components/layout/MobileNav'
+import { BottomNav } from '@/components/layout/BottomNav'
 
 /**
  * Dashboard shell layout — server component.
@@ -73,7 +74,10 @@ export default async function DashboardLayout({
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-50">
       {/* ── Mobile top nav — md:hidden ────────────────────────────────────── */}
-      <MobileNav profile={profile} workspaces={workspaces} />
+      <MobileNav />
+
+      {/* ── Mobile bottom tab bar — md:hidden ─────────────────────────────── */}
+      <BottomNav isAdmin={profile.role === 'admin'} />
 
       {/* ── Sidebar — hidden on mobile ────────────────────────────────────── */}
       <Sidebar profile={profile} workspaces={workspaces} />
@@ -83,7 +87,7 @@ export default async function DashboardLayout({
         <Header profile={profile} workspaces={workspaces} />
 
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto px-4 py-6 md:px-6 md:py-8">
+          <div className="max-w-7xl mx-auto px-4 py-6 pb-24 md:px-6 md:py-8 md:pb-8">
             {children}
           </div>
         </main>

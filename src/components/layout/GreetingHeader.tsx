@@ -14,8 +14,8 @@ interface GreetingHeaderProps {
 export function GreetingHeader({ name }: GreetingHeaderProps) {
   const firstName = name.split(' ')[0]
   return (
-    <div className="mb-6 md:mb-8">
-      <h1 className="text-2xl font-semibold text-black tracking-tight">
+    <div className="mb-4 md:mb-8">
+      <h1 className="text-xl md:text-2xl font-semibold text-black tracking-tight">
         {getGreeting()}, {firstName} 👋
       </h1>
     </div>
