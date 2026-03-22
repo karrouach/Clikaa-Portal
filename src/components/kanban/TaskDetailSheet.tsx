@@ -382,17 +382,36 @@ export function TaskDetailSheet({
                 </div>
               </div>
 
-              {/* ── Body: two-column on desktop, stacked on mobile ──────────── */}
+              {/* ── Body ────────────────────────────────────────────────────── */}
               {/*
-                  Mobile (flex-col, overflow-y-auto on wrapper):
-                    Both panes stack vertically; content scrolls as one unit.
-                  Desktop (md:flex-row, md:overflow-hidden):
-                    Left pane scrolls independently; right pane scrolls independently.
+                  Sidebar mode (always stacked):
+                    flex-col + overflow-y-auto on wrapper → single scroll unit.
+                    Neither pane gets independent overflow — the parent scrolls.
+
+                  Modal / fullscreen on desktop (md:flex-row):
+                    wrapper is overflow-hidden; each pane scrolls independently.
+
+                  Mobile (all modes):
+                    CSS !important forces the panel to full-screen; body is
+                    flex-col + overflow-y-auto regardless of JS mode.
               */}
-              <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
+              <div className={cn(
+                'flex-1 min-h-0 flex',
+                // Sidebar: always single column, parent scrolls
+                mode === 'sidebar'
+                  ? 'flex-col overflow-y-auto'
+                  // Modal / fullscreen: stacked on mobile, two-column on desktop
+                  : 'flex-col md:flex-row overflow-y-auto md:overflow-hidden',
+              )}>
 
                 {/* ── Left / Main pane ──────────────────────────────────────── */}
-                <div className="flex-1 overflow-visible md:overflow-y-auto px-6 py-5 md:border-r md:border-zinc-100 space-y-6">
+                <div className={cn(
+                  'px-6 py-5 space-y-6',
+                  // Two-column modes: left pane fills remaining width and scrolls independently
+                  mode !== 'sidebar' && 'flex-1 overflow-visible md:overflow-y-auto md:border-r md:border-zinc-100',
+                  // Sidebar: full width, no independent overflow
+                  mode === 'sidebar' && 'w-full',
+                )}>
 
                   {/* Status + Priority */}
                   <div className="grid grid-cols-2 gap-4">
@@ -520,9 +539,18 @@ export function TaskDetailSheet({
                 </div>
 
                 {/* ── Right / Activity pane ─────────────────────────────────── */}
-                <div className="overflow-visible md:overflow-y-auto md:w-[360px] md:shrink-0 px-6 py-5 bg-[#F9FAFB] border-t border-zinc-100 md:border-t-0">
-                  {/* Sticky label — scrolls with content on mobile, sticks on desktop */}
-                  <div className="sticky top-0 bg-[#F9FAFB] pb-3 mb-1 z-10">
+                <div className={cn(
+                  'px-6 pb-6 bg-[#F9FAFB] border-t border-zinc-100',
+                  // Two-column: fixed width + independent scroll
+                  mode !== 'sidebar' && 'md:w-[360px] md:shrink-0 md:overflow-y-auto md:border-t-0',
+                  // Sidebar: full width, no independent overflow (parent scrolls)
+                  mode === 'sidebar' && 'w-full',
+                )}>
+                  {/* Sticky "Activity" label — anchors inside whatever scroll context is active.
+                      In two-column mode: sticks within this pane's overflow-y-auto.
+                      In stacked mode:   sticks within the parent body overflow-y-auto.
+                      Background matches pane colour so content slides under it cleanly. */}
+                  <div className="sticky top-0 bg-[#F9FAFB] pt-5 pb-3 mb-1 border-b border-zinc-100 z-10">
                     <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">
                       Activity
                     </p>

@@ -2,6 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Task detail panel keyframes ───────────────────────────────────────────────
+   Defined here (not in tailwind.config.ts animation utilities) so they are
+   always emitted by the CSS bundler regardless of whether the corresponding
+   Tailwind utility class is used in a component.  The globals.css CSS rules
+   below reference these by name.
+*/
+@keyframes task-drawer-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes task-drawer-down {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(100%); }
+}
+@keyframes task-modal-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes task-modal-out {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to   { opacity: 0; transform: translate(-50%, -50%) scale(0.97); }
+}
+@keyframes task-fullscreen-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes task-fullscreen-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.98); }
+}
+@keyframes task-sidebar-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes task-sidebar-out {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+
 @layer base {
   :root {
     /* ── Core palette ───────────────────────────────────────────────────── */
