@@ -117,6 +117,48 @@
     transition: background-color 5000s ease-in-out 0s;
   }
 
+  /* ── Task detail panel — responsive animations ───────────────────────────
+     Mobile (default): always slide up from bottom.
+     Desktop (md+): mode-specific entry/exit animations.
+     !important in the @media (max-width) block overrides React inline styles
+     so the panel always snaps to full-screen on small devices regardless of
+     which layout mode is stored in localStorage.
+  */
+
+  /* Mobile: slide-up (no media query = base/mobile) */
+  .task-panel[data-state='open'] {
+    animation: task-drawer-up 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .task-panel[data-state='closed'] {
+    animation: task-drawer-down 260ms ease-in forwards;
+  }
+
+  /* Desktop: mode-specific animations */
+  @media (min-width: 768px) {
+    .task-panel-modal[data-state='open']      { animation: task-modal-in      260ms cubic-bezier(0.22, 1, 0.36, 1); }
+    .task-panel-modal[data-state='closed']    { animation: task-modal-out     200ms ease forwards; }
+    .task-panel-fullscreen[data-state='open'] { animation: task-fullscreen-in 260ms cubic-bezier(0.22, 1, 0.36, 1); }
+    .task-panel-fullscreen[data-state='closed']{ animation: task-fullscreen-out 200ms ease forwards; }
+    .task-panel-sidebar[data-state='open']    { animation: task-sidebar-in    300ms cubic-bezier(0.22, 1, 0.36, 1); }
+    .task-panel-sidebar[data-state='closed']  { animation: task-sidebar-out   250ms ease-in forwards; }
+  }
+
+  /* Mobile override — force full-screen bottom drawer regardless of inline styles */
+  @media (max-width: 767px) {
+    .task-panel {
+      top: 3.5rem !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      max-width: none !important;
+      height: calc(100% - 3.5rem) !important;
+      max-height: none !important;
+      transform: none !important;
+      border-radius: 1rem 1rem 0 0 !important;
+    }
+  }
+
   /* Scrollbar — subtle and minimal */
   ::-webkit-scrollbar {
     width: 4px;

@@ -98,6 +98,39 @@ const config: Config = {
           from: { transform: 'translateX(0)' },
           to: { transform: 'translateX(100%)' },
         },
+        // ── Task detail panel (mobile: slide-up, desktop: per-mode) ──────────
+        'task-drawer-up': {
+          from: { opacity: '0', transform: 'translateY(100%)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'task-drawer-down': {
+          from: { opacity: '1', transform: 'translateY(0)' },
+          to: { opacity: '0', transform: 'translateY(100%)' },
+        },
+        'task-modal-in': {
+          from: { opacity: '0', transform: 'translate(-50%, -50%) scale(0.96)' },
+          to: { opacity: '1', transform: 'translate(-50%, -50%) scale(1)' },
+        },
+        'task-modal-out': {
+          from: { opacity: '1', transform: 'translate(-50%, -50%) scale(1)' },
+          to: { opacity: '0', transform: 'translate(-50%, -50%) scale(0.97)' },
+        },
+        'task-fullscreen-in': {
+          from: { opacity: '0', transform: 'scale(0.98)' },
+          to: { opacity: '1', transform: 'scale(1)' },
+        },
+        'task-fullscreen-out': {
+          from: { opacity: '1', transform: 'scale(1)' },
+          to: { opacity: '0', transform: 'scale(0.98)' },
+        },
+        'task-sidebar-in': {
+          from: { transform: 'translateX(100%)' },
+          to: { transform: 'translateX(0)' },
+        },
+        'task-sidebar-out': {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(100%)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.4s ease-out forwards',
@@ -108,6 +141,14 @@ const config: Config = {
         'dialog-hide': 'dialog-hide 150ms ease forwards',
         'sheet-slide-in': 'sheet-slide-in 300ms cubic-bezier(0.22, 1, 0.36, 1)',
         'sheet-slide-out': 'sheet-slide-out 250ms ease-in forwards',
+        'task-drawer-up': 'task-drawer-up 320ms cubic-bezier(0.22, 1, 0.36, 1)',
+        'task-drawer-down': 'task-drawer-down 260ms ease-in forwards',
+        'task-modal-in': 'task-modal-in 260ms cubic-bezier(0.22, 1, 0.36, 1)',
+        'task-modal-out': 'task-modal-out 200ms ease forwards',
+        'task-fullscreen-in': 'task-fullscreen-in 260ms cubic-bezier(0.22, 1, 0.36, 1)',
+        'task-fullscreen-out': 'task-fullscreen-out 200ms ease forwards',
+        'task-sidebar-in': 'task-sidebar-in 300ms cubic-bezier(0.22, 1, 0.36, 1)',
+        'task-sidebar-out': 'task-sidebar-out 250ms ease-in forwards',
       },
     },
   },
