@@ -12,6 +12,7 @@ import {
 import {
   Select,
   SelectTrigger,
+  SelectValue,
   SelectContent,
   SelectItem,
 } from '@/components/ui/select'
@@ -43,14 +44,6 @@ function toIso(d: Date): string {
   return d.toISOString().slice(0, 10)
 }
 
-// ─── Native select style (underline variant matching Input underline) ──────────
-const selectClass =
-  'w-full bg-transparent text-sm text-foreground ' +
-  'h-10 px-0 border-0 border-b border-input rounded-none ' +
-  'focus-visible:outline-none focus-visible:border-foreground ' +
-  'transition-colors duration-150 cursor-pointer appearance-none ' +
-  'disabled:cursor-not-allowed disabled:opacity-50'
-
 interface CreateTaskDialogProps {
   workspaceId: string
   onTaskCreated: (task: Task) => void
@@ -69,7 +62,8 @@ export function CreateTaskDialog({
   const [isPending, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
 
-  // Controlled assignee (Radix Select is not a native form element)
+  // Controlled fields (Radix Select is not a native form element)
+  const [priority, setPriority] = useState('medium')
   const [assigneeId, setAssigneeId] = useState('__none__')
   const selectedMember = (members ?? []).find((m) => m.id === assigneeId)
 
@@ -84,6 +78,7 @@ export function CreateTaskDialog({
       setOpen(next)
       if (!next) {
         setError(null)
+        setPriority('medium')
         setAssigneeId('__none__')
         setStartDate(undefined)
         setDueDate(undefined)
@@ -96,6 +91,7 @@ export function CreateTaskDialog({
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     formData.set('workspace_id', workspaceId)
+    formData.set('priority', priority)
     formData.set('assignee_id', assigneeId === '__none__' ? '' : assigneeId)
     formData.set('start_date', startDate ? toIso(startDate) : '')
     formData.set('due_date', dueDate ? toIso(dueDate) : '')
@@ -150,7 +146,7 @@ export function CreateTaskDialog({
 
       {/* ── Dialog ──────────────────────────────────────────────────────── */}
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-xl rounded-2xl">
           <DialogHeader>
             <DialogTitle>Create new task</DialogTitle>
             <DialogDescription>
@@ -177,7 +173,6 @@ export function CreateTaskDialog({
                 Title <span className="text-red-400 normal-case tracking-normal">*</span>
               </label>
               <Input
-                underline
                 id="task-title"
                 name="title"
                 type="text"
@@ -196,7 +191,6 @@ export function CreateTaskDialog({
                 Description
               </label>
               <Textarea
-                underline
                 id="task-description"
                 name="description"
                 rows={3}
@@ -206,23 +200,20 @@ export function CreateTaskDialog({
 
             {/* Priority */}
             <div className="space-y-1.5">
-              <label
-                htmlFor="task-priority"
-                className="block text-[11px] font-medium text-zinc-600 uppercase tracking-widest"
-              >
+              <label className="block text-[11px] font-medium text-zinc-600 uppercase tracking-widest">
                 Priority
               </label>
-              <select
-                id="task-priority"
-                name="priority"
-                defaultValue="medium"
-                className={selectClass}
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger className="rounded-lg">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Start Date + Due Date — DatePicker row */}
@@ -238,9 +229,9 @@ export function CreateTaskDialog({
                       type="button"
                       className="
                         w-full flex items-center gap-2 h-9 px-3 text-sm
-                        rounded-md border border-zinc-200 bg-transparent
-                        hover:border-zinc-300 transition-colors
-                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2
+                        rounded-lg border border-zinc-200 bg-white
+                        hover:border-zinc-300 transition-colors duration-150
+                        focus-visible:outline-none focus-visible:border-zinc-300 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]
                       "
                     >
                       <CalendarIcon size={13} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
@@ -271,9 +262,9 @@ export function CreateTaskDialog({
                       type="button"
                       className="
                         w-full flex items-center gap-2 h-9 px-3 text-sm
-                        rounded-md border border-zinc-200 bg-transparent
-                        hover:border-zinc-300 transition-colors
-                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2
+                        rounded-lg border border-zinc-200 bg-white
+                        hover:border-zinc-300 transition-colors duration-150
+                        focus-visible:outline-none focus-visible:border-zinc-300 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]
                       "
                     >
                       <CalendarIcon size={13} strokeWidth={1.5} className="text-zinc-400 shrink-0" />

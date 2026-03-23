@@ -155,6 +155,77 @@ export async function updateTaskStatus({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// updateTaskPriority
+// ─────────────────────────────────────────────────────────────────────────────
+export async function updateTaskPriority({
+  taskId,
+  priority,
+}: {
+  taskId: string
+  priority: TaskPriority
+}): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorised.' }
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({ priority, updated_at: new Date().toISOString() })
+    .eq('id', taskId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// updateTaskDates
+// ─────────────────────────────────────────────────────────────────────────────
+export async function updateTaskDates({
+  taskId,
+  startDate,
+  dueDate,
+}: {
+  taskId: string
+  startDate: string | null
+  dueDate: string | null
+}): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorised.' }
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({ start_date: startDate, due_date: dueDate, updated_at: new Date().toISOString() })
+    .eq('id', taskId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// updateTaskAssignee
+// ─────────────────────────────────────────────────────────────────────────────
+export async function updateTaskAssignee({
+  taskId,
+  assigneeId,
+}: {
+  taskId: string
+  assigneeId: string | null
+}): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorised.' }
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({ assignee_id: assigneeId, updated_at: new Date().toISOString() })
+    .eq('id', taskId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // deleteTask  (admin-only — enforced by RLS)
 // ─────────────────────────────────────────────────────────────────────────────
 export async function deleteTask(taskId: string): Promise<{ error?: string }> {

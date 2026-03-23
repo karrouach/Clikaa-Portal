@@ -83,7 +83,7 @@ export default async function DashboardLayout({
       <Sidebar profile={profile} workspaces={workspaces} />
 
       {/* ── Main area ────────────────────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden pt-14 md:pt-0">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden pt-14 md:pt-0 transition-[width] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
         <Header profile={profile} workspaces={workspaces} />
 
         <main className="flex-1 overflow-y-auto">
