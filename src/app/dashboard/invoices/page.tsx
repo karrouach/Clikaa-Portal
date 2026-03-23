@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = { title: 'Invoices' }
@@ -70,7 +71,7 @@ export default function InvoicesPage() {
 
   return (
     <div className="animate-fade-in">
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-black tracking-tight">Invoices</h1>
           <p className="mt-1 text-sm text-zinc-500">
@@ -78,12 +79,23 @@ export default function InvoicesPage() {
           </p>
         </div>
 
-        {/* Summary pill */}
-        <div className="text-right">
-          <p className="text-xs text-zinc-400 uppercase tracking-widest">Outstanding</p>
-          <p className="text-2xl font-semibold text-black mt-0.5">
-            ${totalPending.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-          </p>
+        <div className="flex items-start gap-4 shrink-0">
+          {/* Outstanding summary */}
+          <div className="text-right hidden sm:block">
+            <p className="text-xs text-zinc-400 uppercase tracking-widest">Outstanding</p>
+            <p className="text-2xl font-semibold text-black mt-0.5">
+              ${totalPending.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+
+          {/* Create Invoice CTA */}
+          <button
+            className="flex items-center gap-1.5 h-9 px-4 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 active:bg-zinc-900 transition-colors duration-150"
+            aria-label="Create invoice"
+          >
+            <Plus size={14} strokeWidth={1.5} />
+            Create Invoice
+          </button>
         </div>
       </div>
 

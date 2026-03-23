@@ -33,14 +33,8 @@ export default async function WorkspaceLayout({ children, params }: Props) {
     <div className="-mx-4 -my-6 md:-mx-6 md:-my-8 flex flex-col h-[calc(100vh-7.5rem)] md:h-[calc(100vh-3.5rem)]">
 
       {/* ── Sub-navigation bar ──────────────────────────────────────────── */}
-      <div className="shrink-0 flex items-end justify-between px-6 bg-white border-b border-zinc-100">
-        {/* Workspace name */}
-        <div className="flex items-end gap-6 min-w-0">
-          <span className="pb-2.5 text-sm font-semibold text-black truncate">
-            {workspace.name}
-          </span>
-          <WorkspaceSubNav workspaceId={workspaceId} />
-        </div>
+      <div className="shrink-0 px-6 bg-white border-b border-zinc-100">
+        <WorkspaceSubNav workspaceId={workspaceId} />
       </div>
 
       {/* ── Page content ────────────────────────────────────────────────── */}
