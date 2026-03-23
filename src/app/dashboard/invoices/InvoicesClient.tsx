@@ -7,33 +7,42 @@ import { CreateInvoiceModal } from './CreateInvoiceModal'
 import { InvoiceViewPanel } from './InvoiceViewPanel'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-export type InvoiceStatus = 'paid' | 'pending' | 'overdue'
+export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'failed' | 'cancelled'
 
 export interface Invoice {
-  id: string
+  id: string          // display ID (INV-001 style) or uuid from DB
+  dbId?: string       // actual DB uuid (when from real data)
   client: string
   project: string
   amount: string
   issued: string
   due: string
   status: InvoiceStatus
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  rawData?: any       // original DB row for edit mode
 }
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 export const STATUS_STYLES: Record<InvoiceStatus, string> = {
-  paid:    'bg-emerald-50 text-emerald-700 border-emerald-100',
-  pending: 'bg-amber-50   text-amber-700   border-amber-100',
-  overdue: 'bg-red-50     text-red-700     border-red-100',
+  draft:     'bg-zinc-100    text-zinc-600     border-zinc-200',
+  paid:      'bg-emerald-50  text-emerald-700  border-emerald-100',
+  pending:   'bg-amber-50    text-amber-700    border-amber-100',
+  overdue:   'bg-red-50      text-red-700      border-red-100',
+  failed:    'bg-red-100     text-red-800      border-red-200',
+  cancelled: 'bg-zinc-100    text-zinc-500     border-zinc-200',
 }
 
 export const STATUS_LABELS: Record<InvoiceStatus, string> = {
-  paid:    'Paid',
-  pending: 'Pending',
-  overdue: 'Overdue',
+  draft:     'Draft',
+  paid:      'Paid',
+  pending:   'Pending',
+  overdue:   'Overdue',
+  failed:    'Failed',
+  cancelled: 'Cancelled',
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
-const INITIAL_INVOICES: Invoice[] = [
+// ─── Mock data (fallback when no DB data) ─────────────────────────────────────
+const MOCK_INVOICES: Invoice[] = [
   { id: 'INV-001', client: 'Acme Corporation',  project: 'Brand Identity Redesign',   amount: '$2,500.00', issued: 'Jan 15, 2026', due: 'Jan 30, 2026', status: 'paid'    },
   { id: 'INV-002', client: 'TechStart Inc.',    project: 'Website & UX Overhaul',      amount: '$4,000.00', issued: 'Feb 1, 2026',  due: 'Feb 15, 2026', status: 'pending' },
   { id: 'INV-003', client: 'Studio X',          project: 'Campaign Assets Q1',         amount: '$1,800.00', issued: 'Jan 28, 2026', due: 'Feb 11, 2026', status: 'paid'    },
@@ -41,19 +50,55 @@ const INITIAL_INVOICES: Invoice[] = [
   { id: 'INV-005', client: 'Bright Media',      project: 'Social Media Kit',           amount: '$1,000.00', issued: 'Feb 15, 2026', due: 'Mar 1, 2026',  status: 'pending' },
 ]
 
+// ─── Props ────────────────────────────────────────────────────────────────────
+interface InvoicesClientProps {
+  initialInvoices?: Invoice[]
+  workspaces?: { id: string; name: string }[]
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
-export function InvoicesClient() {
-  const [invoices, setInvoices]       = useState<Invoice[]>(INITIAL_INVOICES)
+export function InvoicesClient({ initialInvoices, workspaces = [] }: InvoicesClientProps) {
+  const [invoices, setInvoices]       = useState<Invoice[]>(initialInvoices?.length ? initialInvoices : MOCK_INVOICES)
   const [createOpen, setCreateOpen]   = useState(false)
+  const [editInvoice, setEditInvoice] = useState<Invoice | null>(null)
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null)
 
   const totalPending = invoices
-    .filter(i => i.status !== 'paid')
+    .filter(i => i.status === 'pending' || i.status === 'overdue')
     .reduce((sum, i) => sum + parseFloat(i.amount.replace(/[$,]/g, '')), 0)
 
   function handleMarkPaid(id: string) {
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: 'paid' } : i))
     setViewInvoice(prev => prev?.id === id ? { ...prev, status: 'paid' } : prev)
+  }
+
+  function handleStatusChange(id: string, status: InvoiceStatus) {
+    setInvoices(prev => prev.map(i => i.id === id ? { ...i, status } : i))
+    setViewInvoice(prev => prev?.id === id ? { ...prev, status } : prev)
+  }
+
+  function handleDelete(id: string) {
+    setInvoices(prev => prev.filter(i => i.id !== id))
+    setViewInvoice(null)
+  }
+
+  function handleInvoiceCreated(invoice: Invoice) {
+    if (editInvoice) {
+      setInvoices(prev => prev.map(i => i.id === editInvoice.id ? invoice : i))
+    } else {
+      setInvoices(prev => [invoice, ...prev])
+    }
+  }
+
+  function handleEdit(invoice: Invoice) {
+    setViewInvoice(null)
+    setEditInvoice(invoice)
+    setCreateOpen(true)
+  }
+
+  function handleCreateClose(open: boolean) {
+    setCreateOpen(open)
+    if (!open) setEditInvoice(null)
   }
 
   return (
@@ -96,7 +141,7 @@ export function InvoicesClient() {
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-black truncate">{inv.client}</p>
-                <p className="text-xs text-zinc-500 mt-0.5 truncate">{inv.project}</p>
+                <p className="text-xs text-zinc-500 mt-0.5 truncate">{inv.project || inv.id}</p>
               </div>
               <span className={cn('shrink-0 inline-flex items-center px-2 py-0.5 text-xs font-medium border rounded-full', STATUS_STYLES[inv.status])}>
                 {STATUS_LABELS[inv.status]}
@@ -156,11 +201,20 @@ export function InvoicesClient() {
       </div>
 
       {/* ── Modals ────────────────────────────────────────────────────────── */}
-      <CreateInvoiceModal open={createOpen} onOpenChange={setCreateOpen} />
+      <CreateInvoiceModal
+        open={createOpen}
+        onOpenChange={handleCreateClose}
+        workspaces={workspaces}
+        editInvoice={editInvoice}
+        onCreated={handleInvoiceCreated}
+      />
       <InvoiceViewPanel
         invoice={viewInvoice}
         onClose={() => setViewInvoice(null)}
         onMarkPaid={handleMarkPaid}
+        onStatusChange={handleStatusChange}
+        onDelete={handleDelete}
+        onEdit={handleEdit}
       />
     </div>
   )

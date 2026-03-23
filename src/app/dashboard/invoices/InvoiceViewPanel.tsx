@@ -1,10 +1,23 @@
 'use client'
 
+import { useState } from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { X, Download, Send, CheckCircle2, MoreHorizontal } from 'lucide-react'
+import { X, Download, Send, CheckCircle2, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Invoice } from './InvoicesClient'
+import { toast } from 'sonner'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
+import type { Invoice, InvoiceStatus } from './InvoicesClient'
 import { STATUS_STYLES, STATUS_LABELS } from './InvoicesClient'
+import { updateInvoiceStatus, deleteInvoice as deleteInvoiceAction } from './invoice-actions'
+
+// ─── All statuses available to set ────────────────────────────────────────────
+const ALL_STATUSES: InvoiceStatus[] = ['draft', 'pending', 'paid', 'overdue', 'failed', 'cancelled']
 
 // ─── Mock detail data ─────────────────────────────────────────────────────────
 interface LineItem { description: string; qty: number; rate: number }
@@ -49,22 +62,85 @@ const MOCK_ACTIVITY: Record<string, ActivityItem[]> = {
 const fmt = (n: number) =>
   '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+function formatNow() {
+  return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 // ─── InvoiceViewPanel ─────────────────────────────────────────────────────────
 interface InvoiceViewPanelProps {
   invoice: Invoice | null
   onClose: () => void
   onMarkPaid: (id: string) => void
+  onStatusChange: (id: string, status: InvoiceStatus) => void
+  onDelete: (id: string) => void
+  onEdit: (invoice: Invoice) => void
 }
 
-export function InvoiceViewPanel({ invoice, onClose, onMarkPaid }: InvoiceViewPanelProps) {
-  const lines    = invoice ? (MOCK_LINES[invoice.id]    ?? []) : []
-  const activity = invoice ? (MOCK_ACTIVITY[invoice.id] ?? []) : []
+export function InvoiceViewPanel({
+  invoice,
+  onClose,
+  onMarkPaid,
+  onStatusChange,
+  onDelete,
+  onEdit,
+}: InvoiceViewPanelProps) {
+  const [activity, setActivity] = useState<ActivityItem[]>([])
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false)
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
+
+  // Sync activity when invoice changes
+  const rawActivity = invoice ? (MOCK_ACTIVITY[invoice.id] ?? [
+    { event: 'Invoice created', date: formatNow() },
+  ]) : []
+
+  // Merge local additions into base activity
+  const mergedActivity = invoice
+    ? [...rawActivity, ...activity.filter(a => !rawActivity.some(r => r.event === a.event && r.date === a.date))]
+    : []
+
+  // Use rawData line items if available, else mock
+  const lines: LineItem[] = (() => {
+    if (!invoice) return []
+    if (invoice.rawData?.line_items && Array.isArray(invoice.rawData.line_items)) {
+      return invoice.rawData.line_items as LineItem[]
+    }
+    return MOCK_LINES[invoice.id] ?? []
+  })()
+
   const subtotal = lines.reduce((s, l) => s + l.qty * l.rate, 0)
+
+  async function handleStatusChange(id: string, status: InvoiceStatus) {
+    onStatusChange(id, status)
+    setStatusMenuOpen(false)
+    if (invoice?.dbId) {
+      const result = await updateInvoiceStatus(invoice.dbId, status)
+      if (result.error) toast.error(result.error)
+    }
+  }
+
+  async function handleSendReminder() {
+    toast.success('Reminder sent', {
+      description: `Payment reminder sent for ${invoice?.id}`,
+    })
+    const newEvent: ActivityItem = { event: 'Payment reminder sent', date: formatNow() }
+    setActivity(prev => [...prev, newEvent])
+  }
+
+  async function handleDelete() {
+    if (!invoice) return
+    setMoreMenuOpen(false)
+    if (invoice.dbId) {
+      const result = await deleteInvoiceAction(invoice.dbId)
+      if (result.error) { toast.error(result.error); return }
+    }
+    toast.success('Invoice deleted')
+    onDelete(invoice.id)
+  }
 
   return (
     <DialogPrimitive.Root
       open={invoice !== null}
-      onOpenChange={v => { if (!v) onClose() }}
+      onOpenChange={v => { if (!v) { onClose(); setActivity([]) } }}
     >
       <DialogPrimitive.Portal>
         {/* Backdrop */}
@@ -90,15 +166,45 @@ export function InvoiceViewPanel({ invoice, onClose, onMarkPaid }: InvoiceViewPa
                       <span className="font-mono text-sm font-semibold text-black tracking-wide">
                         {invoice.id}
                       </span>
-                      <span className={cn(
-                        'inline-flex items-center px-2 py-0.5 text-xs font-medium border rounded-full',
-                        STATUS_STYLES[invoice.status]
-                      )}>
-                        {STATUS_LABELS[invoice.status]}
-                      </span>
+
+                      {/* Interactive status badge */}
+                      <DropdownMenu open={statusMenuOpen} onOpenChange={setStatusMenuOpen}>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className={cn(
+                              'inline-flex items-center px-2 py-0.5 text-xs font-medium border rounded-full',
+                              'hover:opacity-80 transition-opacity cursor-pointer',
+                              STATUS_STYLES[invoice.status],
+                            )}
+                          >
+                            {STATUS_LABELS[invoice.status]}
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="min-w-[140px]">
+                          {ALL_STATUSES.map(s => (
+                            <DropdownMenuItem
+                              key={s}
+                              onClick={() => handleStatusChange(invoice.id, s)}
+                              className={cn(
+                                'gap-2',
+                                invoice.status === s && 'font-medium',
+                              )}
+                            >
+                              <span className={cn(
+                                'inline-flex items-center px-2 py-0.5 text-xs font-medium border rounded-full',
+                                STATUS_STYLES[s],
+                              )}>
+                                {STATUS_LABELS[s]}
+                              </span>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                     <p className="text-base font-semibold text-black truncate">{invoice.client}</p>
-                    <p className="text-xs text-zinc-400 mt-0.5 truncate">{invoice.project}</p>
+                    {invoice.project && (
+                      <p className="text-xs text-zinc-400 mt-0.5 truncate">{invoice.project}</p>
+                    )}
                   </div>
                   <DialogPrimitive.Close className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 transition-all duration-150">
                     <X size={15} strokeWidth={1.5} />
@@ -121,7 +227,10 @@ export function InvoiceViewPanel({ invoice, onClose, onMarkPaid }: InvoiceViewPa
                   <Download size={13} strokeWidth={1.5} />
                   <span>Download PDF</span>
                 </button>
-                <button className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors duration-150">
+                <button
+                  onClick={handleSendReminder}
+                  className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors duration-150"
+                >
                   <Send size={13} strokeWidth={1.5} />
                   <span>Send Reminder</span>
                 </button>
@@ -134,9 +243,36 @@ export function InvoiceViewPanel({ invoice, onClose, onMarkPaid }: InvoiceViewPa
                     <span>Mark Paid</span>
                   </button>
                 )}
-                <button className="ml-auto flex items-center justify-center w-8 h-8 rounded-lg text-zinc-400 hover:bg-zinc-100 transition-colors duration-150">
-                  <MoreHorizontal size={15} strokeWidth={1.5} />
-                </button>
+
+                {/* ⋯ More menu */}
+                <DropdownMenu open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <button className="ml-auto flex items-center justify-center w-8 h-8 rounded-lg text-zinc-400 hover:bg-zinc-100 transition-colors duration-150">
+                      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="3" cy="7.5" r="1.25" fill="currentColor" />
+                        <circle cx="7.5" cy="7.5" r="1.25" fill="currentColor" />
+                        <circle cx="12" cy="7.5" r="1.25" fill="currentColor" />
+                      </svg>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => { setMoreMenuOpen(false); onEdit(invoice) }}
+                      className="gap-2"
+                    >
+                      <Pencil size={13} strokeWidth={1.5} className="text-zinc-400" />
+                      Edit Invoice
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleDelete}
+                      className="gap-2 text-red-600 focus:text-red-700 focus:bg-red-50"
+                    >
+                      <Trash2 size={13} strokeWidth={1.5} />
+                      Delete Invoice
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               {/* ── Scrollable body ──────────────────────────────────────── */}
@@ -214,17 +350,17 @@ export function InvoiceViewPanel({ invoice, onClose, onMarkPaid }: InvoiceViewPa
 
                   <div className="relative pl-4">
                     {/* Vertical line */}
-                    {activity.length > 1 && (
+                    {mergedActivity.length > 1 && (
                       <div className="absolute left-[5px] top-2 bottom-6 w-px bg-zinc-100" />
                     )}
 
                     <div className="space-y-5">
-                      {activity.map((item, i) => (
+                      {mergedActivity.map((item, i) => (
                         <div key={i} className="relative">
                           {/* Timeline dot */}
                           <div className={cn(
                             'absolute -left-[11px] top-[5px] w-2.5 h-2.5 rounded-full ring-2 ring-white',
-                            i === activity.length - 1 ? 'bg-black' : 'bg-zinc-300',
+                            i === mergedActivity.length - 1 ? 'bg-black' : 'bg-zinc-300',
                           )} />
                           <p className="text-sm text-black leading-snug">{item.event}</p>
                           <p className="text-xs text-zinc-400 mt-0.5">{item.date}</p>

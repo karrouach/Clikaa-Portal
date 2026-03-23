@@ -8,6 +8,12 @@
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
+export interface LineItem {
+  description: string
+  qty: number
+  rate: number
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -350,6 +356,78 @@ export type Database = {
           {
             foreignKeyName: 'workspace_assets_uploaded_by_fkey'
             columns: ['uploaded_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          id: string
+          workspace_id: string | null
+          invoice_number: string
+          status: 'draft' | 'pending' | 'paid' | 'overdue' | 'failed' | 'cancelled'
+          client_name: string | null
+          issue_date: string | null
+          due_date: string | null
+          line_items: LineItem[]
+          notes: string | null
+          tax_pct: number
+          subtotal: number
+          total: number
+          sent_at: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id?: string | null
+          invoice_number: string
+          status?: 'draft' | 'pending' | 'paid' | 'overdue' | 'failed' | 'cancelled'
+          client_name?: string | null
+          issue_date?: string | null
+          due_date?: string | null
+          line_items?: LineItem[]
+          notes?: string | null
+          tax_pct?: number
+          subtotal?: number
+          total?: number
+          sent_at?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string | null
+          invoice_number?: string
+          status?: 'draft' | 'pending' | 'paid' | 'overdue' | 'failed' | 'cancelled'
+          client_name?: string | null
+          issue_date?: string | null
+          due_date?: string | null
+          line_items?: LineItem[]
+          notes?: string | null
+          tax_pct?: number
+          subtotal?: number
+          total?: number
+          sent_at?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'invoices_workspace_id_fkey'
+            columns: ['workspace_id']
+            isOneToOne: false
+            referencedRelation: 'workspaces'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'invoices_created_by_fkey'
+            columns: ['created_by']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']

@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { Header } from '@/components/layout/Header'
 import { MobileNav } from '@/components/layout/MobileNav'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { Toaster } from '@/components/ui/sonner'
 
 /**
  * Dashboard shell layout — server component.
@@ -72,6 +73,7 @@ export default async function DashboardLayout({
     }))
 
   return (
+    <>
     <div className="flex h-screen overflow-hidden bg-zinc-50">
       {/* ── Mobile top nav — md:hidden ────────────────────────────────────── */}
       <MobileNav />
@@ -93,5 +95,7 @@ export default async function DashboardLayout({
         </main>
       </div>
     </div>
+    <Toaster />
+    </>
   )
 }
