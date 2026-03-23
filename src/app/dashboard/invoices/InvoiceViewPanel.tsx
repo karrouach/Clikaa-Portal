@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X, Download, Send, CheckCircle2, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -15,6 +15,7 @@ import {
 import type { Invoice, InvoiceStatus } from './InvoicesClient'
 import { STATUS_STYLES, STATUS_LABELS } from './InvoicesClient'
 import { updateInvoiceStatus, deleteInvoice as deleteInvoiceAction } from './invoice-actions'
+import { InvoicePrintView } from './InvoicePrintView'
 
 // ─── All statuses available to set ────────────────────────────────────────────
 const ALL_STATUSES: InvoiceStatus[] = ['draft', 'pending', 'paid', 'overdue', 'failed', 'cancelled']
@@ -87,6 +88,8 @@ export function InvoiceViewPanel({
   const [activity, setActivity] = useState<ActivityItem[]>([])
   const [statusMenuOpen, setStatusMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const printRef = useRef<HTMLDivElement>(null)
 
   // Sync activity when invoice changes
   const rawActivity = invoice ? (MOCK_ACTIVITY[invoice.id] ?? [
@@ -108,6 +111,36 @@ export function InvoiceViewPanel({
   })()
 
   const subtotal = lines.reduce((s, l) => s + l.qty * l.rate, 0)
+  const taxPct = invoice?.rawData?.tax_pct ? Number(invoice.rawData.tax_pct) : 0
+  const notes = invoice?.rawData?.notes ?? undefined
+
+  async function handleDownloadPdf() {
+    if (!printRef.current || !invoice) return
+    setPdfLoading(true)
+    try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ])
+      const canvas = await html2canvas(printRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      })
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      pdf.save(`${invoice.id}.pdf`)
+      toast.success('PDF downloaded', { description: invoice.id })
+    } catch {
+      toast.error('Failed to generate PDF')
+    } finally {
+      setPdfLoading(false)
+    }
+  }
 
   async function handleStatusChange(id: string, status: InvoiceStatus) {
     onStatusChange(id, status)
@@ -223,9 +256,13 @@ export function InvoiceViewPanel({
 
               {/* ── Quick actions ────────────────────────────────────────── */}
               <div className="px-4 py-2.5 border-b border-zinc-100 flex items-center gap-1 shrink-0 flex-wrap">
-                <button className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors duration-150">
+                <button
+                  onClick={handleDownloadPdf}
+                  disabled={pdfLoading}
+                  className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors duration-150 disabled:opacity-50"
+                >
                   <Download size={13} strokeWidth={1.5} />
-                  <span>Download PDF</span>
+                  <span>{pdfLoading ? 'Generating…' : 'Download PDF'}</span>
                 </button>
                 <button
                   onClick={handleSendReminder}
@@ -375,6 +412,18 @@ export function InvoiceViewPanel({
           )}
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
+
+      {/* Hidden A4 print view — captured by html2canvas for PDF export */}
+      {invoice && (
+        <InvoicePrintView
+          ref={printRef}
+          invoice={invoice}
+          lines={lines}
+          subtotal={subtotal}
+          taxPct={taxPct}
+          notes={notes}
+        />
+      )}
     </DialogPrimitive.Root>
   )
 }
