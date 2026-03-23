@@ -15,12 +15,11 @@ function formatDate(iso: string) {
 }
 
 /**
- * /dashboard — workspace overview.
+ * /dashboard — global overview page.
  *
- * - Single workspace → redirect directly (clients only).
- * - Zero or multiple workspaces → show overview.
+ * Always shows the overview regardless of workspace count.
  * - Admins see stat cards + workspace manager.
- * - Clients see Project Health widget + workspace list.
+ * - Clients see Project Health widget + their workspace list.
  */
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -48,11 +47,6 @@ export default async function DashboardPage() {
   const workspaces = (memberships ?? [])
     .map((m) => m.workspaces)
     .filter(Boolean) as { id: string; name: string; slug: string; description: string | null }[]
-
-  // Auto-redirect clients with exactly one workspace
-  if (!isAdmin && workspaces.length === 1) {
-    redirect(`/dashboard/${workspaces[0].id}`)
-  }
 
   // ── Project Health data (clients only) ──────────────────────────────────
   let reviewCount   = 0

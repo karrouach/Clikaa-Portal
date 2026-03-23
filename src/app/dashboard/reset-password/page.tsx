@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Button } from '@/components/ui/button'
 
 // ─── Inner component (needs useSearchParams → must be inside Suspense) ────────
@@ -100,9 +101,8 @@ function ResetPasswordContent() {
           >
             New password
           </label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             required
             autoFocus
             autoComplete="new-password"
@@ -121,9 +121,8 @@ function ResetPasswordContent() {
           >
             Confirm password
           </label>
-          <Input
+          <PasswordInput
             id="confirm"
-            type="password"
             required
             autoComplete="new-password"
             placeholder="Repeat your password"

@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { AlertCircle, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react'
 import { setPassword, type AcceptInviteState } from './actions'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Button } from '@/components/ui/button'
 
 function SubmitButton() {
@@ -92,10 +93,9 @@ export default function AcceptInviteForm({ initialFullName, email }: Props) {
           <label htmlFor="password" className="block text-xs font-medium text-zinc-700 tracking-wide uppercase">
             Password
           </label>
-          <Input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="new-password"
             required
             minLength={8}
@@ -109,10 +109,9 @@ export default function AcceptInviteForm({ initialFullName, email }: Props) {
           <label htmlFor="confirm_password" className="block text-xs font-medium text-zinc-700 tracking-wide uppercase">
             Confirm password
           </label>
-          <Input
+          <PasswordInput
             id="confirm_password"
             name="confirm_password"
-            type="password"
             autoComplete="new-password"
             required
             placeholder="••••••••"

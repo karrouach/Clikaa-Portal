@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react'
 import { signIn, type LoginState } from './actions'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Button } from '@/components/ui/button'
 
 // ─── Submit button with pending state via useFormStatus ──────────────────────
@@ -89,10 +90,9 @@ export function LoginForm() {
           <label htmlFor="password" className="block text-xs font-medium text-zinc-700 tracking-wide uppercase">
             Password
           </label>
-          <Input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="current-password"
             required
             placeholder="••••••••"
