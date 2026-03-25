@@ -123,10 +123,19 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [comments.length])
 
+  // ── Auto-resize textarea ──────────────────────────────────────────────────
+  function autoResize() {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }
+
   // ── @mention detection ────────────────────────────────────────────────────
   function handleBodyChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const val = e.target.value
     setBody(val)
+    autoResize()
 
     const cursor = e.target.selectionStart ?? val.length
     const before = val.slice(0, cursor)
@@ -177,6 +186,7 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
     setComments((prev) => [...prev, optimistic])
     setBody('')
     setMentionQuery(null)
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
 
     startTransition(async () => {
       const result = await addComment({ taskId, body: trimmed })
@@ -334,7 +344,7 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
               disabled={isPending}
               underline
               className="py-1"
-              style={{ minHeight: '32px', maxHeight: '120px' }}
+              style={{ minHeight: '32px' }}
             />
           </div>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CheckCircle2, Circle, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
@@ -16,6 +16,7 @@ interface ChecklistItem {
 interface OnboardingChecklistProps {
   hasFullName: boolean
   firstWorkspaceId: string | null
+  userId: string
 }
 
 /**
@@ -26,11 +27,30 @@ interface OnboardingChecklistProps {
 export function OnboardingChecklist({
   hasFullName,
   firstWorkspaceId,
+  userId,
 }: OnboardingChecklistProps) {
   const [checked, setChecked] = useState<Record<string, boolean>>({
     strategy: false,
     assets:   false,
   })
+
+  // Load persisted state from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`clikaa_onboarding_${userId}`)
+      if (stored) setChecked(JSON.parse(stored))
+    } catch {}
+  }, [userId])
+
+  function markChecked(id: string) {
+    setChecked((prev) => {
+      const next = { ...prev, [id]: true }
+      try {
+        localStorage.setItem(`clikaa_onboarding_${userId}`, JSON.stringify(next))
+      } catch {}
+      return next
+    })
+  }
 
   const items: ChecklistItem[] = [
     {
@@ -97,7 +117,7 @@ export function OnboardingChecklist({
                   : 'hover:bg-zinc-50 cursor-pointer'
               )}
               onClick={() => {
-                if (canToggle) setChecked((prev) => ({ ...prev, [item.id]: true }))
+                if (canToggle) markChecked(item.id)
               }}
             >
               {/* Icon */}

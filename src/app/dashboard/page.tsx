@@ -121,6 +121,7 @@ export default async function DashboardPage() {
         <OnboardingChecklist
           hasFullName={!!(profile?.full_name?.trim())}
           firstWorkspaceId={workspaces[0]?.id ?? null}
+          userId={user.id}
         />
       )}
 

@@ -86,6 +86,7 @@ export default async function WorkspaceFilesPage({ params }: Props) {
           workspaceId={workspaceId}
           initialAssets={initialAssets}
           isAdmin={isAdmin}
+          userId={user.id}
         />
 
       </div>

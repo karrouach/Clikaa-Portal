@@ -36,6 +36,7 @@ interface Props {
   workspaceId: string
   initialAssets: AssetItem[]
   isAdmin: boolean
+  userId: string
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -333,7 +334,7 @@ function UploadModal({
 
 // ─── AssetVaultClient ─────────────────────────────────────────────────────────
 
-export function AssetVaultClient({ workspaceId, initialAssets, isAdmin }: Props) {
+export function AssetVaultClient({ workspaceId, initialAssets, isAdmin, userId }: Props) {
   const [assets,       setAssets]       = useState<AssetItem[]>(initialAssets)
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [uploadOpen,   setUploadOpen]   = useState(false)
@@ -344,6 +345,13 @@ export function AssetVaultClient({ workspaceId, initialAssets, isAdmin }: Props)
 
   function handleUploaded(asset: AssetItem) {
     setAssets((prev) => [asset, ...prev])
+    // Mark the "Upload brand assets" onboarding step as complete
+    try {
+      const key = `clikaa_onboarding_${userId}`
+      const stored = localStorage.getItem(key)
+      const current = stored ? JSON.parse(stored) : {}
+      localStorage.setItem(key, JSON.stringify({ ...current, assets: true }))
+    } catch {}
   }
 
   function handleDeleted(id: string) {
@@ -372,16 +380,14 @@ export function AssetVaultClient({ workspaceId, initialAssets, isAdmin }: Props)
           ))}
         </div>
 
-        {/* Admin: upload button */}
-        {isAdmin && (
-          <button
-            onClick={() => setUploadOpen(true)}
-            className="shrink-0 flex items-center gap-1.5 h-8 px-4 bg-black text-white text-xs font-medium rounded-lg hover:bg-zinc-800 transition-colors"
-          >
-            <Plus size={13} strokeWidth={1.5} />
-            Upload Asset
-          </button>
-        )}
+        {/* Upload button — available to all workspace members */}
+        <button
+          onClick={() => setUploadOpen(true)}
+          className="shrink-0 flex items-center gap-1.5 h-8 px-4 bg-black text-white text-xs font-medium rounded-lg hover:bg-zinc-800 transition-colors"
+        >
+          <Plus size={13} strokeWidth={1.5} />
+          Upload Asset
+        </button>
       </div>
 
       {/* ── Grid ─────────────────────────────────────────────────────────── */}
@@ -393,9 +399,9 @@ export function AssetVaultClient({ workspaceId, initialAssets, isAdmin }: Props)
           <p className="text-sm font-medium text-black">
             {activeFilter === 'all' ? 'No assets yet' : `No ${activeFilter.replace('_', ' ')} yet`}
           </p>
-          {isAdmin && activeFilter === 'all' && (
+          {activeFilter === 'all' && (
             <p className="mt-1 text-sm text-zinc-500 max-w-xs">
-              Upload brand files for your client — logos, guidelines, source files.
+              Upload brand files — logos, guidelines, source files.
             </p>
           )}
         </div>
@@ -413,14 +419,12 @@ export function AssetVaultClient({ workspaceId, initialAssets, isAdmin }: Props)
       )}
 
       {/* ── Upload modal ─────────────────────────────────────────────────── */}
-      {isAdmin && (
-        <UploadModal
-          open={uploadOpen}
-          onClose={() => setUploadOpen(false)}
-          workspaceId={workspaceId}
-          onUploaded={handleUploaded}
-        />
-      )}
+      <UploadModal
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        workspaceId={workspaceId}
+        onUploaded={handleUploaded}
+      />
     </>
   )
 }
