@@ -727,7 +727,11 @@ export function TaskDetailSheet({
                       Activity
                     </p>
                   </div>
-                  <CommentFeed taskId={task.id} currentUserProfile={currentUserProfile} />
+                  <CommentFeed
+                    taskId={task.id}
+                    currentUserProfile={currentUserProfile}
+                    members={workspaceMembers}
+                  />
                 </div>
 
               </div>

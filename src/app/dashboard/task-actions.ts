@@ -61,6 +61,23 @@ export async function createTask(formData: FormData): Promise<CreateTaskResult> 
     .single()
 
   if (error) return { error: error.message }
+
+  // ── Notify the assignee (if different from creator) ────────────────────────
+  if (task && assigneeId && assigneeId !== user.id) {
+    const admin = createAdminClient()
+    const { data: creator } = await admin
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', user.id)
+      .single()
+    const creatorName = creator?.full_name || creator?.email || 'Someone'
+    await admin.from('notifications').insert({
+      user_id: assigneeId,
+      message: `${creatorName} assigned you a new task: "${title}"`,
+      link: `/dashboard/${workspaceId}`,
+    })
+  }
+
   return { task }
 }
 

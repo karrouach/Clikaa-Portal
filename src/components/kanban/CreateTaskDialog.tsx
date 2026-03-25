@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { createTask } from '@/app/dashboard/task-actions'
 import { getInitials } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import type { Task } from '@/types/database'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -44,6 +45,12 @@ function toIso(d: Date): string {
   return d.toISOString().slice(0, 10)
 }
 
+type FieldErrors = {
+  title?: string
+  assigneeId?: string
+  dueDate?: string
+}
+
 interface CreateTaskDialogProps {
   workspaceId: string
   onTaskCreated: (task: Task) => void
@@ -58,29 +65,33 @@ export function CreateTaskDialog({
   members,
 }: CreateTaskDialogProps) {
   const [open, setOpen] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [serverError, setServerError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [isPending, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
 
-  // Controlled fields (Radix Select is not a native form element)
+  // Controlled fields
   const [priority, setPriority] = useState('medium')
   const [assigneeId, setAssigneeId] = useState('__none__')
   const selectedMember = (members ?? []).find((m) => m.id === assigneeId)
 
-  // Controlled date pickers
-  const [startDate, setStartDate] = useState<Date | undefined>()
+  // Date pickers — start date defaults to today
+  const [startDate, setStartDate] = useState<Date | undefined>(() => new Date())
   const [dueDate, setDueDate] = useState<Date | undefined>()
   const [startOpen, setStartOpen] = useState(false)
   const [dueOpen, setDueOpen] = useState(false)
+
+  const hasMembers = !!(members && members.length > 0)
 
   function handleOpenChange(next: boolean) {
     if (!isPending) {
       setOpen(next)
       if (!next) {
-        setError(null)
+        setServerError(null)
+        setFieldErrors({})
         setPriority('medium')
         setAssigneeId('__none__')
-        setStartDate(undefined)
+        setStartDate(new Date())
         setDueDate(undefined)
         formRef.current?.reset()
       }
@@ -90,17 +101,32 @@ export function CreateTaskDialog({
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
+
+    // ── Client-side validation ────────────────────────────────────────────────
+    const titleVal = (formData.get('title') as string ?? '').trim()
+    const newErrors: FieldErrors = {}
+    if (!titleVal)                              newErrors.title      = 'Title is required.'
+    if (!dueDate)                               newErrors.dueDate    = 'Due date is required.'
+    if (hasMembers && assigneeId === '__none__') newErrors.assigneeId = 'Please assign this task.'
+
+    if (Object.keys(newErrors).length > 0) {
+      setFieldErrors(newErrors)
+      return
+    }
+    setFieldErrors({})
+    setServerError(null)
+
+    // ── Build FormData ────────────────────────────────────────────────────────
     formData.set('workspace_id', workspaceId)
     formData.set('priority', priority)
     formData.set('assignee_id', assigneeId === '__none__' ? '' : assigneeId)
     formData.set('start_date', startDate ? toIso(startDate) : '')
     formData.set('due_date', dueDate ? toIso(dueDate) : '')
-    setError(null)
 
     startTransition(async () => {
       const result = await createTask(formData)
       if (result.error) {
-        setError(result.error)
+        setServerError(result.error)
         return
       }
       if (result.task) {
@@ -109,8 +135,6 @@ export function CreateTaskDialog({
       }
     })
   }
-
-  const hasMembers = members && members.length > 0
 
   return (
     <>
@@ -155,16 +179,16 @@ export function CreateTaskDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <form ref={formRef} onSubmit={handleSubmit} className="mt-6 space-y-6">
-            {/* Error banner */}
-            {error && (
+          <form ref={formRef} onSubmit={handleSubmit} className="mt-6 space-y-5">
+            {/* Server error banner */}
+            {serverError && (
               <div className="flex items-start gap-2.5 p-3 bg-red-50 border border-red-100 rounded-lg text-red-700 text-sm">
                 <AlertCircle size={14} strokeWidth={1.5} className="mt-0.5 shrink-0" />
-                {error}
+                {serverError}
               </div>
             )}
 
-            {/* Title */}
+            {/* ── Title ─────────────────────────────────────────────────── */}
             <div className="space-y-1.5">
               <label
                 htmlFor="task-title"
@@ -176,13 +200,17 @@ export function CreateTaskDialog({
                 id="task-title"
                 name="title"
                 type="text"
-                required
                 autoFocus
                 placeholder="What needs to be done?"
+                onChange={() => setFieldErrors(p => ({ ...p, title: undefined }))}
+                className={cn(fieldErrors.title && 'border-red-300 focus-visible:border-red-400 focus-visible:shadow-[0_0_0_3px_rgba(239,68,68,0.08)]')}
               />
+              {fieldErrors.title && (
+                <p className="text-xs text-red-500">{fieldErrors.title}</p>
+              )}
             </div>
 
-            {/* Description */}
+            {/* ── Description ───────────────────────────────────────────── */}
             <div className="space-y-1.5">
               <label
                 htmlFor="task-description"
@@ -198,7 +226,7 @@ export function CreateTaskDialog({
               />
             </div>
 
-            {/* Priority */}
+            {/* ── Priority ──────────────────────────────────────────────── */}
             <div className="space-y-1.5">
               <label className="block text-[11px] font-medium text-zinc-600 uppercase tracking-widest">
                 Priority
@@ -216,7 +244,7 @@ export function CreateTaskDialog({
               </Select>
             </div>
 
-            {/* Start Date + Due Date — DatePicker row */}
+            {/* ── Start Date + Due Date ──────────────────────────────────── */}
             <div className="grid grid-cols-2 gap-4">
               {/* Start Date */}
               <div className="space-y-1.5">
@@ -254,18 +282,21 @@ export function CreateTaskDialog({
               {/* Due Date */}
               <div className="space-y-1.5">
                 <p className="text-[11px] font-medium text-zinc-600 uppercase tracking-widest">
-                  Due Date
+                  Due Date <span className="text-red-400">*</span>
                 </p>
                 <Popover open={dueOpen} onOpenChange={setDueOpen}>
                   <PopoverTrigger asChild>
                     <button
                       type="button"
-                      className="
-                        w-full flex items-center gap-2 h-9 px-3 text-sm
-                        rounded-lg border border-zinc-200 bg-white
-                        hover:border-zinc-300 transition-colors duration-150
-                        focus-visible:outline-none focus-visible:border-zinc-300 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]
-                      "
+                      className={cn(
+                        'w-full flex items-center gap-2 h-9 px-3 text-sm',
+                        'rounded-lg border bg-white',
+                        'hover:border-zinc-300 transition-colors duration-150',
+                        'focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]',
+                        fieldErrors.dueDate
+                          ? 'border-red-300 focus-visible:border-red-400'
+                          : 'border-zinc-200 focus-visible:border-zinc-300',
+                      )}
                     >
                       <CalendarIcon size={13} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
                       <span className={dueDate ? 'text-black' : 'text-zinc-400'}>
@@ -277,23 +308,41 @@ export function CreateTaskDialog({
                     <Calendar
                       mode="single"
                       selected={dueDate}
-                      onSelect={(d) => { setDueDate(d); setDueOpen(false) }}
+                      onSelect={(d) => {
+                        setDueDate(d)
+                        setDueOpen(false)
+                        setFieldErrors(p => ({ ...p, dueDate: undefined }))
+                      }}
                       disabled={startDate ? { before: startDate } : undefined}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
+                {fieldErrors.dueDate && (
+                  <p className="text-xs text-red-500">{fieldErrors.dueDate}</p>
+                )}
               </div>
             </div>
 
-            {/* Assignee — Avatar-enhanced Select */}
+            {/* ── Assignee ──────────────────────────────────────────────── */}
             {hasMembers && (
               <div className="space-y-1.5">
                 <label className="block text-[11px] font-medium text-zinc-600 uppercase tracking-widest">
-                  Assignee
+                  Assignee <span className="text-red-400">*</span>
                 </label>
-                <Select value={assigneeId} onValueChange={setAssigneeId}>
-                  <SelectTrigger className="h-9">
+                <Select
+                  value={assigneeId}
+                  onValueChange={(v) => {
+                    setAssigneeId(v)
+                    setFieldErrors(p => ({ ...p, assigneeId: undefined }))
+                  }}
+                >
+                  <SelectTrigger
+                    className={cn(
+                      'h-9',
+                      fieldErrors.assigneeId && 'border-red-300 focus:border-red-400',
+                    )}
+                  >
                     {assigneeId !== '__none__' && selectedMember ? (
                       <div className="flex items-center gap-2 min-w-0">
                         <Avatar className="h-5 w-5 shrink-0">
@@ -316,7 +365,7 @@ export function CreateTaskDialog({
                     <SelectItem value="__none__">
                       <span className="text-zinc-400">Unassigned</span>
                     </SelectItem>
-                    {members.map((m) => (
+                    {members!.map((m) => (
                       <SelectItem key={m.id} value={m.id}>
                         <div className="flex items-center gap-2">
                           <Avatar className="h-5 w-5 shrink-0">
@@ -331,10 +380,13 @@ export function CreateTaskDialog({
                     ))}
                   </SelectContent>
                 </Select>
+                {fieldErrors.assigneeId && (
+                  <p className="text-xs text-red-500">{fieldErrors.assigneeId}</p>
+                )}
               </div>
             )}
 
-            {/* Actions */}
+            {/* ── Actions ───────────────────────────────────────────────── */}
             <div className="flex items-center justify-end gap-3 pt-1 border-t border-zinc-100">
               <button
                 type="button"

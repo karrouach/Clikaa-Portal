@@ -1,7 +1,11 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { Task, CommentWithAuthor } from '@/types/database'
+
+// Matches @[Display Name](uuid) mention markers
+const MENTION_RE = /@\[[^\]]+\]\(([a-f0-9-]{36})\)/g
 
 // ─────────────────────────────────────────────────────────────────────────────
 // addComment
@@ -36,6 +40,29 @@ export async function addComment({
     .single()
 
   if (error) return { error: error.message }
+
+  // ── Notify @mentioned users ───────────────────────────────────────────────
+  const mentionedIds = [...trimmed.matchAll(MENTION_RE)]
+    .map((m) => m[1])
+    .filter((id, i, arr) => arr.indexOf(id) === i && id !== user.id)
+
+  if (mentionedIds.length > 0) {
+    const admin = createAdminClient()
+    const [{ data: task }, { data: commenter }] = await Promise.all([
+      admin.from('tasks').select('title').eq('id', taskId).single(),
+      admin.from('profiles').select('full_name, email').eq('id', user.id).single(),
+    ])
+    const commenterName = commenter?.full_name || commenter?.email || 'Someone'
+    const taskTitle = task?.title || 'a task'
+    await admin.from('notifications').insert(
+      mentionedIds.map((uid) => ({
+        user_id: uid,
+        message: `${commenterName} mentioned you in a comment on "${taskTitle}"`,
+        link: null,
+      }))
+    )
+  }
+
   return { comment: comment as unknown as CommentWithAuthor }
 }
 
