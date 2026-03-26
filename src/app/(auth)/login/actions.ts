@@ -26,5 +26,11 @@ export async function signIn(
     return { error: 'Invalid email or password. Please try again.' }
   }
 
-  redirect('/dashboard')
+  // Only redirect to internal /dashboard/* paths — reject anything else to
+  // prevent open-redirect attacks from a tampered redirectTo value.
+  const redirectTo = formData.get('redirectTo') as string | null
+  const destination =
+    redirectTo && redirectTo.startsWith('/dashboard') ? redirectTo : '/dashboard'
+
+  redirect(destination)
 }

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { createNotification } from '../notification-actions'
+import { emailAllAdmins, emailUserById, portalUrl } from '@/lib/email'
 
 // ── sendNewMessage ─────────────────────────────────────────────────────────────
 // Client creates a new conversation + first message. Notifies all admins.
@@ -54,6 +55,19 @@ export async function sendNewMessage(
       )
     )
   )
+
+  // ── Email: new message notification to admins ──────────────────────────
+  void emailAllAdmins({
+    subject: `New message: "${subject}"`,
+    templateName: 'message',
+    dynamicData: {
+      preheader: `${senderName} sent you a new message.`,
+      heading: 'New message received',
+      body: `<strong>${senderName}</strong> has sent a new message: <em>"${subject}"</em>`,
+      cta: { label: 'View Message', url: portalUrl('/dashboard/messages') },
+      footerNote: 'You received this because you are an admin on the Clikaa platform.',
+    },
+  }).catch((err) => console.error('[email] sendNewMessage:', err))
 
   revalidatePath('/dashboard/messages')
   return conv
@@ -155,6 +169,19 @@ export async function sendMessageReply(
         `Reply from ${senderName}: "${conv.subject}"`,
         '/dashboard/messages',
       )
+
+      // ── Email: admin reply to client ─────────────────────────────────────
+      void emailUserById(conv.client_id, {
+        subject: `Reply to your message: "${conv.subject}"`,
+        templateName: 'message',
+        dynamicData: {
+          preheader: `${senderName} replied to your message.`,
+          heading: 'You have a new reply',
+          body: `<strong>${senderName}</strong> has responded to your message <em>"${conv.subject}"</em>. Log in to the portal to read the reply.`,
+          cta: { label: 'View Message', url: portalUrl('/dashboard/messages') },
+          footerNote: 'You received this because you have a message thread on the Clikaa platform.',
+        },
+      }).catch((err) => console.error('[email] adminReply:', err))
     } else {
       // Client replied → notify all admins
       const { data: admins } = await admin.from('profiles').select('id').eq('role', 'admin')
@@ -167,6 +194,19 @@ export async function sendMessageReply(
           )
         )
       )
+
+      // ── Email: client reply to admins ────────────────────────────────────
+      void emailAllAdmins({
+        subject: `Client reply in "${conv.subject}"`,
+        templateName: 'message',
+        dynamicData: {
+          preheader: `${senderName} replied to a message thread.`,
+          heading: 'A client replied',
+          body: `<strong>${senderName}</strong> replied in the message thread <em>"${conv.subject}"</em>.`,
+          cta: { label: 'View Message', url: portalUrl('/dashboard/messages') },
+          footerNote: 'You received this because you are an admin on the Clikaa platform.',
+        },
+      }).catch((err) => console.error('[email] clientReply:', err))
     }
   }
 

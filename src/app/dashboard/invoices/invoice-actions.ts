@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { LineItem } from '@/types/database'
 import { notifyWorkspaceClients } from '../notification-actions'
+import { emailWorkspaceClients, portalUrl } from '@/lib/email'
 
 export interface CreateInvoiceInput {
   workspace_id: string | null
@@ -47,6 +48,19 @@ export async function createInvoice(input: CreateInvoiceInput) {
       `New Invoice Available: You have a new invoice for ${amountLabel}.`,
       '/dashboard/invoices',
     )
+
+    // ── Email: invoice sent ────────────────────────────────────────────────
+    void emailWorkspaceClients(input.workspace_id, {
+      subject: `New Invoice: ${input.invoice_number}`,
+      templateName: 'invoice',
+      dynamicData: {
+        preheader: `Invoice ${input.invoice_number} for ${amountLabel} is ready for your review.`,
+        heading: 'You have a new invoice',
+        body: `Invoice <strong>${input.invoice_number}</strong> for <strong>${amountLabel}</strong> has been sent to you and is ready for review.`,
+        cta: { label: 'View Invoice', url: portalUrl('/dashboard/invoices') },
+        footerNote: 'You received this because you are a client on the Clikaa platform.',
+      },
+    }).catch((err) => console.error('[email] invoice create:', err))
   }
 
   revalidatePath('/dashboard/invoices')
@@ -84,6 +98,19 @@ export async function updateInvoiceStatus(id: string, status: string) {
       `New Invoice Available: You have a new invoice (${invoiceLabel})${amountPart} ready for review and payment.`,
       '/dashboard/invoices',
     )
+
+    // ── Email: invoice status changed to sent ──────────────────────────────
+    void emailWorkspaceClients(invoice.workspace_id, {
+      subject: `New Invoice: ${invoiceLabel}`,
+      templateName: 'invoice',
+      dynamicData: {
+        preheader: `Invoice ${invoiceLabel}${amountPart} is ready for your review.`,
+        heading: 'You have a new invoice',
+        body: `Invoice <strong>${invoiceLabel}</strong>${amountPart} has been sent to you and is ready for review and payment.`,
+        cta: { label: 'View Invoice', url: portalUrl('/dashboard/invoices') },
+        footerNote: 'You received this because you are a client on the Clikaa platform.',
+      },
+    }).catch((err) => console.error('[email] invoice status:', err))
   }
 
   revalidatePath('/dashboard/invoices')

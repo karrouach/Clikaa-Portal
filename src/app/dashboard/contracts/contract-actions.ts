@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { notifyWorkspaceClients } from '../notification-actions'
+import { emailWorkspaceClients, portalUrl } from '@/lib/email'
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -87,6 +88,19 @@ export async function createContract({
       `New Contract: "${title}" has been sent to you for signature.`,
       '/dashboard/contracts',
     )
+
+    // ── Email: contract sent for signature ────────────────────────────────
+    void emailWorkspaceClients(workspaceId, {
+      subject: `Action Required: Sign "${title}"`,
+      templateName: 'contract',
+      dynamicData: {
+        preheader: `"${title}" is waiting for your signature.`,
+        heading: 'A contract needs your signature',
+        body: `<strong>"${title}"</strong> has been sent to you for review and signature. Please sign it at your earliest convenience.`,
+        cta: { label: 'Review & Sign', url: portalUrl('/dashboard/contracts') },
+        footerNote: 'You received this because you are a client on the Clikaa platform.',
+      },
+    }).catch((err) => console.error('[email] contract create:', err))
   }
 
   revalidatePath('/dashboard/contracts')
@@ -124,6 +138,19 @@ export async function sendContractForSignature(id: string) {
       `New Contract: "${contract.title}" has been sent to you for signature.`,
       '/dashboard/contracts',
     )
+
+    // ── Email: contract sent for signature (status change path) ───────────
+    void emailWorkspaceClients(contract.workspace_id, {
+      subject: `Action Required: Sign "${contract.title}"`,
+      templateName: 'contract',
+      dynamicData: {
+        preheader: `"${contract.title}" is waiting for your signature.`,
+        heading: 'A contract needs your signature',
+        body: `<strong>"${contract.title}"</strong> has been sent to you for review and signature. Please sign it at your earliest convenience.`,
+        cta: { label: 'Review & Sign', url: portalUrl('/dashboard/contracts') },
+        footerNote: 'You received this because you are a client on the Clikaa platform.',
+      },
+    }).catch((err) => console.error('[email] contract send:', err))
   }
 
   revalidatePath('/dashboard/contracts')

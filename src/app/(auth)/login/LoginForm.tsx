@@ -41,6 +41,7 @@ export function LoginForm() {
   const searchParams = useSearchParams()
 
   const callbackError = searchParams.get('error')
+  const redirectTo = searchParams.get('redirectedFrom')
 
   return (
     <motion.div
@@ -69,6 +70,9 @@ export function LoginForm() {
 
       {/* Form */}
       <form action={formAction} className="space-y-5">
+        {redirectTo && (
+          <input type="hidden" name="redirectTo" value={redirectTo} />
+        )}
         {/* Email */}
         <div className="space-y-1.5">
           <label htmlFor="email" className="block text-xs font-medium text-zinc-700 tracking-wide uppercase">

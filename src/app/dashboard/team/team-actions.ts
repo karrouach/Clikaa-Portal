@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { sendTransactionalEmail, portalUrl } from '@/lib/email'
 
 export type TeamActionResult = { error?: string }
 
@@ -84,6 +85,23 @@ export async function inviteTeamMember({
     .eq('id', invited.user.id)
 
   if (promoteError) return { error: promoteError.message }
+
+  // ── Email: branded invite notification ────────────────────────────────────
+  void sendTransactionalEmail({
+    to: trimEmail,
+    subject: "You've been invited to Clikaa",
+    templateName: 'invite',
+    dynamicData: {
+      preheader: "You've been invited to collaborate on the Clikaa portal.",
+      heading: "You've been invited",
+      body: [
+        `Hi ${trimName},`,
+        `You've been invited to join the Clikaa portal. Click below to accept your invitation and get started.`,
+      ],
+      cta: { label: 'Accept Invitation', url: portalUrl('/') },
+      footerNote: "You received this because an admin added you to the Clikaa workspace. If this was unexpected, you can safely ignore this email.",
+    },
+  }).catch((err) => console.error('[email] invite:', err))
 
   revalidatePath('/dashboard/team')
   return {}

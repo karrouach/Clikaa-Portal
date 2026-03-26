@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Task, CommentWithAuthor } from '@/types/database'
+import { emailUsersByIds, portalUrl } from '@/lib/email'
 
 // Matches @[Display Name](uuid) mention markers
 const MENTION_RE = /@\[[^\]]+\]\(([a-f0-9-]{36})\)/g
@@ -61,6 +62,19 @@ export async function addComment({
         link: null,
       }))
     )
+
+    // ── Email: @mention notification ───────────────────────────────────────
+    void emailUsersByIds(mentionedIds, {
+      subject: `${commenterName} mentioned you in a comment`,
+      templateName: 'mention',
+      dynamicData: {
+        preheader: `You were mentioned in a comment on "${taskTitle}".`,
+        heading: 'You were mentioned',
+        body: `<strong>${commenterName}</strong> mentioned you in a comment on the task <em>"${taskTitle}"</em>. Log in to the portal to view the full comment.`,
+        cta: { label: 'View Comment', url: portalUrl('/dashboard') },
+        footerNote: 'You received this because you were mentioned in a comment on the Clikaa platform.',
+      },
+    }).catch((err) => console.error('[email] mention:', err))
   }
 
   return { comment: comment as unknown as CommentWithAuthor }
