@@ -64,21 +64,38 @@ export default async function DashboardLayout({
     .eq('user_id', profile.id)
     .order('created_at', { ascending: true })
 
-  // ── Unread message count (admin only) ─────────────────────────────────────
+  // ── Unread message count (all roles) ──────────────────────────────────────
   let unreadMessageCount = 0
-  if (profile.role === 'admin') {
-    try {
-      const { createAdminClient } = await import('@/lib/supabase/admin')
-      const adminClient = createAdminClient()
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/admin')
+    const adminClient = createAdminClient()
+
+    if (profile.role === 'admin') {
+      // Admin: messages not sent by themselves
       const { count } = await adminClient
         .from('messages')
         .select('id', { count: 'exact', head: true })
         .eq('is_read', false)
         .neq('sender_id', profile.id)
       unreadMessageCount = count ?? 0
-    } catch {
-      // Table may not exist yet if migration hasn't run
+    } else {
+      // Client: unread replies in their own conversations
+      const { data: convs } = await adminClient
+        .from('conversations')
+        .select('id')
+        .eq('client_id', profile.id)
+      if (convs?.length) {
+        const { count } = await adminClient
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .in('conversation_id', convs.map((c) => c.id))
+          .eq('is_read', false)
+          .neq('sender_id', profile.id)
+        unreadMessageCount = count ?? 0
+      }
     }
+  } catch {
+    // Table may not exist yet if migration hasn't run
   }
 
   // Flatten & filter out any null workspace rows (shouldn't happen, but safe).

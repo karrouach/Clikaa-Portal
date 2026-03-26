@@ -59,8 +59,8 @@ export function BottomNav({ isAdmin }: BottomNavProps) {
       isActive: pathname.startsWith('/dashboard/contracts'),
     },
     {
-      label: 'Support',
-      icon: Headphones,
+      label: 'Messages',
+      icon: MessageSquare,
       href: '/dashboard/support',
       isActive: pathname.startsWith('/dashboard/support'),
     },

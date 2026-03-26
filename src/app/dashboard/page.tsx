@@ -10,7 +10,7 @@ import {
 import { NewWorkspaceButton } from '@/components/dashboard/CreateWorkspaceDialog'
 import { GreetingHeader } from '@/components/layout/GreetingHeader'
 import { OnboardingChecklist } from '@/components/dashboard/OnboardingChecklist'
-import { ApprovalActions } from './ApprovalActions'
+import { NeedsApprovalPanel } from './NeedsApprovalPanel'
 import Link from 'next/link'
 
 export const metadata: Metadata = { title: 'Dashboard' }
@@ -435,9 +435,9 @@ export default async function DashboardPage() {
           </div>
 
           {/* Activity + Side panel */}
-          <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 mb-8">
-            <div className="lg:col-span-7">
-              <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 mb-8 items-start">
+            <div className="lg:col-span-7 h-full">
+              <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden h-full">
                 <div className="px-5 py-4 border-b border-zinc-50 flex items-center justify-between">
                   <h2 className="text-sm font-semibold text-black">Recent Activity</h2>
                   <p className="text-xs text-zinc-400">Latest comments</p>
@@ -715,34 +715,7 @@ export default async function DashboardPage() {
                     <h2 className="text-sm font-semibold text-black">Needs Your Approval</h2>
                     <p className="text-xs text-zinc-400 mt-0.5">Review and approve deliverables below</p>
                   </div>
-                  {reviewTasks.length === 0 ? (
-                    <div className="px-5 py-10 flex flex-col items-center text-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center mb-1">
-                        <span className="text-emerald-600 text-base">✓</span>
-                      </div>
-                      <p className="text-sm text-zinc-500">You're all caught up!</p>
-                      <p className="text-xs text-zinc-300">No items pending your review.</p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-zinc-50">
-                      {reviewTasks.map((task) => (
-                        <div key={task.id} className="px-5 py-4">
-                          <div className="flex items-start gap-3">
-                            <div className="shrink-0 w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center mt-0.5">
-                              <FileText size={13} strokeWidth={1.5} className="text-amber-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-black leading-snug">{task.title}</p>
-                              {task.due_date && (
-                                <p className="text-xs text-zinc-400 mt-0.5">Due {formatDate(task.due_date)}</p>
-                              )}
-                              <ApprovalActions taskId={task.id} />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <NeedsApprovalPanel initialTasks={reviewTasks.map((t) => ({ id: t.id, title: t.title, due_date: t.due_date }))} />
                 </div>
 
                 {/* Project Timeline */}

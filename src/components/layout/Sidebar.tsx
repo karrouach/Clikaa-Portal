@@ -351,6 +351,13 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
                 exact
               />
               <NavLink
+                href="/dashboard/support"
+                icon={MessageSquare}
+                label="Messages"
+                isCollapsed={isCollapsed}
+                badge={unreadMessageCount}
+              />
+              <NavLink
                 href="/dashboard/invoices"
                 icon={Receipt}
                 label="Invoices"
