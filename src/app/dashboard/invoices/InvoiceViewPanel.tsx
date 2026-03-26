@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X, Download, Send, CheckCircle2, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -15,7 +15,6 @@ import {
 import type { Invoice, InvoiceStatus } from './InvoicesClient'
 import { STATUS_STYLES, STATUS_LABELS } from './InvoicesClient'
 import { updateInvoiceStatus, deleteInvoice as deleteInvoiceAction } from './invoice-actions'
-import { InvoicePrintView } from './InvoicePrintView'
 
 // ─── All statuses available to set ────────────────────────────────────────────
 const ALL_STATUSES: InvoiceStatus[] = ['draft', 'pending', 'paid', 'overdue', 'failed', 'cancelled']
@@ -91,7 +90,6 @@ export function InvoiceViewPanel({
   const [statusMenuOpen, setStatusMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
-  const printRef = useRef<HTMLDivElement>(null)
 
   // Sync activity when invoice changes
   const rawActivity = invoice ? (MOCK_ACTIVITY[invoice.id] ?? [
@@ -117,25 +115,198 @@ export function InvoiceViewPanel({
   const notes = invoice?.rawData?.notes ?? undefined
 
   async function handleDownloadPdf() {
-    if (!printRef.current || !invoice) return
+    if (!invoice) return
     setPdfLoading(true)
     try {
-      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
-        import('html2canvas'),
-        import('jspdf'),
-      ])
-      const canvas = await html2canvas(printRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-      })
-      const imgData = canvas.toDataURL('image/png')
-      const pdf = new jsPDF('p', 'mm', 'a4')
-      const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-      pdf.save(`${invoice.id}.pdf`)
+      const { default: jsPDF } = await import('jspdf')
+      const doc = new jsPDF('p', 'mm', 'a4')
+
+      // Page geometry
+      const W = 210, H = 297, ml = 20, mr = 20
+      const cw = W - ml - mr // 170 mm content width
+
+      // Colour helpers
+      const black = [9, 9, 11] as const
+      const gray  = [113, 113, 122] as const
+      const light = [228, 228, 231] as const
+      const faint = [244, 244, 245] as const
+
+      let y = 28
+
+      // ── Brand + INVOICE ─────────────────────────────────────────────────
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(20)
+      doc.setTextColor(...black)
+      doc.text('Clikaa', ml, y)
+
+      doc.setFontSize(22)
+      doc.text('INVOICE', W - mr, y, { align: 'right' })
+
+      y += 6
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(...gray)
+      doc.text('Creative Studio', ml, y)
+      doc.text(invoice.id, W - mr, y, { align: 'right' })
+
+      y += 6
+      doc.setDrawColor(...light)
+      doc.setLineWidth(0.3)
+      doc.line(ml, y, W - mr, y)
+
+      y += 10
+
+      // ── Bill To + Dates ─────────────────────────────────────────────────
+      const metaTop = y
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(7.5)
+      doc.setTextColor(...gray)
+      doc.text('BILL TO', ml, y)
+
+      y += 5
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(13)
+      doc.setTextColor(...black)
+      doc.text(invoice.client, ml, y)
+
+      if (invoice.project) {
+        y += 5
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(10)
+        doc.setTextColor(...gray)
+        doc.text(invoice.project, ml, y)
+      }
+
+      // Dates column (right side — aligned to metaTop)
+      let dy = metaTop
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(...gray)
+      doc.text('Issue Date', W - mr - 52, dy)
+      doc.setTextColor(...black)
+      doc.text(invoice.issued, W - mr, dy, { align: 'right' })
+
+      dy += 6
+      doc.setTextColor(...gray)
+      doc.text('Due Date', W - mr - 52, dy)
+      if (invoice.status === 'overdue') doc.setTextColor(220, 38, 38)
+      else doc.setTextColor(...black)
+      doc.text(invoice.due, W - mr, dy, { align: 'right' })
+
+      dy += 6
+      const statusLabel = invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)
+      if (invoice.status === 'paid')    doc.setTextColor(21, 128, 61)
+      else if (invoice.status === 'overdue') doc.setTextColor(220, 38, 38)
+      else doc.setTextColor(180, 83, 9)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      doc.text(statusLabel, W - mr, dy, { align: 'right' })
+
+      y = Math.max(y, dy) + 10
+
+      // Divider
+      doc.setDrawColor(...faint)
+      doc.setLineWidth(0.5)
+      doc.line(ml, y, W - mr, y)
+      y += 8
+
+      // ── Line items header ────────────────────────────────────────────────
+      doc.setFillColor(...faint)
+      doc.rect(ml, y - 3, cw, 8, 'F')
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(7.5)
+      doc.setTextColor(...gray)
+      doc.text('DESCRIPTION', ml + 2, y + 2)
+      doc.text('QTY', ml + 110, y + 2, { align: 'center' })
+      doc.text('RATE', ml + 138, y + 2, { align: 'right' })
+      doc.text('AMOUNT', W - mr, y + 2, { align: 'right' })
+
+      y += 8
+      doc.setDrawColor(...faint)
+      doc.line(ml, y, W - mr, y)
+
+      // ── Line items rows ──────────────────────────────────────────────────
+      for (const line of lines) {
+        y += 8
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(10.5)
+        doc.setTextColor(...black)
+        // Truncate long descriptions to fit
+        const descStr = doc.splitTextToSize(line.description, 90)[0] as string
+        doc.text(descStr, ml + 2, y)
+
+        doc.setTextColor(...gray)
+        doc.text(String(line.qty), ml + 110, y, { align: 'center' })
+        doc.text(fmt(line.rate), ml + 138, y, { align: 'right' })
+
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(...black)
+        doc.text(fmt(line.qty * line.rate), W - mr, y, { align: 'right' })
+
+        y += 4
+        doc.setDrawColor(...faint)
+        doc.line(ml, y, W - mr, y)
+      }
+
+      // ── Totals ───────────────────────────────────────────────────────────
+      y += 6
+      const totX = W - mr - 55
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(10)
+      doc.setTextColor(...gray)
+      doc.text('Subtotal', totX, y)
+      doc.setTextColor(...black)
+      doc.text(fmt(subtotal), W - mr, y, { align: 'right' })
+
+      if (taxPct > 0) {
+        y += 7
+        doc.setTextColor(...gray)
+        doc.text(`Tax (${taxPct}%)`, totX, y)
+        doc.setTextColor(...black)
+        doc.text(fmt(subtotal * taxPct / 100), W - mr, y, { align: 'right' })
+      }
+
+      y += 4
+      doc.setDrawColor(...light)
+      doc.line(totX, y, W - mr, y)
+
+      y += 7
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(12)
+      doc.setTextColor(...black)
+      doc.text('Total', totX, y)
+      doc.setFontSize(13)
+      doc.text(invoice.amount, W - mr, y, { align: 'right' })
+
+      // ── Notes ────────────────────────────────────────────────────────────
+      if (notes) {
+        y += 14
+        doc.setDrawColor(...faint)
+        doc.line(ml, y, W - mr, y)
+        y += 8
+
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(7.5)
+        doc.setTextColor(...gray)
+        doc.text('NOTES', ml, y)
+
+        y += 5
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(10)
+        doc.setTextColor(...gray)
+        const noteLines = doc.splitTextToSize(notes, cw) as string[]
+        doc.text(noteLines, ml, y)
+      }
+
+      // ── Footer ───────────────────────────────────────────────────────────
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8.5)
+      doc.setTextColor(212, 212, 216)
+      doc.text('Thank you for your business.', ml, H - 14)
+      doc.text(invoice.id, W - mr, H - 14, { align: 'right' })
+
+      doc.save(`${invoice.id}.pdf`)
       toast.success('PDF downloaded', { description: invoice.id })
     } catch {
       toast.error('Failed to generate PDF')
@@ -431,17 +602,6 @@ export function InvoiceViewPanel({
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
 
-      {/* Hidden A4 print view — captured by html2canvas for PDF export */}
-      {invoice && (
-        <InvoicePrintView
-          ref={printRef}
-          invoice={invoice}
-          lines={lines}
-          subtotal={subtotal}
-          taxPct={taxPct}
-          notes={notes}
-        />
-      )}
     </DialogPrimitive.Root>
   )
 }

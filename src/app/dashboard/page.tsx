@@ -322,8 +322,7 @@ export default async function DashboardPage() {
   let designerClientFeedback: { id: string; body: string; authorName: string; taskTitle: string; createdAt: string }[] = []
 
   if (isDesigner) {
-    const today7dAgo = new Date(Date.now() - 7 * 86400000).toISOString()
-
+    // Step 1 — fetch tasks (everything else depends on task IDs)
     const { data: dtasks } = await supabase
       .from('tasks')
       .select('id, title, status, priority, due_date, workspace_id, created_at, updated_at')
@@ -333,45 +332,45 @@ export default async function DashboardPage() {
     designerTasks = (dtasks ?? [])
 
     const dtWsIds = [...new Set(designerTasks.map((t) => t.workspace_id))]
-    if (dtWsIds.length > 0) {
-      const { data: dtWs } = await supabase.from('workspaces').select('id, name').in('id', dtWsIds)
-      designerWorkspaceNames = Object.fromEntries((dtWs ?? []).map((w) => [w.id, w.name]))
+    const taskIds  = designerTasks.map((t) => t.id)
+
+    // Step 2 — fetch workspace names + recent comments IN PARALLEL (saves 1 round-trip)
+    const [{ data: dtWs }, { data: comments }] = await Promise.all([
+      dtWsIds.length > 0
+        ? supabase.from('workspaces').select('id, name').in('id', dtWsIds)
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+      taskIds.length > 0
+        ? supabase.from('comments').select('id, body, created_at, author_id, task_id').in('task_id', taskIds).order('created_at', { ascending: false }).limit(8)
+        : Promise.resolve({ data: [] as { id: string; body: string; created_at: string; author_id: string; task_id: string }[] }),
+    ])
+
+    designerWorkspaceNames = Object.fromEntries((dtWs ?? []).map((w) => [w.id, w.name]))
+
+    // Step 3 — fetch comment authors (depends on comments)
+    if (comments?.length) {
+      const authorIds = [...new Set(comments.map((c) => c.author_id))]
+      const { data: authors } = authorIds.length > 0
+        ? await supabase.from('profiles').select('id, full_name, email, role').in('id', authorIds)
+        : { data: [] as { id: string; full_name: string | null; email: string; role: string }[] }
+
+      designerClientFeedback = comments
+        .filter((c) => {
+          const a = (authors ?? []).find((x) => x.id === c.author_id)
+          return a?.role === 'client'
+        })
+        .slice(0, 5)
+        .map((c) => {
+          const a = (authors ?? []).find((x) => x.id === c.author_id)
+          const t = designerTasks.find((x) => x.id === c.task_id)
+          return {
+            id: c.id,
+            body: c.body.length > 100 ? c.body.slice(0, 100) + '…' : c.body,
+            authorName: a?.full_name || a?.email || 'Client',
+            taskTitle: t?.title ?? 'a task',
+            createdAt: c.created_at,
+          }
+        })
     }
-
-    const taskIds = designerTasks.map((t) => t.id)
-    if (taskIds.length > 0) {
-      const { data: comments } = await supabase
-        .from('comments')
-        .select('id, body, created_at, author_id, task_id')
-        .in('task_id', taskIds)
-        .order('created_at', { ascending: false })
-        .limit(8)
-
-      if (comments?.length) {
-        const authorIds = [...new Set(comments.map((c) => c.author_id))]
-        const { data: authors } = await supabase.from('profiles').select('id, full_name, email, role').in('id', authorIds)
-
-        designerClientFeedback = comments
-          .filter((c) => {
-            const a = (authors ?? []).find((x) => x.id === c.author_id)
-            return a?.role === 'client'
-          })
-          .slice(0, 5)
-          .map((c) => {
-            const a = (authors ?? []).find((x) => x.id === c.author_id)
-            const t = designerTasks.find((x) => x.id === c.task_id)
-            return {
-              id: c.id,
-              body: c.body.length > 100 ? c.body.slice(0, 100) + '…' : c.body,
-              authorName: a?.full_name || a?.email || 'Client',
-              taskTitle: t?.title ?? 'a task',
-              createdAt: c.created_at,
-            }
-          })
-      }
-    }
-
-    void today7dAgo // silence unused warning
   }
 
   // Derived for admin dashboard

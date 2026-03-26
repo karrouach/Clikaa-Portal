@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition, useRef } from 'react'
-import { CheckCircle2, Clock, Receipt, Plus, Upload, Loader2, AlertCircle, X } from 'lucide-react'
+import { CheckCircle2, Clock, Receipt, Plus, Upload, Loader2, AlertCircle, X, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { markDesignerInvoicePaid, createDesignerInvoice, submitDesignerInvoice } from './designer-invoice-actions'
 import { createClient } from '@/lib/supabase/client'
@@ -67,6 +67,14 @@ function lastOfMonth() {
 export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, designers, designerName, currentUserId }: Props) {
   const [invoices, setInvoices] = useState<InvoiceItem[]>(initialInvoices)
   const [isPending, startTransition] = useTransition()
+
+  // ── Filter + detail slide-over ─────────────────────────────────────────────
+  const [filterDesignerId, setFilterDesignerId] = useState<string>('all')
+  const [detailInvoice, setDetailInvoice] = useState<InvoiceItem | null>(null)
+
+  const displayedInvoices = filterDesignerId === 'all'
+    ? invoices
+    : invoices.filter((i) => i.designer_id === filterDesignerId)
 
   // ── Admin: Create Invoice modal ────────────────────────────────────────────
   const [createOpen, setCreateOpen] = useState(false)
@@ -283,8 +291,23 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
 
       {/* Invoice list */}
       <div>
-        <h2 className="text-sm font-semibold text-black mb-3">All Invoices</h2>
-        {invoices.length === 0 ? (
+        <div className="flex items-center justify-between mb-3 gap-3">
+          <h2 className="text-sm font-semibold text-black">All Invoices</h2>
+          {isAdmin && designers.length > 0 && (
+            <Select value={filterDesignerId} onValueChange={setFilterDesignerId}>
+              <SelectTrigger className="h-8 w-auto text-xs rounded-lg min-w-[160px]">
+                <SelectValue placeholder="Filter by designer" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Designers</SelectItem>
+                {designers.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+        {displayedInvoices.length === 0 ? (
           <div className="bg-white border border-zinc-100 rounded-xl flex flex-col items-center justify-center py-16 text-center">
             <Receipt size={28} strokeWidth={1} className="text-zinc-200 mb-3" />
             <p className="text-sm text-zinc-400">No invoices yet.</p>
@@ -306,16 +329,18 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
                     <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Description</th>
                     <th className="px-5 py-3 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Amount</th>
                     <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Status</th>
-                    {isAdmin && (
-                      <th className="px-5 py-3 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Action</th>
-                    )}
+                    <th className="px-5 py-3" />
                   </tr>
                 </thead>
                 <tbody>
-                  {invoices.map((inv) => {
+                  {displayedInvoices.map((inv) => {
                     const designer = isAdmin ? designers.find((d) => d.id === inv.designer_id) : null
                     return (
-                      <tr key={inv.id} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/40 transition-colors">
+                      <tr
+                        key={inv.id}
+                        onClick={() => setDetailInvoice(inv)}
+                        className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50 transition-colors cursor-pointer"
+                      >
                         <td className="px-5 py-3.5 font-medium text-black">{inv.invoice_number}</td>
                         {isAdmin && (
                           <td className="px-5 py-3.5 text-zinc-500 hidden md:table-cell">{designer?.name ?? '—'}</td>
@@ -340,19 +365,9 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
                             {inv.status === 'paid' ? 'Paid' : 'Pending'}
                           </span>
                         </td>
-                        {isAdmin && (
-                          <td className="px-5 py-3.5 text-right">
-                            {inv.status === 'pending' && (
-                              <button
-                                onClick={() => handleMarkPaid(inv.id)}
-                                disabled={isPending}
-                                className="text-xs font-medium text-black hover:text-zinc-600 transition-colors disabled:opacity-40"
-                              >
-                                Mark Paid
-                              </button>
-                            )}
-                          </td>
-                        )}
+                        <td className="px-4 py-3.5 text-right">
+                          <ChevronRight size={14} strokeWidth={1.5} className="text-zinc-300 inline-block" />
+                        </td>
                       </tr>
                     )
                   })}
@@ -362,6 +377,80 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
           </div>
         )}
       </div>
+
+      {/* ── Invoice Detail Slide-over ──────────────────────────────────────── */}
+      <Dialog open={detailInvoice !== null} onOpenChange={(o) => { if (!o) setDetailInvoice(null) }}>
+        <DialogContent className="max-w-md">
+          {detailInvoice && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-mono">{detailInvoice.invoice_number}</DialogTitle>
+                <DialogDescription>{formatPeriod(detailInvoice.period_start, detailInvoice.period_end)}</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-1">
+                {isAdmin && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-400 uppercase tracking-wide">Designer</span>
+                    <span className="text-sm font-medium text-black">
+                      {designers.find((d) => d.id === detailInvoice.designer_id)?.name ?? '—'}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-zinc-400 uppercase tracking-wide">Amount</span>
+                  <span className="text-xl font-semibold text-black tabular-nums">{formatCurrency(detailInvoice.amount)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-zinc-400 uppercase tracking-wide">Status</span>
+                  <span className={cn(
+                    'inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-medium border rounded-full',
+                    detailInvoice.status === 'paid'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                      : 'bg-amber-50 text-amber-700 border-amber-100'
+                  )}>
+                    {detailInvoice.status === 'paid' ? <CheckCircle2 size={10} strokeWidth={2} /> : <Clock size={10} strokeWidth={2} />}
+                    {detailInvoice.status === 'paid' ? 'Paid' : 'Pending'}
+                  </span>
+                </div>
+                {detailInvoice.description && (
+                  <div>
+                    <p className="text-xs text-zinc-400 uppercase tracking-wide mb-1">Description</p>
+                    <p className="text-sm text-zinc-700">{detailInvoice.description}</p>
+                  </div>
+                )}
+                {detailInvoice.paid_at && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-400 uppercase tracking-wide">Paid on</span>
+                    <span className="text-sm text-black">
+                      {new Date(detailInvoice.paid_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-zinc-400 uppercase tracking-wide">Submitted</span>
+                  <span className="text-sm text-black">
+                    {new Date(detailInvoice.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+              </div>
+              {isAdmin && detailInvoice.status === 'pending' && (
+                <DialogFooter>
+                  <Button
+                    rounded="sm"
+                    onClick={() => { handleMarkPaid(detailInvoice.id); setDetailInvoice(null) }}
+                    disabled={isPending}
+                    className="gap-1.5"
+                  >
+                    {isPending && <Loader2 size={13} className="animate-spin" />}
+                    <CheckCircle2 size={13} strokeWidth={1.5} />
+                    Mark as Paid
+                  </Button>
+                </DialogFooter>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ── Admin: Create Invoice dialog ───────────────────────────────────── */}
       <Dialog open={createOpen} onOpenChange={(o) => { if (!isPending) { setCreateOpen(o); if (!o) resetCreate() } }}>

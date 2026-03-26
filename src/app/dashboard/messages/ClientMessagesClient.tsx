@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useTransition, useCallback } from 'react'
-import { MessageSquare, Send, Loader2, ChevronLeft, Search, X, Plus } from 'lucide-react'
+import { MessageSquare, Send, Loader2, ChevronLeft, Search, X, Plus, Paperclip } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { sendMessageReply, markConversationRead, searchUsersForMessaging, sendNewMessage } from './message-actions'
@@ -56,6 +56,9 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
   const [loadingMsgs, setLoadingMsgs]     = useState(false)
   const [reply, setReply]                 = useState('')
   const [isPending, startTransition]      = useTransition()
+  const [attachFile, setAttachFile]       = useState<File | null>(null)
+  const [uploading, setUploading]         = useState(false)
+  const attachRef  = useRef<HTMLInputElement>(null)
   const threadEndRef = useRef<HTMLDivElement>(null)
 
   // Search / new message (shows admins only — RBAC enforced server-side)
@@ -145,23 +148,46 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
     return () => { supabase.removeChannel(channel) }
   }, [selectedId, currentUserId])
 
+  // ── File upload helper ────────────────────────────────────────────────────
+  async function uploadAttachment(convId: string): Promise<string | null> {
+    if (!attachFile) return null
+    setUploading(true)
+    try {
+      const { createClient: mkClient } = await import('@/lib/supabase/client')
+      const sb = mkClient()
+      const safeName = attachFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const path = `${convId}/${Date.now()}-${safeName}`
+      const { error } = await sb.storage.from('message-attachments').upload(path, attachFile, { contentType: attachFile.type })
+      if (error) { toast.error('File upload failed'); return null }
+      const { data: signed } = await sb.storage.from('message-attachments').createSignedUrl(path, 60 * 60 * 24 * 7)
+      setAttachFile(null)
+      if (attachRef.current) attachRef.current.value = ''
+      return signed?.signedUrl ? `\n📎 [${attachFile.name}](${signed.signedUrl})` : null
+    } finally {
+      setUploading(false)
+    }
+  }
+
   // ── Send reply ────────────────────────────────────────────────────────────
   function handleReply(e: React.FormEvent) {
     e.preventDefault()
-    if (!selectedId || !reply.trim()) return
-    const body = reply.trim()
+    if (!selectedId || (!reply.trim() && !attachFile)) return
+    const textBody = reply.trim()
     setReply('')
-    const optimistic: MsgItem = {
-      id: `temp-${Date.now()}`,
-      conversation_id: selectedId,
-      sender_id: currentUserId,
-      body,
-      is_read: true,
-      created_at: new Date().toISOString(),
-      sender: null,
-    }
-    setMessages((prev) => [...prev, optimistic])
     startTransition(async () => {
+      const attachment = await uploadAttachment(selectedId)
+      const body = textBody + (attachment ?? '')
+      if (!body.trim()) return
+      const optimistic: MsgItem = {
+        id: `temp-${Date.now()}`,
+        conversation_id: selectedId,
+        sender_id: currentUserId,
+        body,
+        is_read: true,
+        created_at: new Date().toISOString(),
+        sender: null,
+      }
+      setMessages((prev) => [...prev, optimistic])
       const result = await sendMessageReply(selectedId, body)
       if (result?.error) toast.error(result.error)
     })
@@ -376,7 +402,15 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
                           ? 'bg-zinc-100 text-zinc-900 rounded-tr-sm'
                           : 'bg-black text-white rounded-tl-sm'
                       )}>
-                        {msg.body}
+                        {msg.body.split('\n').map((line, li) => {
+                          const m = line.match(/^📎 \[(.+?)\]\((https?:\/\/.+?)\)$/)
+                          if (m) return (
+                            <a key={li} href={m[2]} target="_blank" rel="noopener noreferrer" className={cn('flex items-center gap-1 underline underline-offset-2 text-xs mt-1', isMe ? 'text-zinc-500' : 'text-zinc-300')}>
+                              <Paperclip size={10} strokeWidth={1.5} className="shrink-0" />{m[1]}
+                            </a>
+                          )
+                          return line ? <span key={li} className="block">{line}</span> : null
+                        })}
                       </div>
                       <p className="text-[10px] text-zinc-400 mt-1 px-1">
                         {isMe ? 'You' : name} · {timeAgo(msg.created_at)}
@@ -390,22 +424,40 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
           </div>
 
           {/* Reply form */}
-          <form onSubmit={handleReply} className="px-5 py-4 border-t border-zinc-100">
+          <form onSubmit={handleReply} className="px-5 py-4 border-t border-zinc-100 space-y-2">
+            {attachFile && (
+              <div className="flex items-center gap-2 px-2 py-1 bg-zinc-50 border border-zinc-200 rounded-lg text-xs text-zinc-600">
+                <Paperclip size={11} strokeWidth={1.5} className="shrink-0 text-zinc-400" />
+                <span className="truncate flex-1">{attachFile.name}</span>
+                <button type="button" onClick={() => { setAttachFile(null); if (attachRef.current) attachRef.current.value = '' }} className="shrink-0 text-zinc-400 hover:text-red-500">
+                  <X size={11} strokeWidth={2} />
+                </button>
+              </div>
+            )}
             <div className="flex gap-2">
+              <input ref={attachRef} type="file" className="hidden" onChange={(e) => setAttachFile(e.target.files?.[0] ?? null)} />
+              <button
+                type="button"
+                onClick={() => attachRef.current?.click()}
+                className="h-9 w-9 flex items-center justify-center text-zinc-400 hover:text-black hover:bg-zinc-100 rounded-lg transition-colors shrink-0"
+                title="Attach file"
+              >
+                <Paperclip size={14} strokeWidth={1.5} />
+              </button>
               <input
                 type="text"
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
                 placeholder="Type a reply…"
                 className="flex-1 h-9 px-3 text-sm bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:border-zinc-400 focus:bg-white transition-colors"
-                disabled={isPending}
+                disabled={isPending || uploading}
               />
               <button
                 type="submit"
-                disabled={isPending || !reply.trim()}
+                disabled={isPending || uploading || (!reply.trim() && !attachFile)}
                 className="h-9 w-9 flex items-center justify-center bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
               >
-                {isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} strokeWidth={1.5} />}
+                {(isPending || uploading) ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} strokeWidth={1.5} />}
               </button>
             </div>
           </form>
