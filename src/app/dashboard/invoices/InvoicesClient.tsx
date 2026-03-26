@@ -178,7 +178,6 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
               <tr className="border-b border-zinc-100 bg-zinc-50">
                 <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Invoice</th>
                 <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Client</th>
-                <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell whitespace-nowrap">Project</th>
                 <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden lg:table-cell whitespace-nowrap">Issued</th>
                 <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden lg:table-cell whitespace-nowrap">Due</th>
                 <th className="px-6 py-3 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Amount</th>
@@ -198,7 +197,6 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
                 >
                   <td className="px-6 py-4 font-mono text-xs text-zinc-500 whitespace-nowrap">{inv.id}</td>
                   <td className="px-6 py-4 font-medium text-black whitespace-nowrap group-hover:text-black">{inv.client}</td>
-                  <td className="px-6 py-4 text-zinc-500 hidden md:table-cell">{inv.project}</td>
                   <td className="px-6 py-4 text-zinc-400 hidden lg:table-cell whitespace-nowrap">{inv.issued}</td>
                   <td className="px-6 py-4 text-zinc-400 hidden lg:table-cell whitespace-nowrap">{inv.due}</td>
                   <td className="px-6 py-4 text-right font-medium text-black tabular-nums whitespace-nowrap">{inv.amount}</td>

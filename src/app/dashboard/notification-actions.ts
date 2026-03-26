@@ -28,6 +28,20 @@ export async function createNotification(
     .insert({ user_id: userId, message, link, read_status: false })
 }
 
+// ── deleteNotification ─────────────────────────────────────────────────────
+// Deletes a single notification (user can only delete their own via RLS).
+export async function deleteNotification(notificationId: string): Promise<void> {
+  const supabase = await createClient()
+  await supabase.from('notifications').delete().eq('id', notificationId)
+}
+
+// ── clearAllNotifications ──────────────────────────────────────────────────
+// Deletes all notifications for a user.
+export async function clearAllNotifications(userId: string): Promise<void> {
+  const supabase = await createClient()
+  await supabase.from('notifications').delete().eq('user_id', userId)
+}
+
 // ── notifyWorkspaceClients ─────────────────────────────────────────────────
 // Fires a notification to every client member of a workspace.
 export async function notifyWorkspaceClients(

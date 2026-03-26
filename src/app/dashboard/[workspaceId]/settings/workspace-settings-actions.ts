@@ -158,6 +158,26 @@ export async function uploadWorkspaceLogoFile(
   return { url }
 }
 
+// ── deleteWorkspace ────────────────────────────────────────────────────────
+// Permanently deletes a workspace and all its data (cascade).
+// Only admins may call this.
+export async function deleteWorkspace(
+  workspaceId: string
+): Promise<WorkspaceSettingsResult> {
+  const ctx = await requireAdminUser()
+  if (!ctx) return { error: 'Unauthorised.' }
+
+  const { error } = await ctx.supabase
+    .from('workspaces')
+    .delete()
+    .eq('id', workspaceId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/dashboard')
+  return {}
+}
+
 // ── removeWorkspaceMember ──────────────────────────────────────────────────
 // Removes a user from this workspace (deletes workspace_members row).
 // Does NOT delete their account — they remain a portal user.

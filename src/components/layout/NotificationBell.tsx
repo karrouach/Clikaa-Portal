@@ -1,10 +1,14 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useTransition } from 'react'
 import Link from 'next/link'
-import { Bell } from 'lucide-react'
+import { Bell, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { markAllNotificationsRead } from '@/app/dashboard/notification-actions'
+import {
+  markAllNotificationsRead,
+  deleteNotification,
+  clearAllNotifications,
+} from '@/app/dashboard/notification-actions'
 import type { Notification } from '@/types/database'
 import { cn } from '@/lib/utils'
 
@@ -24,11 +28,12 @@ function timeLabel(iso: string): string {
 export function NotificationBell({ userId }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
+  const [, startTransition] = useTransition()
   const panelRef = useRef<HTMLDivElement>(null)
 
   const unreadCount = notifications.filter((n) => !n.read_status).length
 
-  // ── Fetch notifications + Realtime subscription ────────────────────────
+  // ── Fetch + Realtime ──────────────────────────────────────────────────
   useEffect(() => {
     const supabase = createClient()
 
@@ -46,24 +51,17 @@ export function NotificationBell({ userId }: NotificationBellProps) {
       .channel(`notifications:${userId}`)
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`,
-        },
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
         (payload) => {
           setNotifications((prev) => [payload.new as Notification, ...prev])
         }
       )
       .subscribe()
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
+    return () => { supabase.removeChannel(channel) }
   }, [userId])
 
-  // ── Close panel on outside click ──────────────────────────────────────
+  // ── Close on outside click ────────────────────────────────────────────
   useEffect(() => {
     if (!open) return
     function handleClick(e: MouseEvent) {
@@ -75,19 +73,41 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
 
-  // ── Toggle panel; mark all read on open ───────────────────────────────
+  // ── Toggle panel ──────────────────────────────────────────────────────
   function handleToggle() {
-    const next = !open
-    setOpen(next)
-    if (next && unreadCount > 0) {
-      setNotifications((prev) => prev.map((n) => ({ ...n, read_status: true })))
-      markAllNotificationsRead(userId)
-    }
+    setOpen((v) => !v)
+  }
+
+  // ── Mark single notification read ─────────────────────────────────────
+  function handleRead(id: string) {
+    setNotifications((prev) =>
+      prev.map((n) => n.id === id ? { ...n, read_status: true } : n)
+    )
+    startTransition(() => {
+      // Mark just this notification via markAll doesn't help;
+      // use the client directly for a single update
+      const supabase = createClient()
+      supabase.from('notifications').update({ read_status: true }).eq('id', id).then(() => {})
+    })
+  }
+
+  // ── Delete single notification ────────────────────────────────────────
+  function handleDelete(e: React.MouseEvent, id: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    setNotifications((prev) => prev.filter((n) => n.id !== id))
+    startTransition(() => deleteNotification(id))
+  }
+
+  // ── Clear all ─────────────────────────────────────────────────────────
+  function handleClearAll() {
+    setNotifications([])
+    startTransition(() => clearAllNotifications(userId))
   }
 
   return (
     <div className="relative" ref={panelRef}>
-      {/* ── Bell button ─────────────────────────────────────────────────── */}
+      {/* Bell button */}
       <button
         onClick={handleToggle}
         aria-label="Notifications"
@@ -99,11 +119,27 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         )}
       </button>
 
-      {/* ── Dropdown panel ──────────────────────────────────────────────── */}
+      {/* Dropdown panel */}
       {open && (
         <div className="absolute right-0 top-10 w-80 bg-white border border-zinc-200 rounded-xl shadow-lg z-50 overflow-hidden">
-          <div className="px-4 py-3 border-b border-zinc-100">
-            <h3 className="text-sm font-semibold text-black">Notifications</h3>
+          {/* Header */}
+          <div className="px-4 py-3 border-b border-zinc-100 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-black">
+              Notifications
+              {unreadCount > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </h3>
+            {notifications.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                className="text-[11px] text-zinc-400 hover:text-red-500 transition-colors"
+              >
+                Clear all
+              </button>
+            )}
           </div>
 
           {notifications.length === 0 ? (
@@ -113,24 +149,57 @@ export function NotificationBell({ userId }: NotificationBellProps) {
           ) : (
             <div className="max-h-80 overflow-y-auto divide-y divide-zinc-50">
               {notifications.map((n) => {
+                const isUnread = !n.read_status
+
                 const inner = (
                   <div
                     className={cn(
-                      'px-4 py-3 transition-colors',
-                      !n.read_status ? 'bg-zinc-50/80' : 'hover:bg-zinc-50/50'
+                      'flex items-start gap-3 px-4 py-3 group/item transition-colors',
+                      isUnread ? 'bg-zinc-50' : 'hover:bg-zinc-50/50'
                     )}
                   >
-                    <p className="text-sm text-zinc-700 leading-snug">{n.message}</p>
-                    <p className="text-[11px] text-zinc-400 mt-0.5">{timeLabel(n.created_at)}</p>
+                    {/* Unread dot */}
+                    <div className="shrink-0 mt-1.5">
+                      {isUnread ? (
+                        <span className="w-1.5 h-1.5 bg-red-500 rounded-full block" />
+                      ) : (
+                        <span className="w-1.5 h-1.5 rounded-full block" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <p className={cn(
+                        'text-sm leading-snug',
+                        isUnread ? 'text-zinc-900 font-medium' : 'text-zinc-500 font-normal'
+                      )}>
+                        {n.message}
+                      </p>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">{timeLabel(n.created_at)}</p>
+                    </div>
+
+                    {/* Delete X */}
+                    <button
+                      onClick={(e) => handleDelete(e, n.id)}
+                      className="shrink-0 w-5 h-5 flex items-center justify-center text-zinc-300 hover:text-zinc-600 opacity-0 group-hover/item:opacity-100 transition-all rounded"
+                      aria-label="Dismiss notification"
+                    >
+                      <X size={11} strokeWidth={2} />
+                    </button>
                   </div>
                 )
 
                 return n.link ? (
-                  <Link key={n.id} href={n.link} onClick={() => setOpen(false)}>
+                  <Link
+                    key={n.id}
+                    href={n.link}
+                    onClick={() => { handleRead(n.id); setOpen(false) }}
+                  >
                     {inner}
                   </Link>
                 ) : (
-                  <div key={n.id}>{inner}</div>
+                  <div key={n.id} onClick={() => handleRead(n.id)}>
+                    {inner}
+                  </div>
                 )
               })}
             </div>

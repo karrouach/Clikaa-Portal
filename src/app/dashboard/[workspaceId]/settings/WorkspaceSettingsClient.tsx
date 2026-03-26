@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { UserPlus, Trash2, Loader2, AlertCircle, Check, Pencil, ImagePlus } from 'lucide-react'
 import {
   Dialog,
@@ -26,6 +27,7 @@ import {
   uploadWorkspaceLogoFile,
   removeWorkspaceMember,
   inviteWorkspaceMember,
+  deleteWorkspace,
 } from './workspace-settings-actions'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -74,6 +76,7 @@ const ROLE_LABEL: Record<Role, string> = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function WorkspaceSettingsClient({ workspace, members, currentUserId, isAdmin }: Props) {
+  const router = useRouter()
   // ── Workspace logo upload ──────────────────────────────────────────────────
   const logoInputRef = useRef<HTMLInputElement>(null)
   const [logoPreview, setLogoPreview]   = useState<string | null>(workspace.logo_url)
@@ -150,6 +153,25 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
     setInviteRole('client')
     setInviteError(null)
     setInviteSuccess(false)
+  }
+
+  // ── Workspace deletion ─────────────────────────────────────────────────────
+  const [deleteOpen, setDeleteOpen]       = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [deleteError, setDeleteError]     = useState<string | null>(null)
+  const [isDeletePending, startDeleteTransition] = useTransition()
+
+  function handleDeleteWorkspace() {
+    if (deleteConfirm !== workspace.name) return
+    setDeleteError(null)
+    startDeleteTransition(async () => {
+      const result = await deleteWorkspace(workspace.id)
+      if (result.error) {
+        setDeleteError(result.error)
+      } else {
+        router.push('/dashboard')
+      }
+    })
   }
 
   function handleInvite() {
@@ -456,7 +478,80 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
           </div>
         </div>
 
+        {/* ── Danger Zone ─────────────────────────────────────────────────── */}
+        {isAdmin && (
+          <div className="border border-red-200 bg-red-50/30 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-red-100">
+              <h2 className="text-sm font-semibold text-red-700">Danger Zone</h2>
+              <p className="text-xs text-red-500/80 mt-0.5">
+                Irreversible actions — proceed with caution.
+              </p>
+            </div>
+            <div className="px-6 py-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-zinc-900">Delete this workspace</p>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Permanently deletes the workspace, all tasks, files, and member data. This cannot be undone.
+                </p>
+              </div>
+              <button
+                onClick={() => { setDeleteOpen(true); setDeleteConfirm(''); setDeleteError(null) }}
+                className="shrink-0 h-8 px-4 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors"
+              >
+                Delete Workspace
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
+
+      {/* ── Delete Workspace confirmation modal ───────────────────────────── */}
+      <Dialog open={deleteOpen} onOpenChange={(v) => { if (!isDeletePending) setDeleteOpen(v) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-700">Delete Workspace</DialogTitle>
+            <DialogDescription>
+              This will permanently delete <strong className="text-zinc-900">{workspace.name}</strong> and all associated tasks, files, and members. This action <strong>cannot be undone</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {deleteError && (
+              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-lg text-red-700 text-sm">
+                <AlertCircle size={14} strokeWidth={1.5} className="mt-0.5 shrink-0" />
+                {deleteError}
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-zinc-600">
+                Type <strong className="font-mono text-zinc-900">{workspace.name}</strong> to confirm
+              </Label>
+              <Input
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                placeholder={workspace.name}
+                disabled={isDeletePending}
+                className="font-mono"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" rounded="sm" onClick={() => setDeleteOpen(false)} disabled={isDeletePending}>
+              Cancel
+            </Button>
+            <button
+              onClick={handleDeleteWorkspace}
+              disabled={deleteConfirm !== workspace.name || isDeletePending}
+              className="inline-flex items-center gap-1.5 h-9 px-4 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isDeletePending && <Loader2 size={13} strokeWidth={1.5} className="animate-spin" />}
+              {isDeletePending ? 'Deleting…' : 'Confirm Delete'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Invite Member dialog ──────────────────────────────────────────── */}
       <Dialog open={inviteOpen} onOpenChange={handleCloseInvite}>
