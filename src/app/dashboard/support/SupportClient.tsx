@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { Send, CheckCircle2, Clock, Mail, MessageCircle } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { Send, CheckCircle2, Clock, Mail, MessageCircle, MessageSquare } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
+import { sendNewMessage } from '@/app/dashboard/messages/message-actions'
 
 interface QuickContact {
   name: string
@@ -13,25 +15,56 @@ interface QuickContact {
   email: string
 }
 
-interface SupportClientProps {
-  quickContacts: QuickContact[]
+interface MessageItem {
+  id: string
+  body: string
+  sender_name: string
+  is_admin: boolean
+  created_at: string
 }
 
-export function SupportClient({ quickContacts }: SupportClientProps) {
+interface ConvHistoryItem {
+  id: string
+  subject: string
+  created_at: string
+  messages: MessageItem[]
+}
+
+interface SupportClientProps {
+  quickContacts: QuickContact[]
+  workspaceId?: string | null
+  conversationHistory?: ConvHistoryItem[]
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric',
+  })
+}
+
+export function SupportClient({ quickContacts, workspaceId, conversationHistory = [] }: SupportClientProps) {
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   function handleSend(e: React.FormEvent) {
     e.preventDefault()
     if (!subject.trim() || !message.trim()) return
+    setError(null)
 
-    const mailto = `mailto:hello@clikaa.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`
-    window.open(mailto, '_blank')
-    setSent(true)
-    setTimeout(() => setSent(false), 4000)
-    setSubject('')
-    setMessage('')
+    startTransition(async () => {
+      try {
+        await sendNewMessage(subject.trim(), message.trim(), workspaceId)
+        setSent(true)
+        setSubject('')
+        setMessage('')
+        setTimeout(() => setSent(false), 6000)
+      } catch {
+        setError('Failed to send message. Please try again.')
+      }
+    })
   }
 
   return (
@@ -44,7 +77,7 @@ export function SupportClient({ quickContacts }: SupportClientProps) {
         </div>
         <h1 className="text-2xl font-semibold text-black tracking-tight">How can we help?</h1>
         <p className="mt-2 text-sm text-zinc-500 max-w-sm mx-auto">
-          We're here to support your project. Send us a message and we'll get back to you shortly.
+          Send us a message and we'll get back to you. You'll receive a notification when we reply.
         </p>
       </div>
 
@@ -61,7 +94,9 @@ export function SupportClient({ quickContacts }: SupportClientProps) {
                   <CheckCircle2 size={22} strokeWidth={1.5} className="text-emerald-600" />
                 </div>
                 <p className="text-sm font-medium text-emerald-700">Message sent!</p>
-                <p className="text-xs text-zinc-400">Your email client opened with the message pre-filled.</p>
+                <p className="text-xs text-zinc-400">
+                  We'll reply soon. You'll get a notification when we respond.
+                </p>
               </div>
             ) : (
               <form onSubmit={handleSend} className="space-y-4">
@@ -72,6 +107,7 @@ export function SupportClient({ quickContacts }: SupportClientProps) {
                     placeholder="e.g. Question about my project timeline"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
+                    disabled={isPending}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -81,24 +117,22 @@ export function SupportClient({ quickContacts }: SupportClientProps) {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     className="min-h-[140px] resize-none"
+                    disabled={isPending}
                   />
                 </div>
-                <div className="flex items-center justify-between pt-1">
-                  <p className="text-xs text-zinc-400">
-                    Sends to{' '}
-                    <a href="mailto:hello@clikaa.com" className="text-zinc-600 hover:text-black underline underline-offset-2">
-                      hello@clikaa.com
-                    </a>
-                  </p>
+                {error && (
+                  <p className="text-xs text-red-600">{error}</p>
+                )}
+                <div className="flex items-center justify-end pt-1">
                   <Button
                     type="submit"
                     size="sm"
                     rounded="sm"
-                    disabled={!subject.trim() || !message.trim()}
+                    disabled={!subject.trim() || !message.trim() || isPending}
                     className="gap-1.5"
                   >
                     <Send size={13} strokeWidth={1.5} />
-                    Send Message
+                    {isPending ? 'Sending…' : 'Send Message'}
                   </Button>
                 </div>
               </form>
@@ -138,10 +172,7 @@ export function SupportClient({ quickContacts }: SupportClientProps) {
                   <div>
                     <p className="text-sm font-medium text-black">Clikaa Studio</p>
                     <p className="text-xs text-zinc-500">Lead Designer</p>
-                    <a
-                      href="mailto:hello@clikaa.com"
-                      className="text-xs text-zinc-400 hover:text-black transition-colors"
-                    >
+                    <a href="mailto:hello@clikaa.com" className="text-xs text-zinc-400 hover:text-black transition-colors">
                       hello@clikaa.com
                     </a>
                   </div>
@@ -173,6 +204,51 @@ export function SupportClient({ quickContacts }: SupportClientProps) {
           </div>
         </div>
       </div>
+
+      {/* ── Conversation history ───────────────────────────────────────────── */}
+      {conversationHistory.length > 0 && (
+        <div className="mt-10">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquare size={15} strokeWidth={1.5} className="text-zinc-500" />
+            <h2 className="text-sm font-semibold text-black">Previous Messages</h2>
+          </div>
+          <div className="space-y-4">
+            {conversationHistory.map((conv) => (
+              <div key={conv.id} className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+                <div className="px-5 py-3.5 border-b border-zinc-50 flex items-center justify-between">
+                  <p className="text-sm font-medium text-black">{conv.subject || 'No subject'}</p>
+                  <p className="text-xs text-zinc-400">{formatDate(conv.created_at)}</p>
+                </div>
+                <div className="px-5 py-4 space-y-3">
+                  {conv.messages.map((msg) => (
+                    <div key={msg.id} className={cn('flex gap-3', msg.is_admin && 'flex-row-reverse')}>
+                      <div className={cn(
+                        'shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold',
+                        msg.is_admin ? 'bg-black text-white' : 'bg-zinc-100 text-zinc-700'
+                      )}>
+                        {msg.sender_name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className={cn('max-w-[80%]', msg.is_admin && 'items-end flex flex-col')}>
+                        <div className={cn(
+                          'rounded-xl px-3 py-2 text-sm leading-relaxed',
+                          msg.is_admin
+                            ? 'bg-black text-white rounded-tr-sm'
+                            : 'bg-zinc-100 text-zinc-800 rounded-tl-sm'
+                        )}>
+                          {msg.body}
+                        </div>
+                        <p className="text-[10px] text-zinc-400 mt-1 px-1">
+                          {msg.is_admin ? msg.sender_name : 'You'} · {formatDate(msg.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

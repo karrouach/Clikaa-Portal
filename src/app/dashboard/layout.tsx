@@ -64,6 +64,23 @@ export default async function DashboardLayout({
     .eq('user_id', profile.id)
     .order('created_at', { ascending: true })
 
+  // ── Unread message count (admin only) ─────────────────────────────────────
+  let unreadMessageCount = 0
+  if (profile.role === 'admin') {
+    try {
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      const adminClient = createAdminClient()
+      const { count } = await adminClient
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_read', false)
+        .neq('sender_id', profile.id)
+      unreadMessageCount = count ?? 0
+    } catch {
+      // Table may not exist yet if migration hasn't run
+    }
+  }
+
   // Flatten & filter out any null workspace rows (shouldn't happen, but safe).
   const workspaces: WorkspaceWithRole[] = (memberships ?? [])
     .filter((m) => m.workspaces !== null)
@@ -82,7 +99,7 @@ export default async function DashboardLayout({
       <BottomNav isAdmin={profile.role === 'admin'} />
 
       {/* ── Sidebar — hidden on mobile ────────────────────────────────────── */}
-      <Sidebar profile={profile} workspaces={workspaces} />
+      <Sidebar profile={profile} workspaces={workspaces} unreadMessageCount={unreadMessageCount} />
 
       {/* ── Main area ────────────────────────────────────────────────────── */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden pt-14 md:pt-0 transition-[width] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]">

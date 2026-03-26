@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useTransition } from 'react'
+import { useTransition, useState, useRef, useEffect } from 'react'
 import { LogOut, Loader2 } from 'lucide-react'
 import type { Profile, WorkspaceWithRole } from '@/types/database'
 import { signOut } from '@/app/actions'
@@ -27,6 +27,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   calendar:  'Calendar',
   support:   'Support',
   contracts: 'Contracts',
+  messages:  'Messages',
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -38,6 +39,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export function Header({ profile, workspaces }: HeaderProps) {
   const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
   const initials = getInitials(profile.full_name || profile.email)
 
   const breadcrumbs = buildBreadcrumbs(pathname, workspaces)
@@ -47,6 +50,18 @@ export function Header({ profile, workspaces }: HeaderProps) {
       await signOut()
     })
   }
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [menuOpen])
 
   return (
     <header className="hidden md:flex h-14 border-b border-zinc-100 bg-white items-center justify-between px-6 shrink-0">
@@ -92,36 +107,72 @@ export function Header({ profile, workspaces }: HeaderProps) {
         {/* Divider */}
         <div className="w-px h-5 bg-zinc-100" />
 
-        {/* User badge */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-black flex items-center justify-center text-white text-[10px] font-semibold rounded-lg">
-            {initials}
-          </div>
-          <span className="text-xs text-zinc-500 hidden sm:block">
-            {profile.email}
-          </span>
-        </div>
+        {/* Avatar with user popover */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="w-7 h-7 bg-black flex items-center justify-center text-white text-[10px] font-semibold rounded-lg hover:bg-zinc-800 transition-colors"
+            aria-label="User menu"
+          >
+            {profile.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt={initials}
+                className="w-full h-full rounded-lg object-cover"
+              />
+            ) : (
+              initials
+            )}
+          </button>
 
-        {/* Sign out */}
-        <button
-          onClick={handleSignOut}
-          disabled={isPending}
-          className="
-            flex items-center gap-1.5 px-3 h-7 text-xs text-zinc-500
-            hover:text-black hover:bg-zinc-50
-            border border-transparent hover:border-zinc-200
-            transition-all duration-150 rounded-lg
-            disabled:opacity-50 disabled:cursor-not-allowed
-          "
-          aria-label="Sign out"
-        >
-          {isPending ? (
-            <Loader2 size={13} strokeWidth={1.5} className="animate-spin" />
-          ) : (
-            <LogOut size={13} strokeWidth={1.5} />
+          {menuOpen && (
+            <div className="absolute right-0 top-9 w-56 bg-white border border-zinc-200 rounded-xl shadow-lg z-50 overflow-hidden">
+              {/* User info */}
+              <div className="px-4 py-3 border-b border-zinc-100">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-9 h-9 bg-black rounded-lg flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                    {profile.avatar_url ? (
+                      <img src={profile.avatar_url} alt={initials} className="w-full h-full rounded-lg object-cover" />
+                    ) : (
+                      initials
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-black truncate">
+                      {profile.full_name || 'No name set'}
+                    </p>
+                    <p className="text-xs text-zinc-500 truncate">{profile.email}</p>
+                  </div>
+                </div>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-100 text-zinc-600 capitalize">
+                  {profile.role}
+                </span>
+              </div>
+
+              {/* Actions */}
+              <div className="p-1.5">
+                <Link
+                  href="/dashboard/settings"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 rounded-lg transition-colors w-full"
+                >
+                  Settings
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  disabled={isPending}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isPending
+                    ? <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
+                    : <LogOut size={14} strokeWidth={1.5} />
+                  }
+                  Sign out
+                </button>
+              </div>
+            </div>
           )}
-          <span className="hidden sm:block">Sign out</span>
-        </button>
+        </div>
       </div>
     </header>
   )
@@ -155,7 +206,7 @@ function buildBreadcrumbs(pathname: string, workspaces: WorkspaceWithRole[]): Br
     ]
   }
 
-  // Top-level dashboard sub-pages (invoices, team, calendar, settings…)
+  // Top-level dashboard sub-pages (invoices, messages, calendar, settings…)
   return [
     { label: 'Dashboard', href: '/dashboard' },
     { label: SEGMENT_LABELS[first] ?? capitalize(first.replace(/-/g, ' ')) },

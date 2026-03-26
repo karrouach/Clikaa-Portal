@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Receipt, Users, Settings, Headphones, FileSignature } from 'lucide-react'
+import { LayoutDashboard, Receipt, Settings, Headphones, FileSignature, MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface BottomNavProps {
@@ -20,16 +20,16 @@ export function BottomNav({ isAdmin }: BottomNavProps) {
       isActive: pathname === '/dashboard',
     },
     {
+      label: 'Messages',
+      icon: MessageSquare,
+      href: '/dashboard/messages',
+      isActive: pathname.startsWith('/dashboard/messages'),
+    },
+    {
       label: 'Invoices',
       icon: Receipt,
       href: '/dashboard/invoices',
       isActive: pathname.startsWith('/dashboard/invoices'),
-    },
-    {
-      label: 'Team',
-      icon: Users,
-      href: '/dashboard/team',
-      isActive: pathname.startsWith('/dashboard/team'),
     },
     {
       label: 'Settings',
@@ -76,7 +76,7 @@ export function BottomNav({ isAdmin }: BottomNavProps) {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden" style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-      <div className={cn('flex items-center h-16 px-2', isAdmin ? 'justify-around' : 'justify-around')}>
+      <div className="flex items-center h-16 px-2 justify-around">
         {tabs.map(({ label, icon: Icon, href, isActive }) => (
           <Link
             key={label}

@@ -13,6 +13,7 @@ import {
   Settings,
   Headphones,
   FileSignature,
+  MessageSquare,
 } from 'lucide-react'
 import type { Profile, WorkspaceWithRole } from '@/types/database'
 import { cn, getInitials } from '@/lib/utils'
@@ -20,6 +21,7 @@ import { cn, getInitials } from '@/lib/utils'
 interface SidebarProps {
   profile: Profile
   workspaces: WorkspaceWithRole[]
+  unreadMessageCount?: number
 }
 
 // ─── Animation variants ────────────────────────────────────────────────────
@@ -60,12 +62,14 @@ function NavLink({
   label,
   isCollapsed,
   exact = false,
+  badge,
 }: {
   href: string
   icon: React.ElementType
   label: string
   isCollapsed: boolean
   exact?: boolean
+  badge?: number
 }) {
   const pathname = usePathname()
   const isActive = exact ? pathname === href : pathname === href || pathname.startsWith(href + '/')
@@ -82,7 +86,13 @@ function NavLink({
           : 'text-zinc-400 hover:bg-white/8 hover:text-zinc-200'
       )}
     >
-      <Icon size={16} strokeWidth={1.5} className="shrink-0" />
+      {/* Icon with optional unread dot */}
+      <span className="relative shrink-0">
+        <Icon size={16} strokeWidth={1.5} />
+        {isCollapsed && badge != null && badge > 0 && (
+          <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-[#111111]" />
+        )}
+      </span>
 
       <AnimatePresence initial={false}>
         {!isCollapsed && (
@@ -92,12 +102,19 @@ function NavLink({
             initial="hidden"
             animate="visible"
             exit="hidden"
-            className="overflow-hidden whitespace-nowrap"
+            className="overflow-hidden whitespace-nowrap flex-1"
           >
             {label}
           </motion.span>
         )}
       </AnimatePresence>
+
+      {/* Badge count when expanded */}
+      {!isCollapsed && badge != null && badge > 0 && (
+        <span className="shrink-0 min-w-[18px] h-[18px] bg-red-500 rounded-full text-white text-[9px] font-bold flex items-center justify-center px-1">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
 
       {isCollapsed && (
         <div className="absolute left-full ml-3 px-2 py-1 bg-zinc-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
@@ -174,7 +191,7 @@ function WorkspaceItem({
 }
 
 // ─── Sidebar ───────────────────────────────────────────────────────────────
-export function Sidebar({ profile, workspaces }: SidebarProps) {
+export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const initials = getInitials(profile.full_name || profile.email)
   const isAdmin = profile.role === 'admin'
@@ -261,7 +278,7 @@ export function Sidebar({ profile, workspaces }: SidebarProps) {
 
         {isAdmin ? (
           <>
-            {/* GLOBAL section — admin only */}
+            {/* GLOBAL section — admin */}
             <div>
               <div className="mb-1">
                 <SectionLabel label="Global" isCollapsed={isCollapsed} />
@@ -275,9 +292,16 @@ export function Sidebar({ profile, workspaces }: SidebarProps) {
                   exact
                 />
                 <NavLink
-                  href="/dashboard/invoices"
-                  icon={Receipt}
-                  label="Invoices"
+                  href="/dashboard/messages"
+                  icon={MessageSquare}
+                  label="Messages"
+                  isCollapsed={isCollapsed}
+                  badge={unreadMessageCount}
+                />
+                <NavLink
+                  href="/dashboard/calendar"
+                  icon={CalendarDays}
+                  label="Calendar"
                   isCollapsed={isCollapsed}
                 />
                 <NavLink
@@ -287,9 +311,9 @@ export function Sidebar({ profile, workspaces }: SidebarProps) {
                   isCollapsed={isCollapsed}
                 />
                 <NavLink
-                  href="/dashboard/calendar"
-                  icon={CalendarDays}
-                  label="Calendar"
+                  href="/dashboard/invoices"
+                  icon={Receipt}
+                  label="Invoices"
                   isCollapsed={isCollapsed}
                 />
                 <NavLink

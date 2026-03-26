@@ -449,6 +449,90 @@ export type Database = {
           },
         ]
       }
+      conversations: {
+        Row: {
+          id: string
+          workspace_id: string | null
+          client_id: string
+          subject: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id?: string | null
+          client_id: string
+          subject?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string | null
+          client_id?: string
+          subject?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'conversations_workspace_id_fkey'
+            columns: ['workspace_id']
+            isOneToOne: false
+            referencedRelation: 'workspaces'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'conversations_client_id_fkey'
+            columns: ['client_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          id: string
+          conversation_id: string
+          sender_id: string
+          body: string
+          is_read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          conversation_id: string
+          sender_id: string
+          body: string
+          is_read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          conversation_id?: string
+          sender_id?: string
+          body?: string
+          is_read?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'messages_conversation_id_fkey'
+            columns: ['conversation_id']
+            isOneToOne: false
+            referencedRelation: 'conversations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'messages_sender_id_fkey'
+            columns: ['sender_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       invoices: {
         Row: {
           id: string
@@ -557,6 +641,9 @@ export type Attachment = Database['public']['Tables']['attachments']['Row']
 export type ContractTemplate = Database['public']['Tables']['contract_templates']['Row']
 export type Contract = Database['public']['Tables']['contracts']['Row']
 export type ContractStatus = Contract['status']
+
+export type Conversation = Database['public']['Tables']['conversations']['Row']
+export type Message = Database['public']['Tables']['messages']['Row']
 
 export type TaskStatus = Task['status']
 export type TaskPriority = Task['priority']
