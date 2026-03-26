@@ -7,16 +7,17 @@
 -- or assignee (those remain admin-only on the frontend).
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- Helper: check if the current user is a member of a workspace
--- (already exists from earlier migrations, but recreate safely)
-CREATE OR REPLACE FUNCTION is_workspace_member(ws_id uuid)
+-- Helper: drop and recreate to avoid parameter name conflict with any prior version
+DROP FUNCTION IF EXISTS is_workspace_member(uuid);
+
+CREATE FUNCTION is_workspace_member(p_workspace_id uuid)
 RETURNS boolean
 LANGUAGE sql STABLE
 AS $$
   SELECT EXISTS (
     SELECT 1
     FROM workspace_members
-    WHERE workspace_id = ws_id
+    WHERE workspace_id = p_workspace_id
       AND user_id = auth.uid()
   );
 $$;
