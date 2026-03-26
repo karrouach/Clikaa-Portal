@@ -12,6 +12,7 @@ import {
   CalendarDays,
   Settings,
   Headphones,
+  FileSignature,
 } from 'lucide-react'
 import type { Profile, WorkspaceWithRole } from '@/types/database'
 import { cn, getInitials } from '@/lib/utils'
@@ -291,6 +292,12 @@ export function Sidebar({ profile, workspaces }: SidebarProps) {
                   label="Calendar"
                   isCollapsed={isCollapsed}
                 />
+                <NavLink
+                  href="/dashboard/contracts"
+                  icon={FileSignature}
+                  label="Contracts"
+                  isCollapsed={isCollapsed}
+                />
               </div>
             </div>
 
@@ -323,6 +330,12 @@ export function Sidebar({ profile, workspaces }: SidebarProps) {
                 href="/dashboard/invoices"
                 icon={Receipt}
                 label="Invoices"
+                isCollapsed={isCollapsed}
+              />
+              <NavLink
+                href="/dashboard/contracts"
+                icon={FileSignature}
+                label="Contracts"
                 isCollapsed={isCollapsed}
               />
               <NavLink

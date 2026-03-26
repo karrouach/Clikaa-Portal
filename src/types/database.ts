@@ -365,6 +365,90 @@ export type Database = {
           },
         ]
       }
+      contract_templates: {
+        Row: {
+          id: string
+          template_name: string
+          body_text: string
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          template_name: string
+          body_text?: string
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          template_name?: string
+          body_text?: string
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      contracts: {
+        Row: {
+          id: string
+          workspace_id: string | null
+          template_id: string | null
+          title: string
+          body_text: string
+          status: 'draft' | 'pending_signature' | 'signed'
+          client_signature_name: string | null
+          signed_at: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id?: string | null
+          template_id?: string | null
+          title: string
+          body_text?: string
+          status?: 'draft' | 'pending_signature' | 'signed'
+          client_signature_name?: string | null
+          signed_at?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string | null
+          template_id?: string | null
+          title?: string
+          body_text?: string
+          status?: 'draft' | 'pending_signature' | 'signed'
+          client_signature_name?: string | null
+          signed_at?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'contracts_workspace_id_fkey'
+            columns: ['workspace_id']
+            isOneToOne: false
+            referencedRelation: 'workspaces'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'contracts_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       invoices: {
         Row: {
           id: string
@@ -470,6 +554,10 @@ export type Comment = Database['public']['Tables']['comments']['Row']
 export type Attachment = Database['public']['Tables']['attachments']['Row']
 
 // ─── Domain union types ───────────────────────────────────────────────────────
+export type ContractTemplate = Database['public']['Tables']['contract_templates']['Row']
+export type Contract = Database['public']['Tables']['contracts']['Row']
+export type ContractStatus = Contract['status']
+
 export type TaskStatus = Task['status']
 export type TaskPriority = Task['priority']
 export type UserRole = 'admin' | 'client' | 'designer'

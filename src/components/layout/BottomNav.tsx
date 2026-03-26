@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Receipt, Users, Settings, Headphones } from 'lucide-react'
+import { LayoutDashboard, Receipt, Users, Settings, Headphones, FileSignature } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface BottomNavProps {
@@ -51,6 +51,12 @@ export function BottomNav({ isAdmin }: BottomNavProps) {
       icon: Receipt,
       href: '/dashboard/invoices',
       isActive: pathname.startsWith('/dashboard/invoices'),
+    },
+    {
+      label: 'Contracts',
+      icon: FileSignature,
+      href: '/dashboard/contracts',
+      isActive: pathname.startsWith('/dashboard/contracts'),
     },
     {
       label: 'Support',
