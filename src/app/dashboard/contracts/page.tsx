@@ -46,8 +46,9 @@ export default async function ContractsPage() {
     )
   }
 
-  // ── Client view ────────────────────────────────────────────────────────────
-  // Fetch workspace memberships for this client, then their contracts
+  // ── Client + Designer view ─────────────────────────────────────────────────
+  // Both clients and designers see contracts scoped to their workspace memberships.
+  // Designers receive the exact same clickwrap signing experience as clients.
   const { data: memberships } = await supabase
     .from('workspace_members')
     .select('workspace_id')
@@ -61,7 +62,7 @@ export default async function ContractsPage() {
       .from('contracts')
       .select('*')
       .in('workspace_id', workspaceIds)
-      .neq('status', 'draft') // clients never see drafts
+      .neq('status', 'draft') // never expose drafts to clients/designers
       .order('created_at', { ascending: false })
     contracts = (data ?? []) as Contract[]
   }

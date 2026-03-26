@@ -614,6 +614,8 @@ export type Database = {
           designer_id: string
           invoice_number: string
           amount: number
+          description: string | null
+          attachment_path: string | null
           status: 'pending' | 'paid'
           period_start: string
           period_end: string
@@ -626,6 +628,8 @@ export type Database = {
           designer_id: string
           invoice_number: string
           amount: number
+          description?: string | null
+          attachment_path?: string | null
           status?: 'pending' | 'paid'
           period_start: string
           period_end: string
@@ -638,6 +642,8 @@ export type Database = {
           designer_id?: string
           invoice_number?: string
           amount?: number
+          description?: string | null
+          attachment_path?: string | null
           status?: 'pending' | 'paid'
           period_start?: string
           period_end?: string

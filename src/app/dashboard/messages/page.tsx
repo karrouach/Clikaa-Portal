@@ -21,7 +21,7 @@ export default async function MessagesPage() {
   const admin = createAdminClient()
 
   // ══════════════════════════════════════════════════════════════════════════
-  // ADMIN VIEW — full inbox
+  // ADMIN VIEW — full inbox of all conversations
   // ══════════════════════════════════════════════════════════════════════════
   if (profile?.role === 'admin') {
     const { data: conversations } = await admin
@@ -55,7 +55,7 @@ export default async function MessagesPage() {
       <div className="animate-fade-in">
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-black tracking-tight">Messages</h1>
-          <p className="mt-1 text-sm text-zinc-500">Client support conversations.</p>
+          <p className="mt-1 text-sm text-zinc-500">Client and designer conversations.</p>
         </div>
         <MessagesClient initialConversations={enriched} currentUserId={user.id} />
       </div>
@@ -63,7 +63,7 @@ export default async function MessagesPage() {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // CLIENT VIEW — their own threads
+  // CLIENT + DESIGNER VIEW — their own threads
   // ══════════════════════════════════════════════════════════════════════════
   const { data: conversations } = await admin
     .from('conversations')
@@ -74,7 +74,6 @@ export default async function MessagesPage() {
   const convs = conversations ?? []
   const convIds = convs.map((c) => c.id)
 
-  // Unread = messages not sent by this client
   const { data: unreadMsgs } = convIds.length > 0
     ? await admin
         .from('messages')
@@ -89,12 +88,11 @@ export default async function MessagesPage() {
     unreadByConv[m.conversation_id] = (unreadByConv[m.conversation_id] ?? 0) + 1
   }
 
-  const clientConvs = convs.map((c) => ({
+  const myConvs = convs.map((c) => ({
     ...c,
     unread_count: unreadByConv[c.id] ?? 0,
   }))
 
-  // Fetch admin name for display
   const { data: adminProfile } = await admin
     .from('profiles')
     .select('full_name, email')
@@ -111,7 +109,7 @@ export default async function MessagesPage() {
         <p className="mt-1 text-sm text-zinc-500">Your conversations with the team.</p>
       </div>
       <ClientMessagesClient
-        initialConversations={clientConvs}
+        initialConversations={myConvs}
         currentUserId={user.id}
         adminName={adminName}
       />

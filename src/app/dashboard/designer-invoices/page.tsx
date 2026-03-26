@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { DesignerInvoicesClient } from './DesignerInvoicesClient'
 
-export const metadata: Metadata = { title: 'Designer Invoices' }
+export const metadata: Metadata = { title: 'Payments' }
 
 export default async function DesignerInvoicesPage() {
   const supabase = await createClient()
@@ -36,6 +36,7 @@ export default async function DesignerInvoicesPage() {
         isAdmin={false}
         designers={[]}
         designerName={profile?.full_name || profile?.email || 'You'}
+        currentUserId={user.id}
       />
     )
   }

@@ -15,6 +15,7 @@ import {
   FileSignature,
   MessageSquare,
   Wallet,
+  ClipboardList,
 } from 'lucide-react'
 import type { Profile, WorkspaceWithRole } from '@/types/database'
 import { cn, getInitials } from '@/lib/utils'
@@ -327,7 +328,7 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
                 <NavLink
                   href="/dashboard/designer-invoices"
                   icon={Wallet}
-                  label="Designer Pay"
+                  label="Payments"
                   isCollapsed={isCollapsed}
                 />
               </div>
@@ -366,9 +367,21 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
                 badge={unreadMessageCount}
               />
               <NavLink
+                href="/dashboard/my-tasks"
+                icon={ClipboardList}
+                label="My Tasks"
+                isCollapsed={isCollapsed}
+              />
+              <NavLink
+                href="/dashboard/contracts"
+                icon={FileSignature}
+                label="Contracts"
+                isCollapsed={isCollapsed}
+              />
+              <NavLink
                 href="/dashboard/designer-invoices"
                 icon={Wallet}
-                label="My Invoices"
+                label="Payments"
                 isCollapsed={isCollapsed}
               />
             </div>

@@ -1,16 +1,28 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { CheckCircle2, Clock, Receipt } from 'lucide-react'
+import { useState, useTransition, useRef } from 'react'
+import { CheckCircle2, Clock, Receipt, Plus, Upload, Loader2, AlertCircle, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { markDesignerInvoicePaid } from './designer-invoice-actions'
+import { markDesignerInvoicePaid, createDesignerInvoice, submitDesignerInvoice } from './designer-invoice-actions'
+import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
 
 interface InvoiceItem {
   id: string
   designer_id?: string
   invoice_number: string
   amount: number
+  description?: string | null
+  attachment_path?: string | null
   status: 'pending' | 'paid'
   period_start: string
   period_end: string
@@ -29,6 +41,7 @@ interface Props {
   isAdmin: boolean
   designers: DesignerInfo[]
   designerName: string
+  currentUserId?: string
 }
 
 function formatCurrency(n: number) {
@@ -41,18 +54,147 @@ function formatPeriod(start: string, end: string) {
   return `${s} – ${e}`
 }
 
-export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, designers, designerName }: Props) {
+function todayISO() { return new Date().toISOString().slice(0, 10) }
+function firstOfMonth() {
+  const d = new Date(); d.setDate(1)
+  return d.toISOString().slice(0, 10)
+}
+function lastOfMonth() {
+  const d = new Date(); d.setMonth(d.getMonth() + 1, 0)
+  return d.toISOString().slice(0, 10)
+}
+
+export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, designers, designerName, currentUserId }: Props) {
   const [invoices, setInvoices] = useState<InvoiceItem[]>(initialInvoices)
   const [isPending, startTransition] = useTransition()
 
+  // ── Admin: Create Invoice modal ────────────────────────────────────────────
+  const [createOpen, setCreateOpen] = useState(false)
+  const [createDesignerId, setCreateDesignerId] = useState(designers[0]?.id ?? '')
+  const [createAmount, setCreateAmount] = useState('')
+  const [createDescription, setCreateDescription] = useState('')
+  const [createPeriodStart, setCreatePeriodStart] = useState(firstOfMonth())
+  const [createPeriodEnd, setCreatePeriodEnd] = useState(lastOfMonth())
+  const [createError, setCreateError] = useState<string | null>(null)
+
+  function resetCreate() {
+    setCreateDesignerId(designers[0]?.id ?? '')
+    setCreateAmount('')
+    setCreateDescription('')
+    setCreatePeriodStart(firstOfMonth())
+    setCreatePeriodEnd(lastOfMonth())
+    setCreateError(null)
+  }
+
+  function handleCreate() {
+    const amt = parseFloat(createAmount)
+    if (!createDesignerId) { setCreateError('Select a designer.'); return }
+    if (isNaN(amt) || amt <= 0) { setCreateError('Enter a valid amount.'); return }
+    if (!createPeriodStart || !createPeriodEnd) { setCreateError('Enter a period.'); return }
+    setCreateError(null)
+
+    const designer = designers.find(d => d.id === createDesignerId)
+    const invNum = `DES-${createPeriodStart.slice(0, 7).replace('-', '')}-${Date.now().toString().slice(-4)}`
+
+    startTransition(async () => {
+      const result = await createDesignerInvoice(
+        createDesignerId, invNum, amt, createDescription || null, createPeriodStart, createPeriodEnd
+      )
+      if (result.error) { setCreateError(result.error); return }
+      toast.success('Invoice created')
+      setCreateOpen(false)
+      resetCreate()
+      setInvoices(prev => [{
+        id: `new-${Date.now()}`,
+        designer_id: createDesignerId,
+        invoice_number: invNum,
+        amount: amt,
+        description: createDescription || null,
+        attachment_path: null,
+        status: 'pending',
+        period_start: createPeriodStart,
+        period_end: createPeriodEnd,
+        paid_at: null,
+        created_at: new Date().toISOString(),
+      }, ...prev])
+      void designer
+    })
+  }
+
+  // ── Designer: Submit Invoice modal ─────────────────────────────────────────
+  const [submitOpen, setSubmitOpen] = useState(false)
+  const [submitAmount, setSubmitAmount] = useState('')
+  const [submitDescription, setSubmitDescription] = useState('')
+  const [submitPeriodStart, setSubmitPeriodStart] = useState(firstOfMonth())
+  const [submitPeriodEnd, setSubmitPeriodEnd] = useState(lastOfMonth())
+  const [submitFile, setSubmitFile] = useState<File | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  function resetSubmit() {
+    setSubmitAmount('')
+    setSubmitDescription('')
+    setSubmitPeriodStart(firstOfMonth())
+    setSubmitPeriodEnd(lastOfMonth())
+    setSubmitFile(null)
+    setSubmitError(null)
+    setUploadProgress(false)
+  }
+
+  async function handleSubmit() {
+    const amt = parseFloat(submitAmount)
+    if (isNaN(amt) || amt <= 0) { setSubmitError('Enter a valid amount.'); return }
+    if (!submitDescription.trim()) { setSubmitError('Description is required.'); return }
+    setSubmitError(null)
+
+    let attachmentPath: string | null = null
+
+    if (submitFile) {
+      setUploadProgress(true)
+      const supabase = createClient()
+      const safeName = submitFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const path = `${currentUserId}/${Date.now()}-${safeName}`
+      const { error: uploadErr } = await supabase.storage
+        .from('designer-invoices')
+        .upload(path, submitFile, { contentType: submitFile.type })
+      setUploadProgress(false)
+      if (uploadErr) { setSubmitError(`Upload failed: ${uploadErr.message}`); return }
+      attachmentPath = path
+    }
+
+    const invNum = `INV-${submitPeriodStart.slice(0, 7).replace('-', '')}-${Date.now().toString().slice(-4)}`
+
+    startTransition(async () => {
+      const result = await submitDesignerInvoice(
+        invNum, amt, submitDescription.trim(), submitPeriodStart, submitPeriodEnd, attachmentPath
+      )
+      if (result.error) { setSubmitError(result.error); return }
+      toast.success('Invoice submitted for review')
+      setSubmitOpen(false)
+      resetSubmit()
+      setInvoices(prev => [{
+        id: `new-${Date.now()}`,
+        invoice_number: invNum,
+        amount: amt,
+        description: submitDescription,
+        attachment_path: attachmentPath,
+        status: 'pending',
+        period_start: submitPeriodStart,
+        period_end: submitPeriodEnd,
+        paid_at: null,
+        created_at: new Date().toISOString(),
+      }, ...prev])
+    })
+  }
+
+  // ── Mark paid ──────────────────────────────────────────────────────────────
   function handleMarkPaid(invoiceId: string) {
     startTransition(async () => {
       try {
         await markDesignerInvoicePaid(invoiceId)
         setInvoices((prev) =>
-          prev.map((inv) =>
-            inv.id === invoiceId ? { ...inv, status: 'paid', paid_at: new Date().toISOString() } : inv
-          )
+          prev.map((inv) => inv.id === invoiceId ? { ...inv, status: 'paid', paid_at: new Date().toISOString() } : inv)
         )
         toast.success('Invoice marked as paid')
       } catch {
@@ -67,15 +209,26 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
 
   return (
     <div className="animate-fade-in max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-black tracking-tight">
-          {isAdmin ? 'Designer Invoices' : 'My Invoices'}
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          {isAdmin
-            ? 'View and manage retainer invoices for all designers.'
-            : `Your monthly retainer invoices, ${designerName}.`}
-        </p>
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-black tracking-tight">Payments</h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            {isAdmin
+              ? 'Manage designer payouts and invoices.'
+              : `Your invoices and payment history, ${designerName}.`}
+          </p>
+        </div>
+        {isAdmin ? (
+          <Button size="sm" rounded="sm" onClick={() => { setCreateOpen(true); resetCreate() }} className="gap-1.5 text-xs shrink-0">
+            <Plus size={13} strokeWidth={1.5} />
+            Create Invoice
+          </Button>
+        ) : (
+          <Button size="sm" rounded="sm" onClick={() => { setSubmitOpen(true); resetSubmit() }} className="gap-1.5 text-xs shrink-0">
+            <Plus size={13} strokeWidth={1.5} />
+            Submit Invoice
+          </Button>
+        )}
       </div>
 
       {/* Summary cards */}
@@ -101,7 +254,7 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
         )}
       </div>
 
-      {/* Designer retainer info (admin only) */}
+      {/* Designer retainer rates (admin only) */}
       {isAdmin && designers.length > 0 && (
         <div className="mb-6">
           <h2 className="text-sm font-semibold text-black mb-3">Designer Retainers</h2>
@@ -136,7 +289,7 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
             <Receipt size={28} strokeWidth={1} className="text-zinc-200 mb-3" />
             <p className="text-sm text-zinc-400">No invoices yet.</p>
             <p className="text-xs text-zinc-300 mt-1">
-              {isAdmin ? 'Invoices are auto-generated on the 1st of each month.' : 'Your invoices will appear here.'}
+              {isAdmin ? 'Create an invoice using the button above.' : 'Submit an invoice to get paid.'}
             </p>
           </div>
         ) : (
@@ -149,7 +302,8 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
                     {isAdmin && (
                       <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Designer</th>
                     )}
-                    <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Period</th>
+                    <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden sm:table-cell">Period</th>
+                    <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Description</th>
                     <th className="px-5 py-3 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Amount</th>
                     <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Status</th>
                     {isAdmin && (
@@ -164,12 +318,13 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
                       <tr key={inv.id} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/40 transition-colors">
                         <td className="px-5 py-3.5 font-medium text-black">{inv.invoice_number}</td>
                         {isAdmin && (
-                          <td className="px-5 py-3.5 text-zinc-500 hidden md:table-cell">
-                            {designer?.name ?? '—'}
-                          </td>
+                          <td className="px-5 py-3.5 text-zinc-500 hidden md:table-cell">{designer?.name ?? '—'}</td>
                         )}
-                        <td className="px-5 py-3.5 text-zinc-500 text-xs whitespace-nowrap">
+                        <td className="px-5 py-3.5 text-zinc-500 text-xs whitespace-nowrap hidden sm:table-cell">
                           {formatPeriod(inv.period_start, inv.period_end)}
+                        </td>
+                        <td className="px-5 py-3.5 text-zinc-400 text-xs hidden md:table-cell max-w-[160px] truncate">
+                          {inv.description || <span className="text-zinc-200">—</span>}
                         </td>
                         <td className="px-5 py-3.5 text-right font-medium text-black tabular-nums">
                           {formatCurrency(inv.amount)}
@@ -207,6 +362,172 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
           </div>
         )}
       </div>
+
+      {/* ── Admin: Create Invoice dialog ───────────────────────────────────── */}
+      <Dialog open={createOpen} onOpenChange={(o) => { if (!isPending) { setCreateOpen(o); if (!o) resetCreate() } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Invoice for Designer</DialogTitle>
+            <DialogDescription>Log a payout for a specific designer and period.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {createError && (
+              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-lg text-red-700 text-sm">
+                <AlertCircle size={14} strokeWidth={1.5} className="mt-0.5 shrink-0" />{createError}
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-zinc-600">Designer</Label>
+              <Select value={createDesignerId} onValueChange={setCreateDesignerId}>
+                <SelectTrigger className="rounded-lg">
+                  <SelectValue placeholder="Select designer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {designers.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-zinc-600">Amount (USD)</Label>
+              <Input
+                type="number"
+                min="1"
+                step="0.01"
+                placeholder="e.g. 2500"
+                value={createAmount}
+                onChange={e => setCreateAmount(e.target.value)}
+                disabled={isPending}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-zinc-600">Description (optional)</Label>
+              <Input
+                placeholder="e.g. March Retainer"
+                value={createDescription}
+                onChange={e => setCreateDescription(e.target.value)}
+                disabled={isPending}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wide text-zinc-600">Period Start</Label>
+                <Input type="date" value={createPeriodStart} onChange={e => setCreatePeriodStart(e.target.value)} disabled={isPending} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wide text-zinc-600">Period End</Label>
+                <Input type="date" value={createPeriodEnd} onChange={e => setCreatePeriodEnd(e.target.value)} disabled={isPending} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" rounded="sm" onClick={() => setCreateOpen(false)} disabled={isPending}>Cancel</Button>
+            <Button rounded="sm" onClick={handleCreate} disabled={isPending || !createAmount || !createDesignerId}>
+              {isPending && <Loader2 size={13} className="animate-spin mr-1" />}
+              Create Invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Designer: Submit Invoice dialog ───────────────────────────────── */}
+      <Dialog open={submitOpen} onOpenChange={(o) => { if (!isPending && !uploadProgress) { setSubmitOpen(o); if (!o) resetSubmit() } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Submit Invoice</DialogTitle>
+            <DialogDescription>Submit your invoice to the admin for processing and payment.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {submitError && (
+              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-lg text-red-700 text-sm">
+                <AlertCircle size={14} strokeWidth={1.5} className="mt-0.5 shrink-0" />{submitError}
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-zinc-600">Amount (USD)</Label>
+              <Input
+                type="number"
+                min="1"
+                step="0.01"
+                placeholder="e.g. 2500"
+                value={submitAmount}
+                onChange={e => setSubmitAmount(e.target.value)}
+                disabled={isPending || uploadProgress}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-zinc-600">Description</Label>
+              <Input
+                placeholder="e.g. March Retainer — Brand design"
+                value={submitDescription}
+                onChange={e => setSubmitDescription(e.target.value)}
+                disabled={isPending || uploadProgress}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wide text-zinc-600">Period Start</Label>
+                <Input type="date" value={submitPeriodStart} onChange={e => setSubmitPeriodStart(e.target.value)} disabled={isPending || uploadProgress} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wide text-zinc-600">Period End</Label>
+                <Input type="date" value={submitPeriodEnd} onChange={e => setSubmitPeriodEnd(e.target.value)} disabled={isPending || uploadProgress} />
+              </div>
+            </div>
+
+            {/* PDF upload */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-zinc-600">Invoice PDF (optional)</Label>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".pdf,application/pdf"
+                className="hidden"
+                onChange={e => setSubmitFile(e.target.files?.[0] ?? null)}
+              />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={isPending || uploadProgress}
+                className={cn(
+                  'w-full h-20 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1.5 text-xs transition-colors',
+                  submitFile
+                    ? 'border-zinc-400 bg-zinc-50 text-zinc-700'
+                    : 'border-zinc-200 hover:border-zinc-400 text-zinc-400 hover:text-zinc-600'
+                )}
+              >
+                {submitFile ? (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <Upload size={14} strokeWidth={1.5} />
+                      <span className="font-medium truncate max-w-[200px]">{submitFile.name}</span>
+                      <button
+                        type="button"
+                        onClick={e => { e.stopPropagation(); setSubmitFile(null); if (fileRef.current) fileRef.current.value = '' }}
+                        className="text-zinc-400 hover:text-red-500"
+                      >
+                        <X size={12} strokeWidth={2} />
+                      </button>
+                    </div>
+                    <span className="text-zinc-400">{(submitFile.size / 1024).toFixed(0)} KB</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload size={16} strokeWidth={1.5} />
+                    <span>Click to attach PDF</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" rounded="sm" onClick={() => setSubmitOpen(false)} disabled={isPending || uploadProgress}>Cancel</Button>
+            <Button rounded="sm" onClick={handleSubmit} disabled={isPending || uploadProgress || !submitAmount || !submitDescription.trim()}>
+              {(isPending || uploadProgress) && <Loader2 size={13} className="animate-spin mr-1" />}
+              {uploadProgress ? 'Uploading…' : 'Submit Invoice'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
