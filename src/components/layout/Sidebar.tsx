@@ -11,6 +11,7 @@ import {
   BookUser,
   CalendarDays,
   Settings,
+  Headphones,
 } from 'lucide-react'
 import type { Profile, WorkspaceWithRole } from '@/types/database'
 import { cn, getInitials } from '@/lib/utils'
@@ -310,13 +311,25 @@ export function Sidebar({ profile, workspaces }: SidebarProps) {
         ) : (
           <>
             {/* Dashboard — client */}
-            <div className="px-3">
+            <div className="px-3 space-y-0.5">
               <NavLink
                 href="/dashboard"
                 icon={LayoutDashboard}
                 label="Dashboard"
                 isCollapsed={isCollapsed}
                 exact
+              />
+              <NavLink
+                href="/dashboard/invoices"
+                icon={Receipt}
+                label="Invoices"
+                isCollapsed={isCollapsed}
+              />
+              <NavLink
+                href="/dashboard/support"
+                icon={Headphones}
+                label="Support"
+                isCollapsed={isCollapsed}
               />
             </div>
 

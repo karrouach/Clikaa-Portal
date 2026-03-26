@@ -54,10 +54,11 @@ const MOCK_INVOICES: Invoice[] = [
 interface InvoicesClientProps {
   initialInvoices?: Invoice[]
   workspaces?: { id: string; name: string }[]
+  isClient?: boolean
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export function InvoicesClient({ initialInvoices, workspaces = [] }: InvoicesClientProps) {
+export function InvoicesClient({ initialInvoices, workspaces = [], isClient = false }: InvoicesClientProps) {
   const [invoices, setInvoices]       = useState<Invoice[]>(initialInvoices?.length ? initialInvoices : MOCK_INVOICES)
   const [createOpen, setCreateOpen]   = useState(false)
   const [editInvoice, setEditInvoice] = useState<Invoice | null>(null)
@@ -107,27 +108,33 @@ export function InvoicesClient({ initialInvoices, workspaces = [] }: InvoicesCli
       {/* ── Page header ───────────────────────────────────────────────────── */}
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-black tracking-tight">Invoices</h1>
+          <h1 className="text-2xl font-semibold text-black tracking-tight">
+            {isClient ? 'My Invoices' : 'Invoices'}
+          </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Track billing and payments across all your clients.
+            {isClient
+              ? 'Review and download your invoices.'
+              : 'Track billing and payments across all your clients.'}
           </p>
         </div>
 
-        <div className="flex items-start gap-4 shrink-0">
-          <div className="text-right hidden sm:block">
-            <p className="text-xs text-zinc-400 uppercase tracking-widest">Outstanding</p>
-            <p className="text-2xl font-semibold text-black mt-0.5">
-              ${totalPending.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-            </p>
+        {!isClient && (
+          <div className="flex items-start gap-4 shrink-0">
+            <div className="text-right hidden sm:block">
+              <p className="text-xs text-zinc-400 uppercase tracking-widest">Outstanding</p>
+              <p className="text-2xl font-semibold text-black mt-0.5">
+                ${totalPending.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="flex items-center gap-1.5 h-9 px-4 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 active:bg-zinc-900 transition-colors duration-150"
+            >
+              <Plus size={14} strokeWidth={1.5} />
+              Create Invoice
+            </button>
           </div>
-          <button
-            onClick={() => setCreateOpen(true)}
-            className="flex items-center gap-1.5 h-9 px-4 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 active:bg-zinc-900 transition-colors duration-150"
-          >
-            <Plus size={14} strokeWidth={1.5} />
-            Create Invoice
-          </button>
-        </div>
+        )}
       </div>
 
       {/* ── Mobile card list ──────────────────────────────────────────────── */}
@@ -135,8 +142,11 @@ export function InvoicesClient({ initialInvoices, workspaces = [] }: InvoicesCli
         {invoices.map(inv => (
           <button
             key={inv.id}
-            onClick={() => setViewInvoice(inv)}
-            className="w-full text-left bg-white border border-zinc-100 rounded-xl p-4 hover:border-zinc-200 active:bg-zinc-50 transition-colors"
+            onClick={() => !isClient && setViewInvoice(inv)}
+            className={cn(
+              'w-full text-left bg-white border border-zinc-100 rounded-xl p-4 transition-colors',
+              isClient ? 'cursor-default' : 'hover:border-zinc-200 active:bg-zinc-50',
+            )}
           >
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="min-w-0">
@@ -173,14 +183,18 @@ export function InvoicesClient({ initialInvoices, workspaces = [] }: InvoicesCli
                 <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden lg:table-cell whitespace-nowrap">Due</th>
                 <th className="px-6 py-3 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Amount</th>
                 <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Status</th>
+                {isClient && <th className="px-4 py-3 w-10" />}
               </tr>
             </thead>
             <tbody>
               {invoices.map(inv => (
                 <tr
                   key={inv.id}
-                  onClick={() => setViewInvoice(inv)}
-                  className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/60 transition-colors cursor-pointer group"
+                  onClick={() => !isClient && setViewInvoice(inv)}
+                  className={cn(
+                    'border-b border-zinc-50 last:border-0 transition-colors group',
+                    isClient ? '' : 'hover:bg-zinc-50/60 cursor-pointer',
+                  )}
                 >
                   <td className="px-6 py-4 font-mono text-xs text-zinc-500 whitespace-nowrap">{inv.id}</td>
                   <td className="px-6 py-4 font-medium text-black whitespace-nowrap group-hover:text-black">{inv.client}</td>
@@ -193,6 +207,16 @@ export function InvoicesClient({ initialInvoices, workspaces = [] }: InvoicesCli
                       {STATUS_LABELS[inv.status]}
                     </span>
                   </td>
+                  {isClient && (
+                    <td className="px-4 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => setViewInvoice(inv)}
+                        className="px-2.5 py-1 text-[11px] font-medium text-zinc-600 hover:text-black border border-zinc-200 hover:border-zinc-300 rounded-lg transition-colors"
+                      >
+                        View
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

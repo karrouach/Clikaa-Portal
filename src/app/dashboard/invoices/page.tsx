@@ -10,23 +10,33 @@ export default async function InvoicesPage() {
 
   let workspaces: { id: string; name: string }[] = []
   let initialInvoices: import('./InvoicesClient').Invoice[] = []
+  let isClient = false
 
   if (user) {
-    // Fetch workspaces the user belongs to
-    const { data: memberships } = await supabase
-      .from('workspace_members')
-      .select('workspaces(id, name)')
-      .eq('user_id', user.id)
+    // Fetch the user's role and workspace memberships
+    const [{ data: profile }, { data: memberships }] = await Promise.all([
+      supabase.from('profiles').select('role').eq('id', user.id).single(),
+      supabase.from('workspace_members').select('workspaces(id, name), role').eq('user_id', user.id),
+    ])
+
+    isClient = profile?.role === 'client'
 
     workspaces = (memberships ?? [])
       .map(m => m.workspaces as { id: string; name: string } | null)
       .filter((w): w is { id: string; name: string } => w !== null)
 
-    // Fetch invoices
-    const { data: rows } = await supabase
+    // Build invoice query
+    let query = supabase
       .from('invoices')
       .select('*')
       .order('created_at', { ascending: false })
+
+    // Clients only see invoices for their workspaces
+    if (isClient && workspaces.length > 0) {
+      query = query.in('workspace_id', workspaces.map(w => w.id))
+    }
+
+    const { data: rows } = await query
 
     if (rows) {
       initialInvoices = rows.map(r => ({
@@ -43,5 +53,5 @@ export default async function InvoicesPage() {
     }
   }
 
-  return <InvoicesClient initialInvoices={initialInvoices} workspaces={workspaces} />
+  return <InvoicesClient initialInvoices={initialInvoices} workspaces={workspaces} isClient={isClient} />
 }

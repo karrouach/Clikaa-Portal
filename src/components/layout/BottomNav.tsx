@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Receipt, Users, Settings } from 'lucide-react'
+import { LayoutDashboard, Receipt, Users, Settings, Headphones } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface BottomNavProps {
@@ -45,6 +45,18 @@ export function BottomNav({ isAdmin }: BottomNavProps) {
       icon: LayoutDashboard,
       href: '/dashboard',
       isActive: pathname === '/dashboard',
+    },
+    {
+      label: 'Invoices',
+      icon: Receipt,
+      href: '/dashboard/invoices',
+      isActive: pathname.startsWith('/dashboard/invoices'),
+    },
+    {
+      label: 'Support',
+      icon: Headphones,
+      href: '/dashboard/support',
+      isActive: pathname.startsWith('/dashboard/support'),
     },
     {
       label: 'Settings',

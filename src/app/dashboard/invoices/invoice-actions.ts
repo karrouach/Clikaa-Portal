@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { LineItem } from '@/types/database'
+import { notifyWorkspaceClients } from '../notification-actions'
 
 export interface CreateInvoiceInput {
   workspace_id: string | null
@@ -51,12 +52,25 @@ export async function updateInvoiceStatus(id: string, status: string) {
     updateData.sent_at = new Date().toISOString()
   }
 
-  const { error } = await supabase
+  const { data: invoice, error } = await supabase
     .from('invoices')
     .update(updateData)
     .eq('id', id)
+    .select('workspace_id, invoice_number')
+    .single()
 
   if (error) return { error: error.message }
+
+  // Fire in-app notifications to workspace clients when invoice is sent
+  if (status === 'pending' && invoice?.workspace_id) {
+    const invoiceLabel = invoice.invoice_number ?? id
+    await notifyWorkspaceClients(
+      invoice.workspace_id,
+      `New Invoice: You have a new invoice (${invoiceLabel}) ready for review and payment.`,
+      '/dashboard/invoices',
+    )
+  }
+
   revalidatePath('/dashboard/invoices')
   return { success: true }
 }

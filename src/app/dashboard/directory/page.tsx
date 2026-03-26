@@ -46,7 +46,7 @@ export default async function DirectoryPage() {
   // Clients: workspace_members where role = 'client', joined with profiles + workspaces
   const { data: clientRows } = await admin
     .from('workspace_members')
-    .select('id, workspace_id, user_id, workspaces(id, name), profiles(id, full_name, email, avatar_url, title)')
+    .select('id, workspace_id, user_id, created_at, workspaces(id, name), profiles(id, full_name, email, avatar_url, title)')
     .eq('role', 'client')
     .order('created_at', { ascending: true })
 
@@ -63,14 +63,24 @@ export default async function DirectoryPage() {
       email: profile.email ?? '',
       avatar_url: profile.avatar_url,
       title: profile.title,
+      joinedDate: row.created_at
+        ? new Date(row.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        : '—',
     }]
   })
+
+  // All workspaces for the "Add Client" workspace selector
+  const { data: allWorkspaces } = await admin
+    .from('workspaces')
+    .select('id, name')
+    .order('name', { ascending: true })
 
   return (
     <DirectoryClient
       teamMembers={teamMembers}
       clients={clients}
       currentUserId={user.id}
+      workspaces={allWorkspaces ?? []}
     />
   )
 }

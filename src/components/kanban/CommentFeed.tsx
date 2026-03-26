@@ -297,77 +297,109 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
 
       {/* ── Comment input ─────────────────────────────────────────────────── */}
       <form onSubmit={handleSubmit} className="pt-3 border-t border-zinc-100">
-        <div className="flex items-end gap-2">
+        <div className="flex items-start gap-2.5">
           {/* Current user avatar */}
-          <Avatar className="w-6 h-6 shrink-0 mb-0.5">
+          <Avatar className="w-7 h-7 shrink-0 mt-2">
             <AvatarImage src={currentUserProfile.avatar_url ?? undefined} />
             <AvatarFallback className="text-[9px] bg-zinc-100 text-zinc-600">
               {getInitials(currentUserProfile.full_name || currentUserProfile.email)}
             </AvatarFallback>
           </Avatar>
 
-          {/* Textarea wrapper — relative so mention dropdown can be positioned */}
-          <div className="relative flex-1">
-            {/* @mention dropdown */}
-            {mentionQuery !== null && mentionMatches.length > 0 && (
-              <div className="absolute bottom-full left-0 mb-1.5 w-56 bg-white border border-zinc-200 rounded-xl shadow-lg shadow-black/5 z-50 overflow-hidden">
-                <p className="px-3 pt-2 pb-1 text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
-                  Members
-                </p>
-                {mentionMatches.map((m, i) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onMouseDown={(e) => { e.preventDefault(); insertMention(m) }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${
-                      i === mentionHighlight ? 'bg-zinc-50' : 'hover:bg-zinc-50'
-                    }`}
-                  >
-                    <Avatar className="w-5 h-5 shrink-0">
-                      {m.avatar_url && <AvatarImage src={m.avatar_url} />}
-                      <AvatarFallback className="text-[8px] bg-zinc-100 text-zinc-600">
-                        {getInitials(m.full_name || m.email)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm text-black truncate">
-                      {m.full_name || m.email}
-                    </span>
-                  </button>
-                ))}
+          {/* Unified input container */}
+          <div className="flex-1 min-w-0">
+            <div className="relative border border-gray-200 rounded-xl bg-white focus-within:border-zinc-300 transition-colors duration-150">
+              {/* @mention dropdown */}
+              {mentionQuery !== null && mentionMatches.length > 0 && (
+                <div className="absolute bottom-full left-0 mb-1.5 w-56 bg-white border border-zinc-200 rounded-xl shadow-lg shadow-black/5 z-50 overflow-hidden">
+                  <p className="px-3 pt-2 pb-1 text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
+                    Members
+                  </p>
+                  {mentionMatches.map((m, i) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onMouseDown={(e) => { e.preventDefault(); insertMention(m) }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${
+                        i === mentionHighlight ? 'bg-zinc-50' : 'hover:bg-zinc-50'
+                      }`}
+                    >
+                      <Avatar className="w-5 h-5 shrink-0">
+                        {m.avatar_url && <AvatarImage src={m.avatar_url} />}
+                        <AvatarFallback className="text-[8px] bg-zinc-100 text-zinc-600">
+                          {getInitials(m.full_name || m.email)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm text-black truncate">
+                        {m.full_name || m.email}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Textarea */}
+              <Textarea
+                ref={textareaRef}
+                value={body}
+                onChange={handleBodyChange}
+                onKeyDown={handleKeyDown}
+                placeholder={members.length > 0 ? 'Add a comment… @ to mention' : 'Add a comment…'}
+                disabled={isPending}
+                className="border-0 rounded-xl shadow-none focus-visible:ring-0 px-3 pt-2.5 pb-1 resize-none text-sm"
+                style={{ minHeight: '44px' }}
+              />
+
+              {/* Bottom bar: quick chips + send */}
+              <div className="flex items-center justify-between px-2.5 pb-2 pt-1 gap-2">
+                {/* Quick-insert chips */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {(['Status update…', 'Thanks!', 'Approved ✓'] as const).map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      disabled={isPending}
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        setBody((prev) => (prev ? prev + ' ' + chip : chip))
+                        setTimeout(() => {
+                          autoResize()
+                          textareaRef.current?.focus()
+                        }, 0)
+                      }}
+                      className="px-2 py-0.5 text-[11px] text-zinc-500 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-full transition-colors duration-150 disabled:opacity-50"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Send button */}
+                <button
+                  type="submit"
+                  disabled={!body.trim() || isPending}
+                  className="
+                    flex items-center justify-center w-7 h-7 shrink-0
+                    bg-black text-white rounded-lg
+                    hover:bg-zinc-800 transition-colors duration-150
+                    disabled:opacity-30 disabled:cursor-not-allowed
+                  "
+                >
+                  {isPending ? (
+                    <Loader2 size={12} strokeWidth={1.5} className="animate-spin" />
+                  ) : (
+                    <Send size={12} strokeWidth={1.5} />
+                  )}
+                  <span className="sr-only">Send comment</span>
+                </button>
               </div>
-            )}
+            </div>
 
-            <Textarea
-              ref={textareaRef}
-              value={body}
-              onChange={handleBodyChange}
-              onKeyDown={handleKeyDown}
-              placeholder={members.length > 0 ? 'Add a comment… @ to mention (⌘↵ to send)' : 'Add a comment… (⌘↵ to send)'}
-              disabled={isPending}
-              underline
-              className="py-1"
-              style={{ minHeight: '44px' }}
-            />
+            {/* Microcopy hint */}
+            <p className="mt-1.5 px-1 text-[11px] text-zinc-400">
+              Pro tip: press <kbd className="px-1 py-0.5 bg-zinc-100 rounded text-[10px] font-mono">⌘↵</kbd> to send
+            </p>
           </div>
-
-          {/* Send button */}
-          <button
-            type="submit"
-            disabled={!body.trim() || isPending}
-            className="
-              flex items-center justify-center w-7 h-7 mb-0.5 shrink-0
-              bg-black text-white rounded-lg
-              hover:bg-zinc-800 transition-colors duration-150
-              disabled:opacity-30 disabled:cursor-not-allowed
-            "
-          >
-            {isPending ? (
-              <Loader2 size={12} strokeWidth={1.5} className="animate-spin" />
-            ) : (
-              <Send size={12} strokeWidth={1.5} />
-            )}
-            <span className="sr-only">Send comment</span>
-          </button>
         </div>
       </form>
     </div>
