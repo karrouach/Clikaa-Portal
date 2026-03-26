@@ -2,7 +2,13 @@ import { Resend } from 'resend'
 import { renderClikaaEmail, type ClikaaEmailData } from '@/emails/ClikaaTemplate'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const resend = new Resend(process.env.EMAIL_API_KEY)
+// Lazily instantiated — avoids crashing at module load time when
+// EMAIL_API_KEY is not yet configured in the production environment.
+let _resend: Resend | null = null
+function getResend(): Resend {
+  if (!_resend) _resend = new Resend(process.env.EMAIL_API_KEY)
+  return _resend
+}
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://clikaa.com'
 
@@ -28,7 +34,7 @@ export async function sendTransactionalEmail({
 
   const html = renderClikaaEmail(dynamicData)
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: process.env.EMAIL_FROM ?? 'Clikaa <no-reply@clikaa.com>',
     to: Array.isArray(to) ? to : [to],
     subject,
