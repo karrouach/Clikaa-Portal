@@ -10,7 +10,7 @@ import {
 import { NewWorkspaceButton } from '@/components/dashboard/CreateWorkspaceDialog'
 import { GreetingHeader } from '@/components/layout/GreetingHeader'
 import { OnboardingChecklist } from '@/components/dashboard/OnboardingChecklist'
-import { NeedsApprovalPanel } from './NeedsApprovalPanel'
+import { NeedsApprovalPanel, type ReviewTask } from './NeedsApprovalPanel'
 import Link from 'next/link'
 
 export const metadata: Metadata = { title: 'Dashboard' }
@@ -67,7 +67,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, full_name, email')
+    .select('role, full_name, email, avatar_url')
     .eq('id', user.id)
     .single()
 
@@ -269,8 +269,8 @@ export default async function DashboardPage() {
   // ══════════════════════════════════════════════════════════════════════════
   // CLIENT DATA
   // ══════════════════════════════════════════════════════════════════════════
-  let clientTasks: { id: string; title: string; status: string; due_date: string | null; workspace_id: string; updated_at: string }[] = []
-  let reviewTasks: typeof clientTasks = []
+  let clientTasks: ReviewTask[] = []
+  let reviewTasks: ReviewTask[] = []
   let progressPct     = 0
   let nextDeliverable: { title: string; due_date: string } | null = null
   let recentFiles: { id: string; file_name: string; file_type: string; created_at: string; workspace_id: string }[] = []
@@ -289,7 +289,7 @@ export default async function DashboardPage() {
       { data: invoices },
       { data: adminProfiles },
     ] = await Promise.all([
-      supabase.from('tasks').select('id, title, status, due_date, workspace_id, updated_at').in('workspace_id', workspaceIds),
+      supabase.from('tasks').select('id, title, status, priority, description, due_date, start_date, workspace_id, assignee_id, created_at, updated_at').in('workspace_id', workspaceIds),
       supabase.from('workspace_assets').select('id, file_name, file_type, created_at, workspace_id').in('workspace_id', workspaceIds).order('created_at', { ascending: false }).limit(3),
       supabase.from('invoices').select('id, invoice_number, status, total, due_date').in('workspace_id', workspaceIds).neq('status', 'draft').order('created_at', { ascending: false }).limit(5),
       supabase.from('profiles').select('full_name, email').eq('role', 'admin').limit(1),
@@ -715,7 +715,16 @@ export default async function DashboardPage() {
                     <h2 className="text-sm font-semibold text-black">Needs Your Approval</h2>
                     <p className="text-xs text-zinc-400 mt-0.5">Review and approve deliverables below</p>
                   </div>
-                  <NeedsApprovalPanel initialTasks={reviewTasks.map((t) => ({ id: t.id, title: t.title, due_date: t.due_date }))} />
+                  <NeedsApprovalPanel
+                    initialTasks={reviewTasks}
+                    currentUserProfile={{
+                      id: user.id,
+                      role: (profile?.role ?? 'client') as 'admin' | 'client' | 'designer',
+                      full_name: profile?.full_name ?? '',
+                      avatar_url: profile?.avatar_url ?? null,
+                      email: profile?.email ?? '',
+                    }}
+                  />
                 </div>
 
                 {/* Project Timeline */}

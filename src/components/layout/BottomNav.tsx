@@ -61,8 +61,8 @@ export function BottomNav({ isAdmin }: BottomNavProps) {
     {
       label: 'Messages',
       icon: MessageSquare,
-      href: '/dashboard/support',
-      isActive: pathname.startsWith('/dashboard/support'),
+      href: '/dashboard/messages',
+      isActive: pathname.startsWith('/dashboard/messages') || pathname.startsWith('/dashboard/support'),
     },
     {
       label: 'Settings',

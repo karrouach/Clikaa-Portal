@@ -35,6 +35,7 @@ import {
   LayoutGrid,
   Maximize2,
   PanelRight,
+  Pencil,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -669,7 +670,7 @@ export function TaskDetailSheet({
                     <button
                       onClick={handleApprove}
                       disabled={isApproving}
-                      className="w-full h-11 flex items-center justify-center gap-2 bg-emerald-500 text-white text-sm font-semibold rounded-xl hover:bg-emerald-600 active:bg-emerald-700 transition-colors duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="w-full h-11 flex items-center justify-center gap-2 bg-black text-white text-sm font-semibold rounded-xl hover:bg-zinc-800 active:bg-zinc-900 transition-colors duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {isApproving
                         ? <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
@@ -680,8 +681,17 @@ export function TaskDetailSheet({
                   )}
 
                   {/* Description */}
-                  <div className="space-y-1.5">
-                    <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Description</p>
+                  <div className="space-y-1.5 group/desc">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Description</p>
+                      {canEdit && (
+                        <Pencil
+                          size={10}
+                          strokeWidth={1.5}
+                          className="text-zinc-300 opacity-0 group-hover/desc:opacity-100 transition-opacity"
+                        />
+                      )}
+                    </div>
                     <EditableDescription
                       taskId={task.id}
                       value={task.description}

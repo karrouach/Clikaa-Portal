@@ -107,6 +107,72 @@ export async function replyToConversation(
   revalidatePath('/dashboard/messages')
 }
 
+// ── sendMessageReply ───────────────────────────────────────────────────────────
+// Unified reply action for both admin and client users.
+// Admin reply → notifies the client; Client reply → notifies all admins.
+export async function sendMessageReply(
+  conversationId: string,
+  body: string,
+): Promise<void> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const admin = createAdminClient()
+
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('full_name, email, role')
+    .eq('id', user.id)
+    .single()
+
+  const senderName = profile?.full_name || profile?.email || 'User'
+  const isAdminSender = profile?.role === 'admin'
+
+  await admin.from('messages').insert({
+    conversation_id: conversationId,
+    sender_id: user.id,
+    body,
+    is_read: isAdminSender, // admin's own message starts read; client's starts unread for admin
+  })
+
+  await admin
+    .from('conversations')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', conversationId)
+
+  const { data: conv } = await admin
+    .from('conversations')
+    .select('client_id, subject')
+    .eq('id', conversationId)
+    .single()
+
+  if (conv) {
+    if (isAdminSender) {
+      // Admin replied → notify the client
+      await createNotification(
+        conv.client_id,
+        `Reply from ${senderName}: "${conv.subject}"`,
+        '/dashboard/messages',
+      )
+    } else {
+      // Client replied → notify all admins
+      const { data: admins } = await admin.from('profiles').select('id').eq('role', 'admin')
+      await Promise.all(
+        (admins ?? []).map((a) =>
+          createNotification(
+            a.id,
+            `${senderName} replied in "${conv.subject}"`,
+            '/dashboard/messages',
+          )
+        )
+      )
+    }
+  }
+
+  revalidatePath('/dashboard/messages')
+}
+
 // ── markConversationRead ───────────────────────────────────────────────────────
 // Marks all messages in a conversation as read (for the opening user).
 export async function markConversationRead(conversationId: string): Promise<void> {

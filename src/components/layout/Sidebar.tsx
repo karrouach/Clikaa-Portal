@@ -11,7 +11,7 @@ import {
   BookUser,
   CalendarDays,
   Settings,
-  Headphones,
+  HelpCircle,
   FileSignature,
   MessageSquare,
 } from 'lucide-react'
@@ -351,7 +351,7 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
                 exact
               />
               <NavLink
-                href="/dashboard/support"
+                href="/dashboard/messages"
                 icon={MessageSquare}
                 label="Messages"
                 isCollapsed={isCollapsed}
@@ -367,12 +367,6 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
                 href="/dashboard/contracts"
                 icon={FileSignature}
                 label="Contracts"
-                isCollapsed={isCollapsed}
-              />
-              <NavLink
-                href="/dashboard/support"
-                icon={Headphones}
-                label="Support"
                 isCollapsed={isCollapsed}
               />
             </div>
@@ -394,8 +388,16 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
         )}
       </div>
 
-      {/* ── Bottom: Settings ──────────────────────────────────────────────── */}
-      <div className="px-3 pb-4 border-t border-white/5 pt-3">
+      {/* ── Bottom: Help (client only) + Settings ─────────────────────────── */}
+      <div className="px-3 pb-4 border-t border-white/5 pt-3 space-y-0.5">
+        {!isAdmin && (
+          <NavLink
+            href="/dashboard/support"
+            icon={HelpCircle}
+            label="Help & Support"
+            isCollapsed={isCollapsed}
+          />
+        )}
         <NavLink
           href="/dashboard/settings"
           icon={Settings}
