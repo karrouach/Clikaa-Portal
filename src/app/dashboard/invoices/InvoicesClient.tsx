@@ -239,6 +239,7 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
         onStatusChange={handleStatusChange}
         onDelete={handleDelete}
         onEdit={handleEdit}
+        isClient={isClient}
       />
     </div>
   )

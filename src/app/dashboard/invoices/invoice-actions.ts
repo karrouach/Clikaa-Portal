@@ -38,6 +38,17 @@ export async function createInvoice(input: CreateInvoiceInput) {
     .single()
 
   if (error) return { error: error.message }
+
+  // Notify workspace clients when invoice is published directly as pending/sent
+  if (input.status === 'pending' && input.workspace_id) {
+    const amountLabel = '$' + Number(input.total).toLocaleString('en-US', { minimumFractionDigits: 2 })
+    await notifyWorkspaceClients(
+      input.workspace_id,
+      `New Invoice Available: You have a new invoice for ${amountLabel}.`,
+      '/dashboard/invoices',
+    )
+  }
+
   revalidatePath('/dashboard/invoices')
   return { data }
 }
@@ -56,7 +67,7 @@ export async function updateInvoiceStatus(id: string, status: string) {
     .from('invoices')
     .update(updateData)
     .eq('id', id)
-    .select('workspace_id, invoice_number')
+    .select('workspace_id, invoice_number, total')
     .single()
 
   if (error) return { error: error.message }
@@ -64,9 +75,13 @@ export async function updateInvoiceStatus(id: string, status: string) {
   // Fire in-app notifications to workspace clients when invoice is sent
   if (status === 'pending' && invoice?.workspace_id) {
     const invoiceLabel = invoice.invoice_number ?? id
+    const amountLabel = invoice.total
+      ? '$' + Number(invoice.total).toLocaleString('en-US', { minimumFractionDigits: 2 })
+      : ''
+    const amountPart = amountLabel ? ` for ${amountLabel}` : ''
     await notifyWorkspaceClients(
       invoice.workspace_id,
-      `New Invoice: You have a new invoice (${invoiceLabel}) ready for review and payment.`,
+      `New Invoice Available: You have a new invoice (${invoiceLabel})${amountPart} ready for review and payment.`,
       '/dashboard/invoices',
     )
   }

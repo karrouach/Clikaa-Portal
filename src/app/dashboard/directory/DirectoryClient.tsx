@@ -315,9 +315,9 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
               <thead>
                 <tr className="border-b border-zinc-100 bg-zinc-50">
                   <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Client</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Workspace</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Joined</th>
-                  <th className="px-4 py-3 w-20" />
+                  <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Role</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Joined</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Workspace</th>
                 </tr>
               </thead>
               <tbody>
@@ -339,20 +339,20 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
+                        <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded bg-zinc-100 text-zinc-600">
+                          client
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-zinc-400 text-xs whitespace-nowrap">
+                        {client.joinedDate}
+                      </td>
+                      <td className="px-4 py-3.5 hidden md:table-cell">
                         <Link
                           href={`/dashboard/${client.workspaceId}/settings`}
                           className="text-sm text-zinc-600 hover:text-black hover:underline underline-offset-2 transition-colors"
                         >
                           {client.workspaceName}
                         </Link>
-                      </td>
-                      <td className="px-4 py-3.5 text-zinc-400 text-xs hidden md:table-cell">
-                        {client.joinedDate}
-                      </td>
-                      <td className="px-4 py-3.5 text-right">
-                        <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded bg-zinc-100 text-zinc-600">
-                          client
-                        </span>
                       </td>
                     </tr>
                   )

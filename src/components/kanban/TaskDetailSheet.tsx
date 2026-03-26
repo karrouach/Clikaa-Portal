@@ -166,12 +166,12 @@ function EditableTitle({
 function EditableDescription({
   taskId,
   value,
-  isAdmin,
+  canEdit,
   onSaved,
 }: {
   taskId: string
   value: string | null
-  isAdmin: boolean
+  canEdit: boolean
   onSaved: (description: string | null) => void
 }) {
   const [editing, setEditing] = useState(false)
@@ -180,7 +180,7 @@ function EditableDescription({
 
   if (!editing && draft !== (value ?? '')) setDraft(value ?? '')
 
-  if (!isAdmin) {
+  if (!canEdit) {
     return value
       ? <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-wrap">{value}</p>
       : <p className="text-sm text-zinc-400 italic">No description provided.</p>
@@ -231,18 +231,18 @@ function EditableDescription({
 function DatePickerButton({
   label,
   value,
-  isAdmin,
+  canEdit,
   onChange,
 }: {
   label: string
   value: string | null | undefined
-  isAdmin: boolean
+  canEdit: boolean
   onChange: (iso: string | null) => void
 }) {
   const [open, setOpen] = useState(false)
   const selected = value ? new Date(value) : undefined
 
-  if (!isAdmin) {
+  if (!canEdit) {
     return (
       <p className="text-sm text-zinc-900">
         {value ? formatDisplayDate(value) : <span className="text-zinc-400 italic">Not set</span>}
@@ -316,6 +316,8 @@ export function TaskDetailSheet({
 
   const isAdmin = currentUserProfile.role === 'admin'
   const isClient = currentUserProfile.role === 'client'
+  // Clients can edit Status, Priority, Due Date, and Description (not title, assignee, or delete)
+  const canEdit = isAdmin || isClient
   const assignee = task?.assignee_id
     ? workspaceMembers.find((m) => m.id === task.assignee_id) ?? null
     : null
@@ -535,7 +537,7 @@ export function TaskDetailSheet({
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Status</p>
-                      <Select value={task.status} onValueChange={handleStatusChange} disabled={!isAdmin}>
+                      <Select value={task.status} onValueChange={handleStatusChange} disabled={!canEdit}>
                         <SelectTrigger className="rounded-lg">
                           <SelectValue />
                         </SelectTrigger>
@@ -548,7 +550,7 @@ export function TaskDetailSheet({
                     </div>
                     <div className="space-y-1.5">
                       <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Priority</p>
-                      {isAdmin ? (
+                      {canEdit ? (
                         <Select value={task.priority} onValueChange={handlePriorityChange}>
                           <SelectTrigger className="rounded-lg">
                             <SelectValue>
@@ -584,7 +586,7 @@ export function TaskDetailSheet({
                       <DatePickerButton
                         label="start date"
                         value={task.start_date}
-                        isAdmin={isAdmin}
+                        canEdit={canEdit}
                         onChange={handleStartDateChange}
                       />
                     </div>
@@ -595,7 +597,7 @@ export function TaskDetailSheet({
                       <DatePickerButton
                         label="due date"
                         value={task.due_date}
-                        isAdmin={isAdmin}
+                        canEdit={canEdit}
                         onChange={handleDueDateChange}
                       />
                     </div>
@@ -683,7 +685,7 @@ export function TaskDetailSheet({
                     <EditableDescription
                       taskId={task.id}
                       value={task.description}
-                      isAdmin={isAdmin}
+                      canEdit={canEdit}
                       onSaved={handleDescriptionSaved}
                     />
                   </div>

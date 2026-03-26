@@ -308,7 +308,7 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
 
           {/* Unified input container */}
           <div className="flex-1 min-w-0">
-            <div className="relative border border-gray-200 rounded-xl bg-white focus-within:border-zinc-300 transition-colors duration-150">
+            <div className="relative border border-gray-200 rounded-xl bg-white focus-within:border-zinc-300 focus-within:shadow-[0_0_0_3px_rgba(0,0,0,0.04)] transition-all duration-150">
               {/* @mention dropdown */}
               {mentionQuery !== null && mentionMatches.length > 0 && (
                 <div className="absolute bottom-full left-0 mb-1.5 w-56 bg-white border border-zinc-200 rounded-xl shadow-lg shadow-black/5 z-50 overflow-hidden">
@@ -338,7 +338,7 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
                 </div>
               )}
 
-              {/* Textarea */}
+              {/* Textarea — border-0 + shadow-none strips the Textarea base styles so the parent container owns focus styling */}
               <Textarea
                 ref={textareaRef}
                 value={body}
@@ -346,8 +346,7 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
                 onKeyDown={handleKeyDown}
                 placeholder={members.length > 0 ? 'Add a comment… @ to mention' : 'Add a comment…'}
                 disabled={isPending}
-                className="border-0 rounded-xl shadow-none focus-visible:ring-0 px-3 pt-2.5 pb-1 resize-none text-sm"
-                style={{ minHeight: '44px' }}
+                className="border-0 bg-transparent rounded-xl shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none px-3 pt-2.5 pb-1 resize-none text-sm min-h-[44px]"
               />
 
               {/* Bottom bar: quick chips + send */}

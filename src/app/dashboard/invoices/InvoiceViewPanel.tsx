@@ -75,6 +75,7 @@ interface InvoiceViewPanelProps {
   onStatusChange: (id: string, status: InvoiceStatus) => void
   onDelete: (id: string) => void
   onEdit: (invoice: Invoice) => void
+  isClient?: boolean
 }
 
 export function InvoiceViewPanel({
@@ -84,6 +85,7 @@ export function InvoiceViewPanel({
   onStatusChange,
   onDelete,
   onEdit,
+  isClient = false,
 }: InvoiceViewPanelProps) {
   const [activity, setActivity] = useState<ActivityItem[]>([])
   const [statusMenuOpen, setStatusMenuOpen] = useState(false)
@@ -200,39 +202,48 @@ export function InvoiceViewPanel({
                         {invoice.id}
                       </span>
 
-                      {/* Interactive status badge */}
-                      <DropdownMenu open={statusMenuOpen} onOpenChange={setStatusMenuOpen}>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            className={cn(
-                              'inline-flex items-center px-2 py-0.5 text-xs font-medium border rounded-full',
-                              'hover:opacity-80 transition-opacity cursor-pointer',
-                              STATUS_STYLES[invoice.status],
-                            )}
-                          >
-                            {STATUS_LABELS[invoice.status]}
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="min-w-[140px]">
-                          {ALL_STATUSES.map(s => (
-                            <DropdownMenuItem
-                              key={s}
-                              onClick={() => handleStatusChange(invoice.id, s)}
+                      {/* Status badge — interactive for admins, static for clients */}
+                      {isClient ? (
+                        <span className={cn(
+                          'inline-flex items-center px-2 py-0.5 text-xs font-medium border rounded-full',
+                          STATUS_STYLES[invoice.status],
+                        )}>
+                          {STATUS_LABELS[invoice.status]}
+                        </span>
+                      ) : (
+                        <DropdownMenu open={statusMenuOpen} onOpenChange={setStatusMenuOpen}>
+                          <DropdownMenuTrigger asChild>
+                            <button
                               className={cn(
-                                'gap-2',
-                                invoice.status === s && 'font-medium',
+                                'inline-flex items-center px-2 py-0.5 text-xs font-medium border rounded-full',
+                                'hover:opacity-80 transition-opacity cursor-pointer',
+                                STATUS_STYLES[invoice.status],
                               )}
                             >
-                              <span className={cn(
-                                'inline-flex items-center px-2 py-0.5 text-xs font-medium border rounded-full',
-                                STATUS_STYLES[s],
-                              )}>
-                                {STATUS_LABELS[s]}
-                              </span>
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                              {STATUS_LABELS[invoice.status]}
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="min-w-[140px]">
+                            {ALL_STATUSES.map(s => (
+                              <DropdownMenuItem
+                                key={s}
+                                onClick={() => handleStatusChange(invoice.id, s)}
+                                className={cn(
+                                  'gap-2',
+                                  invoice.status === s && 'font-medium',
+                                )}
+                              >
+                                <span className={cn(
+                                  'inline-flex items-center px-2 py-0.5 text-xs font-medium border rounded-full',
+                                  STATUS_STYLES[s],
+                                )}>
+                                  {STATUS_LABELS[s]}
+                                </span>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                     <p className="text-base font-semibold text-black truncate">{invoice.client}</p>
                     {invoice.project && (
@@ -256,6 +267,7 @@ export function InvoiceViewPanel({
 
               {/* ── Quick actions ────────────────────────────────────────── */}
               <div className="px-4 py-2.5 border-b border-zinc-100 flex items-center gap-1 shrink-0 flex-wrap">
+                {/* Download PDF — available to all roles */}
                 <button
                   onClick={handleDownloadPdf}
                   disabled={pdfLoading}
@@ -264,52 +276,58 @@ export function InvoiceViewPanel({
                   <Download size={13} strokeWidth={1.5} />
                   <span>{pdfLoading ? 'Generating…' : 'Download PDF'}</span>
                 </button>
-                <button
-                  onClick={handleSendReminder}
-                  className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors duration-150"
-                >
-                  <Send size={13} strokeWidth={1.5} />
-                  <span>Send Reminder</span>
-                </button>
-                {invoice.status !== 'paid' && (
-                  <button
-                    onClick={() => onMarkPaid(invoice.id)}
-                    className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors duration-150"
-                  >
-                    <CheckCircle2 size={13} strokeWidth={1.5} />
-                    <span>Mark Paid</span>
-                  </button>
-                )}
 
-                {/* ⋯ More menu */}
-                <DropdownMenu open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
-                  <DropdownMenuTrigger asChild>
-                    <button className="ml-auto flex items-center justify-center w-8 h-8 rounded-lg text-zinc-400 hover:bg-zinc-100 transition-colors duration-150">
-                      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="3" cy="7.5" r="1.25" fill="currentColor" />
-                        <circle cx="7.5" cy="7.5" r="1.25" fill="currentColor" />
-                        <circle cx="12" cy="7.5" r="1.25" fill="currentColor" />
-                      </svg>
+                {/* Admin-only actions */}
+                {!isClient && (
+                  <>
+                    <button
+                      onClick={handleSendReminder}
+                      className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors duration-150"
+                    >
+                      <Send size={13} strokeWidth={1.5} />
+                      <span>Send Reminder</span>
                     </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => { setMoreMenuOpen(false); onEdit(invoice) }}
-                      className="gap-2"
-                    >
-                      <Pencil size={13} strokeWidth={1.5} className="text-zinc-400" />
-                      Edit Invoice
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={handleDelete}
-                      className="gap-2 text-red-600 focus:text-red-700 focus:bg-red-50"
-                    >
-                      <Trash2 size={13} strokeWidth={1.5} />
-                      Delete Invoice
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    {invoice.status !== 'paid' && (
+                      <button
+                        onClick={() => onMarkPaid(invoice.id)}
+                        className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors duration-150"
+                      >
+                        <CheckCircle2 size={13} strokeWidth={1.5} />
+                        <span>Mark Paid</span>
+                      </button>
+                    )}
+
+                    {/* ⋯ More menu */}
+                    <DropdownMenu open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
+                      <DropdownMenuTrigger asChild>
+                        <button className="ml-auto flex items-center justify-center w-8 h-8 rounded-lg text-zinc-400 hover:bg-zinc-100 transition-colors duration-150">
+                          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="3" cy="7.5" r="1.25" fill="currentColor" />
+                            <circle cx="7.5" cy="7.5" r="1.25" fill="currentColor" />
+                            <circle cx="12" cy="7.5" r="1.25" fill="currentColor" />
+                          </svg>
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => { setMoreMenuOpen(false); onEdit(invoice) }}
+                          className="gap-2"
+                        >
+                          <Pencil size={13} strokeWidth={1.5} className="text-zinc-400" />
+                          Edit Invoice
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={handleDelete}
+                          className="gap-2 text-red-600 focus:text-red-700 focus:bg-red-50"
+                        >
+                          <Trash2 size={13} strokeWidth={1.5} />
+                          Delete Invoice
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                )}
               </div>
 
               {/* ── Scrollable body ──────────────────────────────────────── */}
