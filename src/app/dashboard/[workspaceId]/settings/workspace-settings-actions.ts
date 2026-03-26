@@ -115,24 +115,47 @@ export async function inviteWorkspaceMember({
   return {}
 }
 
-// ── updateWorkspaceLogo ────────────────────────────────────────────────────
-export async function updateWorkspaceLogo(
+// ── uploadWorkspaceLogoFile ────────────────────────────────────────────────
+// Uploads the logo server-side (using service role) to bypass Storage RLS,
+// then saves the public URL to the workspaces row.
+export async function uploadWorkspaceLogoFile(
   workspaceId: string,
-  logoUrl: string | null
-): Promise<WorkspaceSettingsResult> {
+  formData: FormData
+): Promise<{ url?: string; error?: string }> {
   const ctx = await requireAdminUser()
   if (!ctx) return { error: 'Unauthorised.' }
 
-  const { error } = await ctx.supabase
+  const file = formData.get('file') as File | null
+  if (!file || file.size === 0) return { error: 'No file provided.' }
+  if (!file.type.startsWith('image/')) return { error: 'File must be an image.' }
+  if (file.size > 5 * 1024 * 1024) return { error: 'Image must be under 5 MB.' }
+
+  const admin = createAdminClient()
+  const ext = (file.name.split('.').pop() ?? 'png').toLowerCase()
+  const path = `${workspaceId}/logo.${ext}`
+
+  const arrayBuffer = await file.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+
+  const { error: uploadErr } = await admin.storage
+    .from('workspace-logos')
+    .upload(path, buffer, { contentType: file.type, upsert: true })
+
+  if (uploadErr) return { error: uploadErr.message }
+
+  const { data } = admin.storage.from('workspace-logos').getPublicUrl(path)
+  const url = `${data.publicUrl}?t=${Date.now()}`
+
+  const { error: dbErr } = await ctx.supabase
     .from('workspaces')
-    .update({ logo_url: logoUrl, updated_at: new Date().toISOString() })
+    .update({ logo_url: url, updated_at: new Date().toISOString() })
     .eq('id', workspaceId)
 
-  if (error) return { error: error.message }
+  if (dbErr) return { error: dbErr.message }
 
   revalidatePath(`/dashboard/${workspaceId}/settings`)
-  revalidatePath('/', 'layout') // refresh sidebar logo
-  return {}
+  revalidatePath('/', 'layout')
+  return { url }
 }
 
 // ── removeWorkspaceMember ──────────────────────────────────────────────────

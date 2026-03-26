@@ -2,7 +2,6 @@
 
 import { useState, useTransition, useRef } from 'react'
 import { UserPlus, Trash2, Loader2, AlertCircle, Check, Pencil, ImagePlus } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import {
   Dialog,
   DialogContent,
@@ -24,7 +23,7 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import {
   updateWorkspaceName,
-  updateWorkspaceLogo,
+  uploadWorkspaceLogoFile,
   removeWorkspaceMember,
   inviteWorkspaceMember,
 } from './workspace-settings-actions'
@@ -84,29 +83,14 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!file.type.startsWith('image/')) { setLogoError('Please select an image file.'); return }
-    if (file.size > 5 * 1024 * 1024) { setLogoError('Image must be under 5 MB.'); return }
 
     setLogoError(null)
     startLogoTransition(async () => {
-      const supabase = createClient()
-      const ext = file.name.split('.').pop() ?? 'png'
-      const path = `${workspace.id}/logo.${ext}`
-
-      const { error: uploadErr } = await supabase.storage
-        .from('workspace-logos')
-        .upload(path, file, { contentType: file.type, upsert: true })
-
-      if (uploadErr) { setLogoError(uploadErr.message); return }
-
-      const { data } = supabase.storage.from('workspace-logos').getPublicUrl(path)
-      // Append timestamp to bust CDN cache after re-upload
-      const publicUrl = `${data.publicUrl}?t=${Date.now()}`
-
-      const result = await updateWorkspaceLogo(workspace.id, publicUrl)
+      const fd = new FormData()
+      fd.set('file', file)
+      const result = await uploadWorkspaceLogoFile(workspace.id, fd)
       if (result.error) { setLogoError(result.error); return }
-
-      setLogoPreview(publicUrl)
+      if (result.url) setLogoPreview(result.url)
       if (logoInputRef.current) logoInputRef.current.value = ''
     })
   }

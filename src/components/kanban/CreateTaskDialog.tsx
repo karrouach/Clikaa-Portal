@@ -339,7 +339,7 @@ export function CreateTaskDialog({
                 >
                   <SelectTrigger
                     className={cn(
-                      'h-9',
+                      'h-9 rounded-lg',
                       fieldErrors.assigneeId && 'border-red-300 focus:border-red-400',
                     )}
                   >

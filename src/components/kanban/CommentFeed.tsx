@@ -131,6 +131,9 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
     el.style.height = `${el.scrollHeight}px`
   }
 
+  // Resize on mount so placeholder never gets clipped
+  useEffect(() => { autoResize() }, [])
+
   // ── @mention detection ────────────────────────────────────────────────────
   function handleBodyChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const val = e.target.value
@@ -339,12 +342,11 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
               value={body}
               onChange={handleBodyChange}
               onKeyDown={handleKeyDown}
-              rows={1}
               placeholder={members.length > 0 ? 'Add a comment… @ to mention (⌘↵ to send)' : 'Add a comment… (⌘↵ to send)'}
               disabled={isPending}
               underline
               className="py-1"
-              style={{ minHeight: '32px' }}
+              style={{ minHeight: '44px' }}
             />
           </div>
 

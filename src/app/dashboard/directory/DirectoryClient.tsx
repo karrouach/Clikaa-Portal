@@ -1,0 +1,381 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+import Link from 'next/link'
+import { UserPlus, Trash2, Loader2, AlertCircle, Check } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { inviteTeamMember, removeTeamMember } from '../team/team-actions'
+import { cn } from '@/lib/utils'
+import { getInitials } from '@/lib/utils'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type InviteRole = 'admin' | 'designer'
+
+export type TeamMember = {
+  id: string
+  full_name: string
+  email: string
+  avatar_url: string | null
+  role: string
+  title: string | null
+  created_at: string
+}
+
+export type ClientEntry = {
+  userId: string
+  membershipId: string
+  workspaceId: string
+  workspaceName: string
+  full_name: string
+  email: string
+  avatar_url: string | null
+  title: string | null
+}
+
+interface Props {
+  teamMembers: TeamMember[]
+  clients: ClientEntry[]
+  currentUserId: string
+}
+
+// ─── Role badge styles ────────────────────────────────────────────────────────
+
+const ROLE_BADGE: Record<string, string> = {
+  admin:    'bg-zinc-900 text-white',
+  designer: 'bg-violet-100 text-violet-700',
+  client:   'bg-zinc-100 text-zinc-600',
+}
+
+// ─── Shared avatar helper ─────────────────────────────────────────────────────
+
+function MemberAvatar({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
+  return avatarUrl ? (
+    <img src={avatarUrl} alt="" className="shrink-0 w-8 h-8 rounded-full object-cover" />
+  ) : (
+    <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-semibold text-zinc-600 select-none">
+      {getInitials(name)}
+    </div>
+  )
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function DirectoryClient({ teamMembers: initialTeam, clients, currentUserId }: Props) {
+  const [activeTab, setActiveTab] = useState<'team' | 'clients'>('team')
+  const [team, setTeam]           = useState(initialTeam)
+  const [error, setError]         = useState<string | null>(null)
+  const [removingId, setRemovingId] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  // ── Invite dialog ─────────────────────────────────────────────────────────
+  const [inviteOpen, setInviteOpen]     = useState(false)
+  const [inviteName, setInviteName]     = useState('')
+  const [inviteEmail, setInviteEmail]   = useState('')
+  const [inviteRole, setInviteRole]     = useState<InviteRole>('designer')
+  const [inviteSuccess, setInviteSuccess] = useState(false)
+
+  function resetInvite() {
+    setInviteName(''); setInviteEmail(''); setInviteRole('designer'); setInviteSuccess(false); setError(null)
+  }
+
+  function handleInvite() {
+    setError(null)
+    startTransition(async () => {
+      const result = await inviteTeamMember({ email: inviteEmail, fullName: inviteName, role: inviteRole })
+      if (result.error) { setError(result.error); return }
+      setInviteSuccess(true)
+      setTimeout(() => { setInviteOpen(false); resetInvite() }, 1500)
+    })
+  }
+
+  function handleRemove(userId: string) {
+    if (!confirm('Remove this team member? This will revoke their portal access.')) return
+    setError(null)
+    setRemovingId(userId)
+    startTransition(async () => {
+      const result = await removeTeamMember(userId)
+      setRemovingId(null)
+      if (result.error) { setError(result.error); return }
+      setTeam((prev) => prev.filter((m) => m.id !== userId))
+    })
+  }
+
+  const tabs = [
+    { key: 'team' as const,    label: 'Internal Team', count: team.length },
+    { key: 'clients' as const, label: 'Clients',       count: clients.length },
+  ]
+
+  return (
+    <div className="animate-fade-in">
+      {/* ── Page heading ───────────────────────────────────────────────── */}
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-black tracking-tight">Directory</h1>
+          <p className="mt-1 text-sm text-zinc-500">Internal team members and external clients.</p>
+        </div>
+
+        {activeTab === 'team' && (
+          <Button
+            size="sm"
+            rounded="sm"
+            onClick={() => { setInviteOpen(true); resetInvite() }}
+            className="gap-1.5 text-xs shrink-0"
+          >
+            <UserPlus size={13} strokeWidth={1.5} />
+            Add Member
+          </Button>
+        )}
+      </div>
+
+      {/* ── Error banner ───────────────────────────────────────────────── */}
+      {error && (
+        <div className="mb-4 flex items-start gap-2.5 p-3 bg-red-50 border border-red-100 text-red-700 text-sm rounded-lg">
+          <AlertCircle size={15} strokeWidth={1.5} className="mt-0.5 shrink-0" />
+          {error}
+        </div>
+      )}
+
+      {/* ── Tabs ───────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-0.5 mb-6 border-b border-zinc-100">
+        {tabs.map(({ key, label, count }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={cn(
+              'relative px-4 pb-3 pt-1 text-sm font-medium transition-colors duration-150',
+              activeTab === key
+                ? 'text-black after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-black'
+                : 'text-zinc-400 hover:text-zinc-600'
+            )}
+          >
+            {label}
+            <span className={cn(
+              'ml-1.5 text-[10px] tabular-nums px-1.5 py-0.5 rounded-full',
+              activeTab === key ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-500'
+            )}>
+              {count}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Internal Team Tab ──────────────────────────────────────────── */}
+      {activeTab === 'team' && (
+        <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+          {team.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-sm font-medium text-zinc-900 mb-1">No team members yet</p>
+              <p className="text-sm text-zinc-400">Invite your first member to get started.</p>
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-100 bg-zinc-50">
+                  <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Member</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Role</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Joined</th>
+                  <th className="px-4 py-3 w-10" />
+                </tr>
+              </thead>
+              <tbody>
+                {team.map((member) => {
+                  const isYou = member.id === currentUserId
+                  const isRemoving = removingId === member.id
+                  const displayName = member.full_name || member.email
+
+                  return (
+                    <tr
+                      key={member.id}
+                      className={cn(
+                        'border-b border-zinc-50 last:border-0 transition-colors',
+                        isRemoving ? 'opacity-40' : 'hover:bg-zinc-50/50'
+                      )}
+                    >
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <MemberAvatar name={displayName} avatarUrl={member.avatar_url} />
+                          <div>
+                            <Link
+                              href={`/dashboard/team/${member.id}`}
+                              className="font-medium text-black hover:underline underline-offset-2"
+                            >
+                              {displayName}
+                              {isYou && <span className="ml-1.5 text-[10px] text-zinc-400 font-normal">(you)</span>}
+                            </Link>
+                            {member.title ? (
+                              <p className="text-xs text-zinc-500">{member.title}</p>
+                            ) : (
+                              <p className="text-xs text-zinc-400">{member.email}</p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className={cn('inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded capitalize', ROLE_BADGE[member.role] ?? 'bg-zinc-100 text-zinc-600')}>
+                          {member.role}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-zinc-400 text-xs hidden md:table-cell">
+                        {new Date(member.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-4 py-3.5 text-right">
+                        {!isYou && (
+                          <button
+                            onClick={() => handleRemove(member.id)}
+                            disabled={isPending}
+                            className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors disabled:pointer-events-none"
+                            title="Remove member"
+                          >
+                            {isRemoving
+                              ? <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
+                              : <Trash2 size={14} strokeWidth={1.5} />
+                            }
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* ── Clients Tab ────────────────────────────────────────────────── */}
+      {activeTab === 'clients' && (
+        <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+          {clients.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-sm font-medium text-zinc-900 mb-1">No clients yet</p>
+              <p className="text-sm text-zinc-400">Invite clients from within a workspace's Settings page.</p>
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-100 bg-zinc-50">
+                  <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Client</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Workspace</th>
+                  <th className="px-4 py-3 w-20" />
+                </tr>
+              </thead>
+              <tbody>
+                {clients.map((client) => {
+                  const displayName = client.full_name || client.email
+                  return (
+                    <tr key={`${client.userId}-${client.workspaceId}`} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/50 transition-colors">
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <MemberAvatar name={displayName} avatarUrl={client.avatar_url} />
+                          <div>
+                            <p className="font-medium text-black">{displayName}</p>
+                            {client.title ? (
+                              <p className="text-xs text-zinc-500">{client.title}</p>
+                            ) : (
+                              <p className="text-xs text-zinc-400">{client.email}</p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <Link
+                          href={`/dashboard/${client.workspaceId}/settings`}
+                          className="text-sm text-zinc-600 hover:text-black hover:underline underline-offset-2 transition-colors"
+                        >
+                          {client.workspaceName}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3.5 text-right">
+                        <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded bg-zinc-100 text-zinc-600">
+                          client
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* ── Invite dialog ──────────────────────────────────────────────── */}
+      <Dialog open={inviteOpen} onOpenChange={(open) => { if (!isPending) { setInviteOpen(open); if (!open) resetInvite() } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Team Member</DialogTitle>
+            <DialogDescription>
+              Invite an internal team member. They'll receive a portal access link via email.
+            </DialogDescription>
+          </DialogHeader>
+
+          {inviteSuccess ? (
+            <div className="py-6 flex flex-col items-center text-center gap-2">
+              <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
+                <Check size={18} strokeWidth={2} className="text-emerald-600" />
+              </div>
+              <p className="text-sm font-medium text-emerald-600">Invite sent!</p>
+              <p className="text-xs text-zinc-400">They'll receive an email to set their password.</p>
+            </div>
+          ) : (
+            <div className="space-y-5 py-4">
+              {error && (
+                <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-lg text-red-700 text-sm">
+                  <AlertCircle size={14} strokeWidth={1.5} className="mt-0.5 shrink-0" />
+                  {error}
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wide text-zinc-600">Full name</Label>
+                <Input type="text" placeholder="Jane Smith" value={inviteName} onChange={(e) => setInviteName(e.target.value)} disabled={isPending} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wide text-zinc-600">Email address</Label>
+                <Input type="email" placeholder="jane@clikaa.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !isPending && handleInvite()} disabled={isPending} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs uppercase tracking-wide text-zinc-600">Role</Label>
+                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as InviteRole)}>
+                  <SelectTrigger className="rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="designer">Designer — Internal team member</SelectItem>
+                    <SelectItem value="admin">Admin — Full portal access</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          {!inviteSuccess && (
+            <DialogFooter>
+              <Button variant="outline" rounded="sm" onClick={() => setInviteOpen(false)} disabled={isPending}>Cancel</Button>
+              <Button rounded="sm" onClick={handleInvite} disabled={isPending || !inviteEmail.trim() || !inviteName.trim()}>
+                {isPending ? <><Loader2 size={13} strokeWidth={1.5} className="animate-spin" />Sending…</> : 'Send Invite'}
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

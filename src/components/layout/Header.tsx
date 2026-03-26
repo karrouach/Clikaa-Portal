@@ -17,13 +17,14 @@ interface HeaderProps {
 
 // Human-readable labels for known route segments
 const SEGMENT_LABELS: Record<string, string> = {
-  strategy: 'Strategy',
-  files:    'Files',
-  details:  'Details',
-  settings: 'Settings',
-  invoices: 'Invoices',
-  team:     'My Team',
-  calendar: 'Calendar',
+  strategy:  'Strategy',
+  files:     'Files',
+  details:   'Details',
+  settings:  'Settings',
+  invoices:  'Invoices',
+  team:      'Team',
+  directory: 'Directory',
+  calendar:  'Calendar',
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

@@ -8,7 +8,7 @@ import {
   ChevronLeft,
   LayoutDashboard,
   Receipt,
-  Users,
+  BookUser,
   CalendarDays,
   Settings,
 } from 'lucide-react'
@@ -279,9 +279,9 @@ export function Sidebar({ profile, workspaces }: SidebarProps) {
                   isCollapsed={isCollapsed}
                 />
                 <NavLink
-                  href="/dashboard/team"
-                  icon={Users}
-                  label="My Team"
+                  href="/dashboard/directory"
+                  icon={BookUser}
+                  label="Directory"
                   isCollapsed={isCollapsed}
                 />
                 <NavLink
