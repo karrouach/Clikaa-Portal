@@ -317,7 +317,8 @@ export function TaskDetailSheet({
 
   const isAdmin = currentUserProfile.role === 'admin'
   const isClient = currentUserProfile.role === 'client'
-  // Clients can edit Status, Priority, Due Date, and Description (not title, assignee, or delete)
+  const isDesigner = currentUserProfile.role === 'designer'
+  // Clients/designers can edit Status only; admins have full edit access
   const canEdit = isAdmin || isClient
   const assignee = task?.assignee_id
     ? workspaceMembers.find((m) => m.id === task.assignee_id) ?? null
@@ -538,7 +539,7 @@ export function TaskDetailSheet({
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Status</p>
-                      <Select value={task.status} onValueChange={handleStatusChange} disabled={!canEdit}>
+                      <Select value={task.status} onValueChange={handleStatusChange} disabled={!canEdit && !isDesigner}>
                         <SelectTrigger className="rounded-lg">
                           <SelectValue />
                         </SelectTrigger>

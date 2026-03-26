@@ -247,14 +247,16 @@ export function KanbanBoard({
             </p>
           </div>
 
-          {/* Desktop "New Task" button — hidden on mobile (FAB used instead) */}
-          <div className="hidden md:block">
-            <CreateTaskDialog
-              workspaceId={workspaceId}
-              onTaskCreated={handleTaskCreated}
-              members={workspaceMembers}
-            />
-          </div>
+          {/* Desktop "New Task" button — hidden on mobile and for designers */}
+          {currentUserProfile.role !== 'designer' && (
+            <div className="hidden md:block">
+              <CreateTaskDialog
+                workspaceId={workspaceId}
+                onTaskCreated={handleTaskCreated}
+                members={workspaceMembers}
+              />
+            </div>
+          )}
         </div>
 
         {/* ── Columns ──────────────────────────────────────────────────── */}

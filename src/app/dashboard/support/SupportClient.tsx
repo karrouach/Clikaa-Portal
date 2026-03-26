@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Send, CheckCircle2, Clock, Mail, MessageCircle, MessageSquare } from 'lucide-react'
+import { Send, CheckCircle2, Clock, Mail, MessageCircle } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { cn } from '@/lib/utils'
 import { sendNewMessage } from '@/app/dashboard/messages/message-actions'
 
 interface QuickContact {
@@ -15,34 +14,13 @@ interface QuickContact {
   email: string
 }
 
-interface MessageItem {
-  id: string
-  body: string
-  sender_name: string
-  is_admin: boolean
-  created_at: string
-}
-
-interface ConvHistoryItem {
-  id: string
-  subject: string
-  created_at: string
-  messages: MessageItem[]
-}
-
 interface SupportClientProps {
   quickContacts: QuickContact[]
   workspaceId?: string | null
-  conversationHistory?: ConvHistoryItem[]
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-GB', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  })
-}
 
-export function SupportClient({ quickContacts, workspaceId, conversationHistory = [] }: SupportClientProps) {
+export function SupportClient({ quickContacts, workspaceId }: SupportClientProps) {
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
   const [sent, setSent] = useState(false)
@@ -68,7 +46,7 @@ export function SupportClient({ quickContacts, workspaceId, conversationHistory 
   }
 
   return (
-    <div className="animate-fade-in max-w-3xl mx-auto">
+    <div className="animate-fade-in max-w-5xl mx-auto">
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="mb-10 text-center">
@@ -153,11 +131,11 @@ export function SupportClient({ quickContacts, workspaceId, conversationHistory 
                       {contact.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-black truncate">{contact.name}</p>
-                      <p className="text-xs text-zinc-500">{contact.role}</p>
+                      <p className="text-sm font-medium text-black truncate whitespace-nowrap">{contact.name}</p>
+                      <p className="text-xs text-zinc-500 whitespace-nowrap">{contact.role}</p>
                       <a
                         href={`mailto:${contact.email}`}
-                        className="text-xs text-zinc-400 hover:text-black transition-colors truncate block"
+                        className="text-xs text-zinc-400 hover:text-black transition-colors truncate whitespace-nowrap block"
                       >
                         {contact.email}
                       </a>
@@ -205,50 +183,6 @@ export function SupportClient({ quickContacts, workspaceId, conversationHistory 
         </div>
       </div>
 
-      {/* ── Conversation history ───────────────────────────────────────────── */}
-      {conversationHistory.length > 0 && (
-        <div className="mt-10">
-          <div className="flex items-center gap-2 mb-4">
-            <MessageSquare size={15} strokeWidth={1.5} className="text-zinc-500" />
-            <h2 className="text-sm font-semibold text-black">Previous Messages</h2>
-          </div>
-          <div className="space-y-4">
-            {conversationHistory.map((conv) => (
-              <div key={conv.id} className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-                <div className="px-5 py-3.5 border-b border-zinc-50 flex items-center justify-between">
-                  <p className="text-sm font-medium text-black">{conv.subject || 'No subject'}</p>
-                  <p className="text-xs text-zinc-400">{formatDate(conv.created_at)}</p>
-                </div>
-                <div className="px-5 py-4 space-y-3">
-                  {conv.messages.map((msg) => (
-                    <div key={msg.id} className={cn('flex gap-3', msg.is_admin && 'flex-row-reverse')}>
-                      <div className={cn(
-                        'shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold',
-                        msg.is_admin ? 'bg-black text-white' : 'bg-zinc-100 text-zinc-700'
-                      )}>
-                        {msg.sender_name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className={cn('max-w-[80%]', msg.is_admin && 'items-end flex flex-col')}>
-                        <div className={cn(
-                          'rounded-xl px-3 py-2 text-sm leading-relaxed',
-                          msg.is_admin
-                            ? 'bg-black text-white rounded-tr-sm'
-                            : 'bg-zinc-100 text-zinc-800 rounded-tl-sm'
-                        )}>
-                          {msg.body}
-                        </div>
-                        <p className="text-[10px] text-zinc-400 mt-1 px-1">
-                          {msg.is_admin ? msg.sender_name : 'You'} · {formatDate(msg.created_at)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

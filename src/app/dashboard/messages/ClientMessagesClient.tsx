@@ -78,6 +78,39 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
     threadEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // ── Realtime: new messages in active conversation ─────────────────────────
+  useEffect(() => {
+    if (!selectedId) return
+    const supabase = createClient()
+
+    const channel = supabase
+      .channel(`messages:${selectedId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${selectedId}` },
+        async (payload) => {
+          const raw = payload.new as { id: string; conversation_id: string; sender_id: string; body: string; is_read: boolean; created_at: string }
+          if (raw.sender_id === currentUserId) return // already added optimistically
+
+          const { data: senderData } = await supabase
+            .from('profiles')
+            .select('full_name, email, avatar_url')
+            .eq('id', raw.sender_id)
+            .single()
+
+          const msg: MsgItem = { ...raw, sender: senderData ?? null }
+          setMessages((prev) => [...prev, msg])
+          setConversations((prev) =>
+            prev.map((c) => c.id === selectedId ? { ...c, updated_at: raw.created_at } : c)
+              .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+          )
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [selectedId, currentUserId])
+
   // ── Send reply ────────────────────────────────────────────────────────────
   function handleReply(e: React.FormEvent) {
     e.preventDefault()

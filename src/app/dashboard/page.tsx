@@ -71,7 +71,8 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
-  const isAdmin = profile?.role === 'admin'
+  const isAdmin    = profile?.role === 'admin'
+  const isDesigner = profile?.role === 'designer'
   const displayName = profile?.full_name || profile?.email?.split('@')[0] || 'there'
 
   // ── Workspaces (all roles) ─────────────────────────────────────────────────
@@ -279,7 +280,7 @@ export default async function DashboardPage() {
   let totalBalance = 0
   let adminName    = 'Us'
 
-  if (!isAdmin && workspaces.length > 0) {
+  if (!isAdmin && !isDesigner && workspaces.length > 0) {
     const workspaceIds = workspaces.map((ws) => ws.id)
     const today = new Date().toISOString().split('T')[0]
 
@@ -311,6 +312,66 @@ export default async function DashboardPage() {
     totalPaid      = clientInvoices.filter((i) => i.status === 'paid').reduce((s, i) => s + i.total, 0)
     totalBalance   = clientInvoices.filter((i) => ['pending', 'overdue'].includes(i.status)).reduce((s, i) => s + i.total, 0)
     adminName      = adminProfiles?.[0]?.full_name || adminProfiles?.[0]?.email?.split('@')[0] || 'Us'
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // DESIGNER DATA
+  // ══════════════════════════════════════════════════════════════════════════
+  let designerTasks: { id: string; title: string; status: string; priority: string; due_date: string | null; workspace_id: string; created_at: string; updated_at: string }[] = []
+  let designerWorkspaceNames: Record<string, string> = {}
+  let designerClientFeedback: { id: string; body: string; authorName: string; taskTitle: string; createdAt: string }[] = []
+
+  if (isDesigner) {
+    const today7dAgo = new Date(Date.now() - 7 * 86400000).toISOString()
+
+    const { data: dtasks } = await supabase
+      .from('tasks')
+      .select('id, title, status, priority, due_date, workspace_id, created_at, updated_at')
+      .eq('assignee_id', user.id)
+      .order('updated_at', { ascending: false })
+
+    designerTasks = (dtasks ?? [])
+
+    const dtWsIds = [...new Set(designerTasks.map((t) => t.workspace_id))]
+    if (dtWsIds.length > 0) {
+      const { data: dtWs } = await supabase.from('workspaces').select('id, name').in('id', dtWsIds)
+      designerWorkspaceNames = Object.fromEntries((dtWs ?? []).map((w) => [w.id, w.name]))
+    }
+
+    const taskIds = designerTasks.map((t) => t.id)
+    if (taskIds.length > 0) {
+      const { data: comments } = await supabase
+        .from('comments')
+        .select('id, body, created_at, author_id, task_id')
+        .in('task_id', taskIds)
+        .order('created_at', { ascending: false })
+        .limit(8)
+
+      if (comments?.length) {
+        const authorIds = [...new Set(comments.map((c) => c.author_id))]
+        const { data: authors } = await supabase.from('profiles').select('id, full_name, email, role').in('id', authorIds)
+
+        designerClientFeedback = comments
+          .filter((c) => {
+            const a = (authors ?? []).find((x) => x.id === c.author_id)
+            return a?.role === 'client'
+          })
+          .slice(0, 5)
+          .map((c) => {
+            const a = (authors ?? []).find((x) => x.id === c.author_id)
+            const t = designerTasks.find((x) => x.id === c.task_id)
+            return {
+              id: c.id,
+              body: c.body.length > 100 ? c.body.slice(0, 100) + '…' : c.body,
+              authorName: a?.full_name || a?.email || 'Client',
+              taskTitle: t?.title ?? 'a task',
+              createdAt: c.created_at,
+            }
+          })
+      }
+    }
+
+    void today7dAgo // silence unused warning
   }
 
   // Derived for admin dashboard
@@ -621,7 +682,7 @@ export default async function DashboardPage() {
       )}
 
       {/* ════════════════════ CLIENT CONCIERGE VIEW ═════════════════════════ */}
-      {!isAdmin && (
+      {!isAdmin && !isDesigner && (
         <>
           {workspaces.length === 0 ? (
             /* Empty state */
@@ -882,6 +943,224 @@ export default async function DashboardPage() {
           )}
         </>
       )}
+      {/* ════════════════════ DESIGNER VIEW ════════════════════════════════ */}
+      {isDesigner && (() => {
+        const today = new Date().toISOString().split('T')[0]
+        const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]
+
+        const PRIORITY_ORDER: Record<string, number> = { urgent: 4, high: 3, medium: 2, low: 1 }
+
+        const dueTodayCount        = designerTasks.filter((t) => t.due_date === today && t.status !== 'done').length
+        const inProgressCount      = designerTasks.filter((t) => t.status === 'in_progress').length
+        const completedWeekCount   = designerTasks.filter((t) => t.status === 'done' && t.updated_at >= weekAgo).length
+        const awaitingFeedbackCount = designerTasks.filter((t) => t.status === 'review').length
+
+        const priorityTask = designerTasks
+          .filter((t) => t.status !== 'done')
+          .sort((a, b) => (PRIORITY_ORDER[b.priority] ?? 0) - (PRIORITY_ORDER[a.priority] ?? 0))[0] ?? null
+
+        const myTasksToday     = designerTasks.filter((t) => t.due_date === today && t.status !== 'done')
+        const waitingOnClient  = designerTasks.filter((t) => t.status === 'review')
+        const recentlyDone     = designerTasks.filter((t) => t.status === 'done' && t.updated_at >= weekAgo).slice(0, 5)
+
+        const upcomingDLs = designerTasks
+          .filter((t) => t.due_date && t.due_date >= today && t.status !== 'done')
+          .sort((a, b) => (a.due_date! > b.due_date! ? 1 : -1))
+          .slice(0, 5)
+
+        return (
+          <>
+            {/* Priority Task Banner */}
+            {priorityTask && (
+              <div className="mb-6 bg-black rounded-xl px-6 py-5 flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1">
+                    Priority Task · {designerWorkspaceNames[priorityTask.workspace_id] || ''}
+                  </p>
+                  <p className="text-white font-semibold text-base leading-snug truncate">{priorityTask.title}</p>
+                  <p className="mt-1 text-xs text-zinc-400 capitalize">{priorityTask.status.replace('_', ' ')}</p>
+                </div>
+                <span className={`shrink-0 inline-flex items-center px-2.5 py-1 text-[10px] font-semibold rounded-full uppercase tracking-wide ${
+                  priorityTask.priority === 'urgent' ? 'bg-red-500/20 text-red-300'
+                    : priorityTask.priority === 'high' ? 'bg-amber-500/20 text-amber-300'
+                    : 'bg-white/10 text-zinc-300'
+                }`}>
+                  {priorityTask.priority}
+                </span>
+              </div>
+            )}
+
+            {/* Metric Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+              {[
+                { label: 'Due Today',             value: dueTodayCount,         sub: dueTodayCount === 0 ? 'Clear for today' : 'Due today' },
+                { label: 'In Progress',            value: inProgressCount,       sub: 'Active tasks' },
+                { label: 'Completed This Week',    value: completedWeekCount,    sub: 'Finished last 7 days' },
+                { label: 'Awaiting Client Feedback', value: awaitingFeedbackCount, sub: 'In review' },
+              ].map(({ label, value, sub }) => (
+                <div key={label} className="bg-white border border-zinc-100 rounded-xl p-4 md:p-5">
+                  <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-3">{label}</p>
+                  <p className="text-2xl font-semibold text-black tracking-tight">{value}</p>
+                  <p className="mt-1 text-xs text-zinc-400">{sub}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Main split: My Tasks (70%) + Feedback & Deadlines (30%) */}
+            <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 items-start">
+              {/* My Tasks */}
+              <div className="lg:col-span-7 space-y-4">
+                {/* TODAY */}
+                <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-50">
+                    <h2 className="text-sm font-semibold text-black">Today</h2>
+                    <p className="text-xs text-zinc-400 mt-0.5">Tasks due today</p>
+                  </div>
+                  {myTasksToday.length === 0 ? (
+                    <div className="px-5 py-6 text-center">
+                      <p className="text-sm text-zinc-400">Nothing due today.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-zinc-50">
+                      {myTasksToday.map((t) => (
+                        <div key={t.id} className="flex items-center gap-3 px-5 py-3.5">
+                          <div className={`shrink-0 w-2 h-2 rounded-full ${
+                            t.priority === 'urgent' ? 'bg-red-500' : t.priority === 'high' ? 'bg-amber-500' : 'bg-zinc-300'
+                          }`} />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-black truncate">{t.title}</p>
+                            <p className="text-xs text-zinc-400">{designerWorkspaceNames[t.workspace_id] || ''}</p>
+                          </div>
+                          <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-500 capitalize">
+                            {t.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* WAITING ON CLIENT */}
+                <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-50">
+                    <h2 className="text-sm font-semibold text-black">Waiting on Client</h2>
+                    <p className="text-xs text-zinc-400 mt-0.5">Submitted for review</p>
+                  </div>
+                  {waitingOnClient.length === 0 ? (
+                    <div className="px-5 py-6 text-center">
+                      <p className="text-sm text-zinc-400">Nothing in review.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-zinc-50">
+                      {waitingOnClient.map((t) => (
+                        <div key={t.id} className="flex items-center gap-3 px-5 py-3.5">
+                          <div className="shrink-0 w-2 h-2 rounded-full bg-violet-400" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-black truncate">{t.title}</p>
+                            <p className="text-xs text-zinc-400">{designerWorkspaceNames[t.workspace_id] || ''}</p>
+                          </div>
+                          {t.due_date && (
+                            <span className="shrink-0 text-[10px] text-zinc-400">{formatDate(t.due_date)}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* RECENTLY COMPLETED */}
+                <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-50">
+                    <h2 className="text-sm font-semibold text-black">Recently Completed</h2>
+                    <p className="text-xs text-zinc-400 mt-0.5">Done in the last 7 days</p>
+                  </div>
+                  {recentlyDone.length === 0 ? (
+                    <div className="px-5 py-6 text-center">
+                      <p className="text-sm text-zinc-400">No completions this week yet.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-zinc-50">
+                      {recentlyDone.map((t) => (
+                        <div key={t.id} className="flex items-center gap-3 px-5 py-3.5">
+                          <div className="shrink-0 w-2 h-2 rounded-full bg-emerald-400" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-zinc-500 truncate line-through">{t.title}</p>
+                            <p className="text-xs text-zinc-400">{designerWorkspaceNames[t.workspace_id] || ''}</p>
+                          </div>
+                          <span className="shrink-0 text-[10px] text-zinc-400">{timeAgo(t.updated_at)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right column: Client Feedback + Upcoming Deadlines */}
+              <div className="lg:col-span-3 space-y-4">
+                {/* Client Feedback */}
+                <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-50">
+                    <h2 className="text-sm font-semibold text-black">Client Feedback</h2>
+                  </div>
+                  {designerClientFeedback.length === 0 ? (
+                    <div className="px-5 py-6 text-center">
+                      <p className="text-xs text-zinc-400">No client comments yet.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-zinc-50">
+                      {designerClientFeedback.map((fb) => (
+                        <div key={fb.id} className="px-5 py-3.5">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-5 h-5 rounded-full bg-zinc-100 flex items-center justify-center text-[9px] font-semibold text-zinc-600 shrink-0">
+                              {fb.authorName.charAt(0).toUpperCase()}
+                            </div>
+                            <p className="text-xs font-medium text-zinc-700 truncate">{fb.authorName}</p>
+                            <span className="ml-auto text-[10px] text-zinc-300 shrink-0">{timeAgo(fb.createdAt)}</span>
+                          </div>
+                          <p className="text-xs text-zinc-500 line-clamp-2 pl-7">{fb.body}</p>
+                          <p className="text-[10px] text-zinc-300 mt-0.5 pl-7 truncate">on: {fb.taskTitle}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Upcoming Deadlines */}
+                <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-50">
+                    <h2 className="text-sm font-semibold text-black">Upcoming Deadlines</h2>
+                  </div>
+                  {upcomingDLs.length === 0 ? (
+                    <div className="px-5 py-6 text-center">
+                      <p className="text-xs text-zinc-400">No upcoming deadlines.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-zinc-50">
+                      {upcomingDLs.map((t) => {
+                        const label = daysUntilLabel(t.due_date!)
+                        const isToday = label === 'Today'
+                        return (
+                          <div key={t.id} className="flex items-center gap-3 px-5 py-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-black truncate">{t.title}</p>
+                              <p className="text-[10px] text-zinc-400">{designerWorkspaceNames[t.workspace_id] || ''}</p>
+                            </div>
+                            <span className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                              isToday ? 'bg-red-50 text-red-600' : label === 'Tomorrow' ? 'bg-amber-50 text-amber-600' : 'bg-zinc-100 text-zinc-500'
+                            }`}>
+                              {label}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        )
+      })()}
     </div>
   )
 }

@@ -25,6 +25,7 @@ export type Database = {
           avatar_url: string | null
           role: 'admin' | 'client' | 'designer'
           title: string | null
+          monthly_retainer?: number | null
           created_at: string
         }
         Insert: {
@@ -34,6 +35,7 @@ export type Database = {
           avatar_url?: string | null
           role?: 'admin' | 'client' | 'designer'
           title?: string | null
+          monthly_retainer?: number | null
           created_at?: string
         }
         Update: {
@@ -43,6 +45,7 @@ export type Database = {
           avatar_url?: string | null
           role?: 'admin' | 'client' | 'designer'
           title?: string | null
+          monthly_retainer?: number | null
           created_at?: string
         }
         Relationships: []
@@ -605,6 +608,53 @@ export type Database = {
           },
         ]
       }
+      designer_invoices: {
+        Row: {
+          id: string
+          designer_id: string
+          invoice_number: string
+          amount: number
+          status: 'pending' | 'paid'
+          period_start: string
+          period_end: string
+          paid_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          designer_id: string
+          invoice_number: string
+          amount: number
+          status?: 'pending' | 'paid'
+          period_start: string
+          period_end: string
+          paid_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          designer_id?: string
+          invoice_number?: string
+          amount?: number
+          status?: 'pending' | 'paid'
+          period_start?: string
+          period_end?: string
+          paid_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'designer_invoices_designer_id_fkey'
+            columns: ['designer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     // Required by @supabase/supabase-js v2.44+ GenericSchema contract.
     Views: {
@@ -644,6 +694,7 @@ export type ContractStatus = Contract['status']
 
 export type Conversation = Database['public']['Tables']['conversations']['Row']
 export type Message = Database['public']['Tables']['messages']['Row']
+export type DesignerInvoice = Database['public']['Tables']['designer_invoices']['Row']
 
 export type TaskStatus = Task['status']
 export type TaskPriority = Task['priority']

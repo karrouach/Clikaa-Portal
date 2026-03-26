@@ -14,6 +14,7 @@ import {
   HelpCircle,
   FileSignature,
   MessageSquare,
+  Wallet,
 } from 'lucide-react'
 import type { Profile, WorkspaceWithRole } from '@/types/database'
 import { cn, getInitials } from '@/lib/utils'
@@ -194,7 +195,8 @@ function WorkspaceItem({
 export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const initials = getInitials(profile.full_name || profile.email)
-  const isAdmin = profile.role === 'admin'
+  const isAdmin    = profile.role === 'admin'
+  const isDesigner = profile.role === 'designer'
 
   return (
     <motion.aside
@@ -322,10 +324,56 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
                   label="Contracts"
                   isCollapsed={isCollapsed}
                 />
+                <NavLink
+                  href="/dashboard/designer-invoices"
+                  icon={Wallet}
+                  label="Designer Pay"
+                  isCollapsed={isCollapsed}
+                />
               </div>
             </div>
 
             {/* WORKSPACES section — admin */}
+            {workspaces.length > 0 && (
+              <div>
+                <div className="mb-1">
+                  <SectionLabel label="Workspaces" isCollapsed={isCollapsed} />
+                </div>
+                <div className="px-3 space-y-0.5">
+                  {workspaces.map((ws) => (
+                    <WorkspaceItem key={ws.id} workspace={ws} isCollapsed={isCollapsed} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        ) : isDesigner ? (
+          <>
+            {/* Dashboard — designer */}
+            <div className="px-3 space-y-0.5">
+              <NavLink
+                href="/dashboard"
+                icon={LayoutDashboard}
+                label="Dashboard"
+                isCollapsed={isCollapsed}
+                exact
+              />
+              <NavLink
+                href="/dashboard/messages"
+                icon={MessageSquare}
+                label="Messages"
+                isCollapsed={isCollapsed}
+                badge={unreadMessageCount}
+              />
+              <NavLink
+                href="/dashboard/designer-invoices"
+                icon={Wallet}
+                label="My Invoices"
+                isCollapsed={isCollapsed}
+              />
+            </div>
+
+            {/* Workspaces — designer */}
             {workspaces.length > 0 && (
               <div>
                 <div className="mb-1">
@@ -388,7 +436,7 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
         )}
       </div>
 
-      {/* ── Bottom: Help (client only) + Settings ─────────────────────────── */}
+      {/* ── Bottom: Help (client + designer) + Settings ───────────────────── */}
       <div className="px-3 pb-4 border-t border-white/5 pt-3 space-y-0.5">
         {!isAdmin && (
           <NavLink
