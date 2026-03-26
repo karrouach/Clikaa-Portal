@@ -56,7 +56,7 @@ export async function sendNewMessage(
       )
     )
 
-    void emailAllAdmins({
+    await emailAllAdmins({
       subject: `New message: "${subject}"`,
       templateName: 'message',
       dynamicData: {
@@ -138,7 +138,7 @@ export async function adminStartConversation(
       '/dashboard/messages',
     )
 
-    void emailUserById(targetUserId, {
+    await emailUserById(targetUserId, {
       subject: `Message from ${senderName}: "${subject}"`,
       templateName: 'message',
       dynamicData: {
@@ -260,7 +260,7 @@ export async function sendMessageReply(
           '/dashboard/messages',
         )
 
-        void emailUserById(conv.client_id, {
+        await emailUserById(conv.client_id, {
           subject: `Reply to your message: "${conv.subject}"`,
           templateName: 'message',
           dynamicData: {
@@ -283,7 +283,7 @@ export async function sendMessageReply(
           )
         )
 
-        void emailAllAdmins({
+        await emailAllAdmins({
           subject: `Client reply in "${conv.subject}"`,
           templateName: 'message',
           dynamicData: {

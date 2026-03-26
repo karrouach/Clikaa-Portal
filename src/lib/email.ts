@@ -34,19 +34,27 @@ export async function sendTransactionalEmail({
 
   const html = renderClikaaEmail(dynamicData)
 
-  const { data, error } = await getResend().emails.send({
-    from: process.env.EMAIL_FROM ?? 'Clikaa <no-reply@clikaa.com>',
-    to: Array.isArray(to) ? to : [to],
-    subject,
-    html,
-  })
+  const fromAddress = process.env.EMAIL_FROM ?? 'Clikaa <hello@clikaa.com>'
 
-  if (error) {
-    console.error('[email] Resend error:', error)
-    return { error: error.message }
+  try {
+    const { data, error } = await getResend().emails.send({
+      from: fromAddress,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+    })
+
+    if (error) {
+      console.error('[email] Resend error:', error)
+      return { error: error.message }
+    }
+
+    console.log('[email] Resend sent ok — id:', data?.id, '| to:', to, '| subject:', subject)
+    return { id: data?.id }
+  } catch (err) {
+    console.error('[email] Resend threw unexpectedly:', err)
+    return { error: err instanceof Error ? err.message : String(err) }
   }
-
-  return { id: data?.id }
 }
 
 // ── Routing helpers ──────────────────────────────────────────────────────────

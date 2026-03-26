@@ -50,7 +50,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
     )
 
     // ── Email: invoice sent ────────────────────────────────────────────────
-    void emailWorkspaceClients(input.workspace_id, {
+    await emailWorkspaceClients(input.workspace_id, {
       subject: `New Invoice: ${input.invoice_number}`,
       templateName: 'invoice',
       dynamicData: {
@@ -100,7 +100,7 @@ export async function updateInvoiceStatus(id: string, status: string) {
     )
 
     // ── Email: invoice status changed to sent ──────────────────────────────
-    void emailWorkspaceClients(invoice.workspace_id, {
+    await emailWorkspaceClients(invoice.workspace_id, {
       subject: `New Invoice: ${invoiceLabel}`,
       templateName: 'invoice',
       dynamicData: {

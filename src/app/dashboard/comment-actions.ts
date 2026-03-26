@@ -64,7 +64,7 @@ export async function addComment({
     )
 
     // ── Email: @mention notification ───────────────────────────────────────
-    void emailUsersByIds(mentionedIds, {
+    await emailUsersByIds(mentionedIds, {
       subject: `${commenterName} mentioned you in a comment`,
       templateName: 'mention',
       dynamicData: {

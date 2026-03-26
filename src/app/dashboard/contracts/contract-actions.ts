@@ -90,7 +90,7 @@ export async function createContract({
     )
 
     // ── Email: contract sent for signature ────────────────────────────────
-    void emailWorkspaceClients(workspaceId, {
+    await emailWorkspaceClients(workspaceId, {
       subject: `Action Required: Sign "${title}"`,
       templateName: 'contract',
       dynamicData: {
@@ -140,7 +140,7 @@ export async function sendContractForSignature(id: string) {
     )
 
     // ── Email: contract sent for signature (status change path) ───────────
-    void emailWorkspaceClients(contract.workspace_id, {
+    await emailWorkspaceClients(contract.workspace_id, {
       subject: `Action Required: Sign "${contract.title}"`,
       templateName: 'contract',
       dynamicData: {

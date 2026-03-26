@@ -42,7 +42,7 @@ export async function approveTask(taskId: string): Promise<void> {
   )
 
   // ── Email: task approved ───────────────────────────────────────────────
-  void emailAllAdmins({
+  await emailAllAdmins({
     subject: `Task approved: "${taskTitle}"`,
     templateName: 'approval',
     dynamicData: {
@@ -100,7 +100,7 @@ export async function requestRevision(taskId: string, feedback: string): Promise
   )
 
   // ── Email: revision requested ──────────────────────────────────────────
-  void emailAllAdmins({
+  await emailAllAdmins({
     subject: `Revision requested on "${taskTitle}"`,
     templateName: 'approval',
     dynamicData: {
