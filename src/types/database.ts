@@ -53,6 +53,7 @@ export type Database = {
           name: string
           slug: string
           description: string | null
+          logo_url: string | null
           created_by: string
           created_at: string
           updated_at: string
@@ -62,6 +63,7 @@ export type Database = {
           name: string
           slug: string
           description?: string | null
+          logo_url?: string | null
           created_by: string
           created_at?: string
           updated_at?: string
@@ -71,6 +73,7 @@ export type Database = {
           name?: string
           slug?: string
           description?: string | null
+          logo_url?: string | null
           created_by?: string
           created_at?: string
           updated_at?: string
@@ -477,6 +480,7 @@ export type WorkspaceWithRole = {
   name: string
   slug: string
   description: string | null
+  logo_url: string | null
   role: 'admin' | 'client'
 }
 

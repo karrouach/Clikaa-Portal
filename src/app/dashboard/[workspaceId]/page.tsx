@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
@@ -68,6 +67,8 @@ export default async function WorkspacePage({ params }: Props) {
     .select('user_id, profiles(id, full_name, email, avatar_url)')
     .eq('workspace_id', workspaceId)
 
+  // Assignees are strictly limited to explicit workspace members only.
+  // If an Admin needs to be assigned, they must first be added to this workspace.
   const workspaceMembers = (memberships ?? [])
     .map(
       (m) =>
@@ -86,28 +87,6 @@ export default async function WorkspacePage({ params }: Props) {
       avatar_url: p!.avatar_url ?? null,
     }))
 
-  // ── Also include global admins not already in workspace_members ──────────
-  // Clients can only assign to explicit workspace members, but admin accounts
-  // often exist at the global level and may not be added to every workspace.
-  const memberIdSet = new Set(workspaceMembers.map((m) => m.id))
-  const admin = createAdminClient()
-  const { data: adminProfiles } = await admin
-    .from('profiles')
-    .select('id, full_name, email, avatar_url')
-    .eq('role', 'admin')
-
-  const allMembers = [
-    ...workspaceMembers,
-    ...(adminProfiles ?? [])
-      .filter((p) => !memberIdSet.has(p.id))
-      .map((p) => ({
-        id: p.id,
-        full_name: p.full_name,
-        email: p.email,
-        avatar_url: p.avatar_url ?? null,
-      })),
-  ]
-
   // Fallback profile shape for safety (should never be null for a logged-in user)
   const currentUserProfile = profile ?? {
     id: user.id,
@@ -125,7 +104,7 @@ export default async function WorkspacePage({ params }: Props) {
       workspaceName={workspace.name}
       initialTasks={tasks ?? []}
       currentUserProfile={currentUserProfile}
-      workspaceMembers={allMembers}
+      workspaceMembers={workspaceMembers}
     />
   )
 }

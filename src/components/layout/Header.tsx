@@ -78,7 +78,7 @@ export function Header({ profile, workspaces }: HeaderProps) {
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
         {/* Command palette search */}
-        <CommandMenu />
+        <CommandMenu isAdmin={profile.role === 'admin'} workspaces={workspaces} />
 
         {/* Divider */}
         <div className="w-px h-5 bg-zinc-100" />

@@ -30,7 +30,7 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
   // ── Workspace ──────────────────────────────────────────────────────────
   const { data: workspace } = await supabase
     .from('workspaces')
-    .select('id, name')
+    .select('id, name, logo_url')
     .eq('id', workspaceId)
     .single()
 
@@ -61,7 +61,7 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
 
   return (
     <WorkspaceSettingsClient
-      workspace={workspace}
+      workspace={{ id: workspace.id, name: workspace.name, logo_url: workspace.logo_url ?? null }}
       members={members}
       currentUserId={user.id}
       isAdmin={isAdmin}

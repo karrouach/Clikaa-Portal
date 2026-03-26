@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { UserPlus, Trash2, Loader2, AlertCircle, Check, Pencil } from 'lucide-react'
+import { useState, useTransition, useRef } from 'react'
+import { UserPlus, Trash2, Loader2, AlertCircle, Check, Pencil, ImagePlus } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import {
   updateWorkspaceName,
+  updateWorkspaceLogo,
   removeWorkspaceMember,
   inviteWorkspaceMember,
 } from './workspace-settings-actions'
@@ -48,6 +50,7 @@ interface Member {
 interface Workspace {
   id: string
   name: string
+  logo_url: string | null
 }
 
 interface Props {
@@ -72,6 +75,42 @@ const ROLE_LABEL: Record<Role, string> = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function WorkspaceSettingsClient({ workspace, members, currentUserId, isAdmin }: Props) {
+  // ── Workspace logo upload ──────────────────────────────────────────────────
+  const logoInputRef = useRef<HTMLInputElement>(null)
+  const [logoPreview, setLogoPreview]   = useState<string | null>(workspace.logo_url)
+  const [logoError, setLogoError]       = useState<string | null>(null)
+  const [isLogoPending, startLogoTransition] = useTransition()
+
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { setLogoError('Please select an image file.'); return }
+    if (file.size > 5 * 1024 * 1024) { setLogoError('Image must be under 5 MB.'); return }
+
+    setLogoError(null)
+    startLogoTransition(async () => {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop() ?? 'png'
+      const path = `${workspace.id}/logo.${ext}`
+
+      const { error: uploadErr } = await supabase.storage
+        .from('workspace-logos')
+        .upload(path, file, { contentType: file.type, upsert: true })
+
+      if (uploadErr) { setLogoError(uploadErr.message); return }
+
+      const { data } = supabase.storage.from('workspace-logos').getPublicUrl(path)
+      // Append timestamp to bust CDN cache after re-upload
+      const publicUrl = `${data.publicUrl}?t=${Date.now()}`
+
+      const result = await updateWorkspaceLogo(workspace.id, publicUrl)
+      if (result.error) { setLogoError(result.error); return }
+
+      setLogoPreview(publicUrl)
+      if (logoInputRef.current) logoInputRef.current.value = ''
+    })
+  }
+
   // ── Workspace name editing ─────────────────────────────────────────────────
   const [wsName, setWsName]           = useState(workspace.name)
   const [editingName, setEditingName] = useState(false)
@@ -166,7 +205,61 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
               <h2 className="text-sm font-semibold text-black">General</h2>
             </div>
 
-            <div className="px-6 py-5 space-y-4">
+            <div className="px-6 py-5 space-y-6">
+
+              {/* ── Logo ─────────────────────────────────────────────────── */}
+              <div className="space-y-2">
+                <Label className="text-xs uppercase tracking-wide text-zinc-600">
+                  Workspace Logo
+                </Label>
+                <div className="flex items-center gap-4">
+                  {/* Preview — forced square via CSS (object-cover) */}
+                  <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-zinc-100 flex items-center justify-center border border-zinc-200">
+                    {logoPreview ? (
+                      <img src={logoPreview} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-lg font-semibold text-zinc-500 select-none">
+                        {workspace.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={isLogoPending}
+                      className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium border border-zinc-200 rounded-lg hover:border-zinc-300 hover:bg-zinc-50 transition-colors disabled:opacity-50"
+                    >
+                      {isLogoPending ? (
+                        <Loader2 size={11} strokeWidth={1.5} className="animate-spin" />
+                      ) : (
+                        <ImagePlus size={11} strokeWidth={1.5} />
+                      )}
+                      {isLogoPending ? 'Uploading…' : (logoPreview ? 'Change Logo' : 'Upload Logo')}
+                    </button>
+                    <p className="mt-1 text-[10px] text-zinc-400">
+                      Square images recommended. Auto-cropped to uniform size in sidebar.
+                    </p>
+                    {logoError && (
+                      <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                        <AlertCircle size={11} strokeWidth={1.5} />
+                        {logoError}
+                      </p>
+                    )}
+                  </div>
+
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleLogoChange}
+                  />
+                </div>
+              </div>
+
+              {/* ── Name ─────────────────────────────────────────────────── */}
               <div className="space-y-1.5">
                 <Label className="text-xs uppercase tracking-wide text-zinc-600">
                   Workspace name
@@ -231,6 +324,7 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
                   </p>
                 )}
               </div>
+
             </div>
           </div>
         )}

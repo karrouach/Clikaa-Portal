@@ -60,7 +60,7 @@ export default async function DashboardLayout({
   // ── Workspaces ────────────────────────────────────────────────────────────
   const { data: memberships } = await supabase
     .from('workspace_members')
-    .select('role, workspaces(id, name, slug, description)')
+    .select('role, workspaces(id, name, slug, description, logo_url)')
     .eq('user_id', profile.id)
     .order('created_at', { ascending: true })
 
@@ -68,7 +68,7 @@ export default async function DashboardLayout({
   const workspaces: WorkspaceWithRole[] = (memberships ?? [])
     .filter((m) => m.workspaces !== null)
     .map((m) => ({
-      ...(m.workspaces as { id: string; name: string; slug: string; description: string | null }),
+      ...(m.workspaces as { id: string; name: string; slug: string; description: string | null; logo_url: string | null }),
       role: m.role as 'admin' | 'client',
     }))
 

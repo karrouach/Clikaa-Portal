@@ -115,6 +115,26 @@ export async function inviteWorkspaceMember({
   return {}
 }
 
+// ── updateWorkspaceLogo ────────────────────────────────────────────────────
+export async function updateWorkspaceLogo(
+  workspaceId: string,
+  logoUrl: string | null
+): Promise<WorkspaceSettingsResult> {
+  const ctx = await requireAdminUser()
+  if (!ctx) return { error: 'Unauthorised.' }
+
+  const { error } = await ctx.supabase
+    .from('workspaces')
+    .update({ logo_url: logoUrl, updated_at: new Date().toISOString() })
+    .eq('id', workspaceId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/dashboard/${workspaceId}/settings`)
+  revalidatePath('/', 'layout') // refresh sidebar logo
+  return {}
+}
+
 // ── removeWorkspaceMember ──────────────────────────────────────────────────
 // Removes a user from this workspace (deletes workspace_members row).
 // Does NOT delete their account — they remain a portal user.

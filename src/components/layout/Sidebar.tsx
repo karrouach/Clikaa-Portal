@@ -130,14 +130,22 @@ function WorkspaceItem({
           : ['text-zinc-400 hover:bg-white/8 hover:text-zinc-200', !isCollapsed && 'border-transparent']
       )}
     >
-      <span
-        className={cn(
-          'shrink-0 w-6 h-6 flex items-center justify-center text-xs font-semibold bg-white/10 rounded-sm',
-          isActive && 'bg-white/25'
-        )}
-      >
-        {initial}
-      </span>
+      {workspace.logo_url ? (
+        <img
+          src={workspace.logo_url}
+          alt={workspace.name}
+          className="shrink-0 w-6 h-6 rounded-sm object-cover"
+        />
+      ) : (
+        <span
+          className={cn(
+            'shrink-0 w-6 h-6 flex items-center justify-center text-xs font-semibold bg-white/10 rounded-sm',
+            isActive && 'bg-white/25'
+          )}
+        >
+          {initial}
+        </span>
+      )}
 
       <AnimatePresence initial={false}>
         {!isCollapsed && (

@@ -2,20 +2,20 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, ClipboardList, Loader2 } from 'lucide-react'
+import { Search, ClipboardList, Building2, Users, Loader2 } from 'lucide-react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { createClient } from '@/lib/supabase/client'
-import { cn } from '@/lib/utils'
+import { cn, getInitials } from '@/lib/utils'
+import type { WorkspaceWithRole } from '@/types/database'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TaskResult = {
-  id: string
-  title: string
-  status: string
-  workspace_id: string
-  workspaceName: string
-}
+type TaskResult    = { type: 'task';      id: string; title: string; status: string; workspace_id: string; workspaceName: string }
+type WorkspaceResult = { type: 'workspace'; id: string; name: string; description: string | null }
+type MemberResult  = { type: 'member';    id: string; name: string; email: string; role: string; avatar_url: string | null }
+type SearchResult  = TaskResult | WorkspaceResult | MemberResult
+
+type FilterType = 'all' | 'workspaces' | 'tasks' | 'team'
 
 // ─── Status chip colours ──────────────────────────────────────────────────────
 
@@ -27,23 +27,31 @@ const STATUS_CHIP: Record<string, string> = {
   done:        'bg-emerald-50 text-emerald-700',
 }
 
+const ROLE_CHIP: Record<string, string> = {
+  admin:    'bg-zinc-900 text-white',
+  designer: 'bg-violet-100 text-violet-700',
+  client:   'bg-zinc-100 text-zinc-500',
+}
+
 // ─── CommandMenu ──────────────────────────────────────────────────────────────
 
-/**
- * Global command palette triggered by Ctrl+K / Cmd+K.
- * Renders a Search button in the header and a full-screen dialog overlay.
- * No external cmdk dependency — built on the already-installed Radix Dialog.
- */
-export function CommandMenu() {
-  const [open, setOpen]             = useState(false)
-  const [query, setQuery]           = useState('')
-  const [tasks, setTasks]           = useState<TaskResult[]>([])
-  const [loading, setLoading]       = useState(false)
-  const [activeIndex, setActiveIndex] = useState(0)
+interface CommandMenuProps {
+  isAdmin: boolean
+  workspaces: WorkspaceWithRole[]
+}
+
+export function CommandMenu({ isAdmin, workspaces }: CommandMenuProps) {
+  const [open, setOpen]                 = useState(false)
+  const [query, setQuery]               = useState('')
+  const [filter, setFilter]             = useState<FilterType>('all')
+  const [tasks, setTasks]               = useState<TaskResult[]>([])
+  const [members, setMembers]           = useState<MemberResult[]>([])
+  const [loading, setLoading]           = useState(false)
+  const [activeIndex, setActiveIndex]   = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const router   = useRouter()
 
-  // ── Global keyboard shortcut ────────────────────────────────────────────────
+  // ── Global keyboard shortcut ─────────────────────────────────────────────
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -55,12 +63,13 @@ export function CommandMenu() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  // ── Fetch tasks when menu opens ─────────────────────────────────────────────
+  // ── Fetch data when menu opens ───────────────────────────────────────────
   useEffect(() => {
     if (!open) return
     setLoading(true)
     const supabase = createClient()
-    supabase
+
+    const fetchTasks = supabase
       .from('tasks')
       .select('id, title, status, workspace_id, workspaces(name)')
       .neq('status', 'done')
@@ -69,6 +78,7 @@ export function CommandMenu() {
       .then(({ data }) => {
         setTasks(
           (data ?? []).map((t) => ({
+            type:          'task' as const,
             id:            t.id,
             title:         t.title,
             status:        t.status,
@@ -76,30 +86,79 @@ export function CommandMenu() {
             workspaceName: (t.workspaces as { name: string } | null)?.name ?? '',
           }))
         )
-        setLoading(false)
       })
-  }, [open])
 
-  // ── Filtered results ────────────────────────────────────────────────────────
-  const filtered = query.trim()
-    ? tasks.filter(
-        (t) =>
-          t.title.toLowerCase().includes(query.toLowerCase()) ||
-          t.workspaceName.toLowerCase().includes(query.toLowerCase())
-      )
-    : tasks.slice(0, 8)
+    // Admin: also fetch team members
+    const fetchMembers = isAdmin
+      ? supabase
+          .from('profiles')
+          .select('id, full_name, email, role, avatar_url')
+          .in('role', ['admin', 'designer'])
+          .order('full_name', { ascending: true })
+          .then(({ data }) => {
+            setMembers(
+              (data ?? []).map((p) => ({
+                type:      'member' as const,
+                id:        p.id,
+                name:      p.full_name || p.email,
+                email:     p.email,
+                role:      p.role,
+                avatar_url: p.avatar_url,
+              }))
+            )
+          })
+      : Promise.resolve()
 
-  // Reset active index when query changes
-  useEffect(() => { setActiveIndex(0) }, [query])
+    Promise.all([fetchTasks, fetchMembers]).then(() => setLoading(false))
+  }, [open, isAdmin])
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  // ── Build filtered results ───────────────────────────────────────────────
+  const q = query.trim().toLowerCase()
+
+  const filteredTasks: SearchResult[] = tasks.filter(
+    (t) => !q || t.title.toLowerCase().includes(q) || t.workspaceName.toLowerCase().includes(q)
+  )
+
+  const filteredWorkspaces: SearchResult[] = workspaces
+    .filter((w) => !q || w.name.toLowerCase().includes(q) || (w.description ?? '').toLowerCase().includes(q))
+    .map((w) => ({ type: 'workspace' as const, id: w.id, name: w.name, description: w.description }))
+
+  const filteredMembers: SearchResult[] = members.filter(
+    (m) => !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)
+  )
+
+  let filtered: SearchResult[]
+  if (!isAdmin) {
+    // Clients: tasks only
+    filtered = filteredTasks.slice(0, 8)
+  } else if (filter === 'tasks') {
+    filtered = filteredTasks.slice(0, 8)
+  } else if (filter === 'workspaces') {
+    filtered = filteredWorkspaces.slice(0, 8)
+  } else if (filter === 'team') {
+    filtered = filteredMembers.slice(0, 8)
+  } else {
+    // 'all': mix results
+    filtered = [
+      ...filteredTasks.slice(0, q ? 4 : 3),
+      ...filteredWorkspaces.slice(0, q ? 2 : 3),
+      ...filteredMembers.slice(0, q ? 2 : 2),
+    ].slice(0, 8)
+  }
+
+  useEffect(() => { setActiveIndex(0) }, [query, filter])
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
   function handleClose() {
     setOpen(false)
     setQuery('')
+    setFilter('all')
   }
 
-  function handleSelect(task: TaskResult) {
-    router.push(`/dashboard/${task.workspace_id}`)
+  function handleSelect(result: SearchResult) {
+    if (result.type === 'task')      router.push(`/dashboard/${result.workspace_id}`)
+    if (result.type === 'workspace') router.push(`/dashboard/${result.id}`)
+    if (result.type === 'member')    router.push(`/dashboard/team/${result.id}`)
     handleClose()
   }
 
@@ -115,13 +174,20 @@ export function CommandMenu() {
     }
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Admin filter chips ────────────────────────────────────────────────────
+  const FILTERS: { key: FilterType; label: string }[] = [
+    { key: 'all',        label: 'All' },
+    { key: 'tasks',      label: 'Tasks' },
+    { key: 'workspaces', label: 'Workspaces' },
+    { key: 'team',       label: 'Team' },
+  ]
+
   return (
     <>
-      {/* ── Trigger button ──────────────────────────────────────────────── */}
+      {/* ── Trigger button ─────────────────────────────────────────────── */}
       <button
         onClick={() => setOpen(true)}
-        aria-label="Search tasks (⌘K)"
+        aria-label="Search (⌘K)"
         className="
           flex items-center gap-2 h-7 px-3
           text-xs text-zinc-400 border border-zinc-200 rounded-lg
@@ -134,11 +200,8 @@ export function CommandMenu() {
         <kbd className="hidden sm:block ml-1 text-[10px] text-zinc-300 font-mono">⌘K</kbd>
       </button>
 
-      {/* ── Dialog ──────────────────────────────────────────────────────── */}
-      <DialogPrimitive.Root
-        open={open}
-        onOpenChange={(v) => { if (!v) handleClose() }}
-      >
+      {/* ── Dialog ─────────────────────────────────────────────────────── */}
+      <DialogPrimitive.Root open={open} onOpenChange={(v) => { if (!v) handleClose() }}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay
             className="
@@ -157,11 +220,9 @@ export function CommandMenu() {
               data-[state=closed]:animate-dialog-hide
             "
           >
-            <DialogPrimitive.Title className="sr-only">
-              Search tasks
-            </DialogPrimitive.Title>
+            <DialogPrimitive.Title className="sr-only">Search</DialogPrimitive.Title>
             <DialogPrimitive.Description className="sr-only">
-              Search across all your tasks and navigate directly to them.
+              Search tasks, workspaces, and team members.
             </DialogPrimitive.Description>
 
             {/* Search bar */}
@@ -172,65 +233,100 @@ export function CommandMenu() {
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search tasks…"
+                placeholder={isAdmin ? 'Search tasks, workspaces, team…' : 'Search tasks…'}
                 className="flex-1 text-sm text-zinc-900 placeholder:text-zinc-400 bg-transparent outline-none"
               />
-              {loading && (
-                <Loader2
-                  size={13}
-                  strokeWidth={1.5}
-                  className="animate-spin text-zinc-300 shrink-0"
-                />
-              )}
-              <kbd className="hidden sm:block text-[10px] text-zinc-300 font-mono border border-zinc-100 rounded px-1.5 py-0.5">
-                esc
-              </kbd>
+              {loading && <Loader2 size={13} strokeWidth={1.5} className="animate-spin text-zinc-300 shrink-0" />}
+              <kbd className="hidden sm:block text-[10px] text-zinc-300 font-mono border border-zinc-100 rounded px-1.5 py-0.5">esc</kbd>
             </div>
 
-            {/* Results list */}
-            <div className="max-h-[360px] overflow-y-auto py-1">
+            {/* Admin filter chips */}
+            {isAdmin && (
+              <div className="flex items-center gap-1.5 px-4 py-2 border-b border-zinc-100">
+                {FILTERS.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setFilter(key)}
+                    className={cn(
+                      'px-3 h-6 text-[11px] font-medium rounded-full transition-colors duration-100',
+                      filter === key
+                        ? 'bg-black text-white'
+                        : 'text-zinc-500 hover:text-black hover:bg-zinc-100'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Results */}
+            <div className="max-h-[340px] overflow-y-auto py-1">
               {!loading && filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10">
-                  <ClipboardList
-                    size={20}
-                    strokeWidth={1.5}
-                    className="text-zinc-200 mb-2"
-                  />
+                  <ClipboardList size={20} strokeWidth={1.5} className="text-zinc-200 mb-2" />
                   <p className="text-xs text-zinc-400">
-                    {query ? 'No tasks match your search' : 'No active tasks found'}
+                    {query ? 'No results match your search' : 'No results found'}
                   </p>
                 </div>
               ) : (
-                filtered.map((task, i) => (
+                filtered.map((result, i) => (
                   <button
-                    key={task.id}
-                    onClick={() => handleSelect(task)}
+                    key={`${result.type}-${result.id}`}
+                    onClick={() => handleSelect(result)}
                     className={cn(
                       'w-full flex items-start gap-3 px-4 py-2.5 text-left transition-colors duration-75',
                       i === activeIndex ? 'bg-zinc-50' : 'hover:bg-zinc-50'
                     )}
                   >
-                    <ClipboardList
-                      size={14}
-                      strokeWidth={1.5}
-                      className="text-zinc-300 shrink-0 mt-0.5"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-zinc-900 truncate">{task.title}</p>
-                      {task.workspaceName && (
-                        <p className="text-[11px] text-zinc-400 mt-0.5">
-                          {task.workspaceName}
-                        </p>
-                      )}
-                    </div>
-                    <span
-                      className={cn(
-                        'ml-auto shrink-0 text-[10px] px-1.5 py-0.5 rounded capitalize',
-                        STATUS_CHIP[task.status] ?? 'bg-zinc-100 text-zinc-500'
-                      )}
-                    >
-                      {task.status.replace('_', ' ')}
-                    </span>
+                    {result.type === 'task' && (
+                      <>
+                        <ClipboardList size={14} strokeWidth={1.5} className="text-zinc-300 shrink-0 mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-zinc-900 truncate">{result.title}</p>
+                          {result.workspaceName && (
+                            <p className="text-[11px] text-zinc-400 mt-0.5">{result.workspaceName}</p>
+                          )}
+                        </div>
+                        <span className={cn('ml-auto shrink-0 text-[10px] px-1.5 py-0.5 rounded capitalize', STATUS_CHIP[result.status] ?? 'bg-zinc-100 text-zinc-500')}>
+                          {result.status.replace('_', ' ')}
+                        </span>
+                      </>
+                    )}
+
+                    {result.type === 'workspace' && (
+                      <>
+                        <Building2 size={14} strokeWidth={1.5} className="text-zinc-300 shrink-0 mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-zinc-900 truncate">{result.name}</p>
+                          {result.description && (
+                            <p className="text-[11px] text-zinc-400 mt-0.5 truncate">{result.description}</p>
+                          )}
+                        </div>
+                        <span className="ml-auto shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500">
+                          workspace
+                        </span>
+                      </>
+                    )}
+
+                    {result.type === 'member' && (
+                      <>
+                        {result.avatar_url ? (
+                          <img src={result.avatar_url} alt="" className="shrink-0 w-5 h-5 rounded-full object-cover mt-0.5" />
+                        ) : (
+                          <div className="shrink-0 w-5 h-5 rounded-full bg-zinc-100 flex items-center justify-center mt-0.5">
+                            <span className="text-[8px] font-semibold text-zinc-500">{getInitials(result.name)}</span>
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-zinc-900 truncate">{result.name}</p>
+                          <p className="text-[11px] text-zinc-400 mt-0.5 truncate">{result.email}</p>
+                        </div>
+                        <span className={cn('ml-auto shrink-0 text-[10px] px-1.5 py-0.5 rounded capitalize', ROLE_CHIP[result.role] ?? 'bg-zinc-100 text-zinc-500')}>
+                          {result.role}
+                        </span>
+                      </>
+                    )}
                   </button>
                 ))
               )}
@@ -239,8 +335,8 @@ export function CommandMenu() {
             {/* Footer hints */}
             <div className="px-4 py-2 border-t border-zinc-50 flex items-center gap-4">
               {[
-                { key: '↑↓', label: 'navigate' },
-                { key: '↵',  label: 'open' },
+                { key: '↑↓',  label: 'navigate' },
+                { key: '↵',   label: 'open' },
                 { key: 'esc', label: 'close' },
               ].map(({ key, label }) => (
                 <span key={key} className="text-[10px] text-zinc-300 flex items-center gap-1 font-mono">
