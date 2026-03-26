@@ -117,12 +117,13 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
     const supabase = createClient()
 
     const channel = supabase
-      .channel(`messages:${selectedId}`)
+      .channel(`client:messages:${selectedId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${selectedId}` },
+        { event: 'INSERT', schema: 'public', table: 'messages' },
         async (payload) => {
           const raw = payload.new as { id: string; conversation_id: string; sender_id: string; body: string; is_read: boolean; created_at: string }
+          if (raw.conversation_id !== selectedId) return
           if (raw.sender_id === currentUserId) return // already added optimistically
 
           const { data: senderData } = await supabase

@@ -51,9 +51,11 @@ export function NotificationBell({ userId }: NotificationBellProps) {
       .channel(`notifications:${userId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+        { event: 'INSERT', schema: 'public', table: 'notifications' },
         (payload) => {
-          setNotifications((prev) => [payload.new as Notification, ...prev])
+          const n = payload.new as Notification
+          if (n.user_id !== userId) return
+          setNotifications((prev) => [n, ...prev])
         }
       )
       .subscribe()

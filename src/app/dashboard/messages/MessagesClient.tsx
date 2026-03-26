@@ -114,12 +114,13 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
     const supabase = createClient()
 
     const channel = supabase
-      .channel(`messages:${selectedId}`)
+      .channel(`admin:messages:${selectedId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${selectedId}` },
+        { event: 'INSERT', schema: 'public', table: 'messages' },
         async (payload) => {
           const raw = payload.new as MsgItem
+          if (raw.conversation_id !== selectedId) return
           if (raw.sender_id === currentUserId) return
           const { data: senderData } = await supabase
             .from('profiles')
