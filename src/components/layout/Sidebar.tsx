@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import { createBrowserClient } from '@supabase/ssr'
 import {
   ChevronLeft,
   LayoutDashboard,
@@ -195,9 +196,47 @@ function WorkspaceItem({
 // ─── Sidebar ───────────────────────────────────────────────────────────────
 export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const initials = getInitials(profile.full_name || profile.email)
+  const [msgBadge, setMsgBadge] = useState(unreadMessageCount)
+  const pathname  = usePathname()
+  const initials  = getInitials(profile.full_name || profile.email)
   const isAdmin    = profile.role === 'admin'
   const isDesigner = profile.role === 'designer'
+
+  // ── Clear badge when the user is on the messages page ─────────────────────
+  useEffect(() => {
+    if (pathname === '/dashboard/messages') {
+      setMsgBadge(0)
+    }
+  }, [pathname])
+
+  // ── Realtime: increment badge on new incoming messages ────────────────────
+  useEffect(() => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    const channel = supabase
+      .channel('sidebar:messages')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload) => {
+          console.log('Sidebar Realtime Message:', payload)
+          const msg = payload.new as { sender_id: string; conversation_id: string }
+          // Ignore messages the current user sent
+          if (msg.sender_id === profile.id) return
+          // Only increment if the user is not already reading messages
+          if (window.location.pathname === '/dashboard/messages') return
+          setMsgBadge((prev) => prev + 1)
+        }
+      )
+      .subscribe((status) => {
+        console.log('Sidebar Realtime Status:', status)
+      })
+
+    return () => { supabase.removeChannel(channel) }
+  }, [profile.id])
 
   return (
     <motion.aside
@@ -299,7 +338,7 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
                   icon={MessageSquare}
                   label="Messages"
                   isCollapsed={isCollapsed}
-                  badge={unreadMessageCount}
+                  badge={msgBadge}
                 />
                 <NavLink
                   href="/dashboard/calendar"
@@ -364,7 +403,7 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
                 icon={MessageSquare}
                 label="Messages"
                 isCollapsed={isCollapsed}
-                badge={unreadMessageCount}
+                badge={msgBadge}
               />
               <NavLink
                 href="/dashboard/my-tasks"
@@ -416,7 +455,7 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
                 icon={MessageSquare}
                 label="Messages"
                 isCollapsed={isCollapsed}
-                badge={unreadMessageCount}
+                badge={msgBadge}
               />
               <NavLink
                 href="/dashboard/invoices"
