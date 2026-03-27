@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useTransition } from 'react'
 import Link from 'next/link'
 import { Bell, X } from 'lucide-react'
+import { createBrowserClient } from '@supabase/ssr'
 import { createClient } from '@/lib/supabase/client'
 import {
   markAllNotificationsRead,
@@ -33,10 +34,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
   const unreadCount = notifications.filter((n) => !n.read_status).length
 
-  // ── Fetch + Realtime ──────────────────────────────────────────────────
+  // ── Initial fetch ─────────────────────────────────────────────────────
   useEffect(() => {
     const supabase = createClient()
-
     supabase
       .from('notifications')
       .select('*')
@@ -46,19 +46,30 @@ export function NotificationBell({ userId }: NotificationBellProps) {
       .then(({ data }) => {
         if (data) setNotifications(data as Notification[])
       })
+  }, [userId])
+
+  // ── Realtime subscription (single channel, createBrowserClient) ───────
+  useEffect(() => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
 
     const channel = supabase
-      .channel(`notifications:${userId}`)
+      .channel('realtime:portal')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications' },
         (payload) => {
+          console.log('Realtime Notification Received!', payload)
           const n = payload.new as Notification
           if (n.user_id !== userId) return
           setNotifications((prev) => [n, ...prev])
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        console.log('Supabase Realtime Status:', status)
+      })
 
     return () => { supabase.removeChannel(channel) }
   }, [userId])

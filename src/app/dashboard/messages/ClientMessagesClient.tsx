@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useTransition, useCallback } from 'react'
 import { MessageSquare, Send, Loader2, ChevronLeft, Search, X, Plus, Paperclip } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
+import { createBrowserClient } from '@supabase/ssr'
 import { createClient } from '@/lib/supabase/client'
 import { sendMessageReply, markConversationRead, searchUsersForMessaging, sendNewMessage } from './message-actions'
 import { toast } from 'sonner'
@@ -114,39 +115,70 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
     threadEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // ── Realtime: new messages in active conversation ─────────────────────────
+  // ── selectedId ref — lets the realtime callback read current value
+  //    without needing the channel to be recreated on each selection change
+  const selectedIdRef = useRef(selectedId)
+  useEffect(() => { selectedIdRef.current = selectedId }, [selectedId])
+
+  // ── Single consolidated realtime channel ──────────────────────────────────
   useEffect(() => {
-    if (!selectedId) return
-    const supabase = createClient()
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
 
     const channel = supabase
-      .channel(`client:messages:${selectedId}`)
+      .channel('realtime:client-portal')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         async (payload) => {
-          const raw = payload.new as { id: string; conversation_id: string; sender_id: string; body: string; is_read: boolean; created_at: string }
-          if (raw.conversation_id !== selectedId) return
-          if (raw.sender_id === currentUserId) return // already added optimistically
+          console.log('Realtime Message Received!', payload)
+          const raw = payload.new as MsgItem
+          // Skip own optimistic messages
+          if (raw.sender_id === currentUserId) return
 
-          const { data: senderData } = await supabase
-            .from('profiles')
-            .select('full_name, email, avatar_url')
-            .eq('id', raw.sender_id)
-            .single()
-
-          const msg: MsgItem = { ...raw, sender: senderData ?? null }
-          setMessages((prev) => [...prev, msg])
+          if (raw.conversation_id === selectedIdRef.current) {
+            const { data: senderData } = await supabase
+              .from('profiles')
+              .select('full_name, email, avatar_url')
+              .eq('id', raw.sender_id)
+              .single()
+            setMessages((prevMessages) => [...prevMessages, { ...raw, sender: senderData ?? null }])
+          }
+          // Bubble conversation to top and bump unread if not active
           setConversations((prev) =>
-            prev.map((c) => c.id === selectedId ? { ...c, updated_at: raw.created_at } : c)
+            prev
+              .map((c) => c.id === raw.conversation_id
+                ? {
+                    ...c,
+                    updated_at: raw.created_at,
+                    unread_count: c.id === selectedIdRef.current ? c.unread_count : c.unread_count + 1,
+                  }
+                : c
+              )
               .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
           )
         }
       )
-      .subscribe()
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'conversations' },
+        (payload) => {
+          const raw = payload.new as { id: string; updated_at: string }
+          setConversations((prev) =>
+            prev
+              .map((c) => c.id === raw.id ? { ...c, updated_at: raw.updated_at } : c)
+              .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+          )
+        }
+      )
+      .subscribe((status) => {
+        console.log('Supabase Realtime Status:', status)
+      })
 
     return () => { supabase.removeChannel(channel) }
-  }, [selectedId, currentUserId])
+  }, [currentUserId])
 
   // ── File upload helper ────────────────────────────────────────────────────
   async function uploadAttachment(convId: string): Promise<string | null> {

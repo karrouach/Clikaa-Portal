@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useTransition, useCallback } from 'react'
 import { MessageSquare, Send, Loader2, User, Search, X, Plus, Paperclip } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
+import { createBrowserClient } from '@supabase/ssr'
 import { createClient } from '@/lib/supabase/client'
 import {
   replyToConversation,
@@ -119,46 +120,58 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
     threadEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // ── Realtime: new messages in active thread ──────────────────────────────
+  // ── selectedId ref — lets the realtime callback read the latest value
+  //    without needing the channel to be recreated on every selection change
+  const selectedIdRef = useRef(selectedId)
+  useEffect(() => { selectedIdRef.current = selectedId }, [selectedId])
+
+  // ── Single consolidated realtime channel ─────────────────────────────────
   useEffect(() => {
-    if (!selectedId) return
-    const supabase = createClient()
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
 
     const channel = supabase
-      .channel(`admin:messages:${selectedId}`)
+      .channel('realtime:admin-portal')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         async (payload) => {
+          console.log('Realtime Message Received!', payload)
           const raw = payload.new as MsgItem
-          if (raw.conversation_id !== selectedId) return
+          // Skip own optimistic messages
           if (raw.sender_id === currentUserId) return
-          const { data: senderData } = await supabase
-            .from('profiles')
-            .select('full_name, email, avatar_url')
-            .eq('id', raw.sender_id)
-            .single()
-          setMessages((prev) => [...prev, { ...raw, sender: senderData ?? null }])
+
+          if (raw.conversation_id === selectedIdRef.current) {
+            // Fetch sender profile then append to thread
+            const { data: senderData } = await supabase
+              .from('profiles')
+              .select('full_name, email, avatar_url')
+              .eq('id', raw.sender_id)
+              .single()
+            setMessages((prevMessages) => [...prevMessages, { ...raw, sender: senderData ?? null }])
+          }
+          // Bubble conversation to top and bump unread if not active
           setConversations((prev) =>
-            prev.map((c) => c.id === selectedId ? { ...c, updated_at: raw.created_at } : c)
+            prev
+              .map((c) => c.id === raw.conversation_id
+                ? {
+                    ...c,
+                    updated_at: raw.created_at,
+                    unread_count: c.id === selectedIdRef.current ? c.unread_count : c.unread_count + 1,
+                  }
+                : c
+              )
               .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
           )
         }
       )
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
-  }, [selectedId, currentUserId])
-
-  // ── Realtime: new conversations appearing in inbox ───────────────────────
-  useEffect(() => {
-    const supabase = createClient()
-    const channel = supabase
-      .channel('admin:conversations')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'conversations' },
         async (payload) => {
+          console.log('Realtime Conversation Received!', payload)
           const raw = payload.new as { id: string; client_id: string; subject: string; created_at: string; updated_at: string }
           const { data: clientData } = await supabase
             .from('profiles')
@@ -176,29 +189,24 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
           setConversations((prev) => [newConv, ...prev])
         }
       )
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [])
-
-  // ── Realtime: conversation updated_at changes (new replies) ─────────────
-  useEffect(() => {
-    const supabase = createClient()
-    const channel = supabase
-      .channel('admin:conversations:updates')
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'conversations' },
         (payload) => {
           const raw = payload.new as { id: string; updated_at: string }
           setConversations((prev) =>
-            prev.map((c) => c.id === raw.id ? { ...c, updated_at: raw.updated_at } : c)
+            prev
+              .map((c) => c.id === raw.id ? { ...c, updated_at: raw.updated_at } : c)
               .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
           )
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        console.log('Supabase Realtime Status:', status)
+      })
+
     return () => { supabase.removeChannel(channel) }
-  }, [])
+  }, [currentUserId])
 
   // ── Search debounce ──────────────────────────────────────────────────────
   const runSearch = useCallback(async (q: string) => {
