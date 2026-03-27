@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { ClipboardList, ChevronDown } from 'lucide-react'
+import Link from 'next/link'
+import { ClipboardList, ChevronDown, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { format, isPast, isToday } from 'date-fns'
 
@@ -103,9 +104,10 @@ export function MyTasksClient({ tasks: initialTasks }: Props) {
             const dueToday = dueDateObj && isToday(dueDateObj)
 
             return (
-              <div
+              <Link
                 key={task.id}
-                className="bg-white border border-zinc-100 rounded-xl px-5 py-4 flex items-start gap-4 hover:border-zinc-200 transition-colors"
+                href={`/dashboard/${task.workspace_id}`}
+                className="block bg-white border border-zinc-100 rounded-xl px-5 py-4 flex items-start gap-4 hover:border-zinc-300 hover:shadow-sm transition-all cursor-pointer"
               >
                 {/* Priority dot */}
                 <div className={cn(
@@ -158,7 +160,8 @@ export function MyTasksClient({ tasks: initialTasks }: Props) {
                     )}
                   </div>
                 </div>
-              </div>
+                <ArrowRight size={14} strokeWidth={1.5} className="shrink-0 text-zinc-300 mt-1 self-center" />
+              </Link>
             )
           })}
         </div>

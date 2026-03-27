@@ -82,7 +82,7 @@ function MemberAvatar({ name, avatarUrl }: { name: string; avatarUrl: string | n
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function DirectoryClient({ teamMembers: initialTeam, clients, currentUserId, workspaces }: Props) {
-  const [activeTab, setActiveTab] = useState<'team' | 'clients'>('team')
+  const [activeTab, setActiveTab] = useState<'admins' | 'designers' | 'clients'>('admins')
   const [team, setTeam]           = useState(initialTeam)
   const [error, setError]         = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
@@ -148,9 +148,13 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
     })
   }
 
+  const admins    = team.filter((m) => m.role === 'admin')
+  const designers = team.filter((m) => m.role === 'designer')
+
   const tabs = [
-    { key: 'team' as const,    label: 'Internal Team', count: team.length },
-    { key: 'clients' as const, label: 'Clients',       count: clients.length },
+    { key: 'admins'    as const, label: 'Admins',    count: admins.length },
+    { key: 'designers' as const, label: 'Designers', count: designers.length },
+    { key: 'clients'   as const, label: 'Clients',   count: clients.length },
   ]
 
   return (
@@ -162,7 +166,7 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
           <p className="mt-1 text-sm text-zinc-500">Internal team members and external clients.</p>
         </div>
 
-        {activeTab === 'team' && (
+        {(activeTab === 'admins' || activeTab === 'designers') && (
           <Button
             size="sm"
             rounded="sm"
@@ -219,88 +223,91 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
         ))}
       </div>
 
-      {/* ── Internal Team Tab ──────────────────────────────────────────── */}
-      {activeTab === 'team' && (
-        <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-          {team.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-sm font-medium text-zinc-900 mb-1">No team members yet</p>
-              <p className="text-sm text-zinc-400">Invite your first member to get started.</p>
-            </div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-zinc-100 bg-zinc-50">
-                  <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Member</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Role</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Joined</th>
-                  <th className="px-4 py-3 w-10" />
-                </tr>
-              </thead>
-              <tbody>
-                {team.map((member) => {
-                  const isYou = member.id === currentUserId
-                  const isRemoving = removingId === member.id
-                  const displayName = member.full_name || member.email
-
-                  return (
-                    <tr
-                      key={member.id}
-                      className={cn(
-                        'border-b border-zinc-50 last:border-0 transition-colors',
-                        isRemoving ? 'opacity-40' : 'hover:bg-zinc-50/50'
-                      )}
-                    >
-                      <td className="px-6 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <MemberAvatar name={displayName} avatarUrl={member.avatar_url} />
-                          <div>
-                            <Link
-                              href={`/dashboard/team/${member.id}`}
-                              className="font-medium text-black hover:underline underline-offset-2"
-                            >
-                              {displayName}
-                              {isYou && <span className="ml-1.5 text-[10px] text-zinc-400 font-normal">(you)</span>}
-                            </Link>
-                            {member.title ? (
-                              <p className="text-xs text-zinc-500">{member.title}</p>
-                            ) : (
-                              <p className="text-xs text-zinc-400">{member.email}</p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <span className={cn('inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded capitalize', ROLE_BADGE[member.role] ?? 'bg-zinc-100 text-zinc-600')}>
-                          {member.role}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-zinc-400 text-xs hidden md:table-cell">
-                        {new Date(member.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </td>
-                      <td className="px-4 py-3.5 text-right">
-                        {!isYou && (
-                          <button
-                            onClick={() => handleRemove(member.id)}
-                            disabled={isPending}
-                            className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors disabled:pointer-events-none"
-                            title="Remove member"
-                          >
-                            {isRemoving
-                              ? <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
-                              : <Trash2 size={14} strokeWidth={1.5} />
-                            }
-                          </button>
+      {/* ── Admins / Designers Tabs ────────────────────────────────────── */}
+      {(activeTab === 'admins' || activeTab === 'designers') && (() => {
+        const rows = activeTab === 'admins' ? admins : designers
+        const emptyLabel = activeTab === 'admins' ? 'No admins yet' : 'No designers yet'
+        return (
+          <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+            {rows.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <p className="text-sm font-medium text-zinc-900 mb-1">{emptyLabel}</p>
+                <p className="text-sm text-zinc-400">Invite a team member to get started.</p>
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-100 bg-zinc-50">
+                    <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Member</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Role</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Joined</th>
+                    <th className="px-4 py-3 w-10" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((member) => {
+                    const isYou = member.id === currentUserId
+                    const isRemoving = removingId === member.id
+                    const displayName = member.full_name || member.email
+                    return (
+                      <tr
+                        key={member.id}
+                        className={cn(
+                          'border-b border-zinc-50 last:border-0 transition-colors',
+                          isRemoving ? 'opacity-40' : 'hover:bg-zinc-50/50'
                         )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
+                      >
+                        <td className="px-6 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <MemberAvatar name={displayName} avatarUrl={member.avatar_url} />
+                            <div>
+                              <Link
+                                href={`/dashboard/team/${member.id}`}
+                                className="font-medium text-black hover:underline underline-offset-2"
+                              >
+                                {displayName}
+                                {isYou && <span className="ml-1.5 text-[10px] text-zinc-400 font-normal">(you)</span>}
+                              </Link>
+                              {member.title ? (
+                                <p className="text-xs text-zinc-500">{member.title}</p>
+                              ) : (
+                                <p className="text-xs text-zinc-400">{member.email}</p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className={cn('inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded capitalize', ROLE_BADGE[member.role] ?? 'bg-zinc-100 text-zinc-600')}>
+                            {member.role}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-zinc-400 text-xs hidden md:table-cell">
+                          {new Date(member.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          {!isYou && (
+                            <button
+                              onClick={() => handleRemove(member.id)}
+                              disabled={isPending}
+                              className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors disabled:pointer-events-none"
+                              title="Remove member"
+                            >
+                              {isRemoving
+                                ? <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
+                                : <Trash2 size={14} strokeWidth={1.5} />
+                              }
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )
+      })()}
 
       {/* ── Clients Tab ────────────────────────────────────────────────── */}
       {activeTab === 'clients' && (

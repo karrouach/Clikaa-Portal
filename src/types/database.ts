@@ -57,6 +57,7 @@ export type Database = {
           slug: string
           description: string | null
           logo_url: string | null
+          current_phase: number
           created_by: string
           created_at: string
           updated_at: string
@@ -67,6 +68,7 @@ export type Database = {
           slug: string
           description?: string | null
           logo_url?: string | null
+          current_phase?: number
           created_by: string
           created_at?: string
           updated_at?: string
@@ -77,6 +79,7 @@ export type Database = {
           slug?: string
           description?: string | null
           logo_url?: string | null
+          current_phase?: number
           created_by?: string
           created_at?: string
           updated_at?: string

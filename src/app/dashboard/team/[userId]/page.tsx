@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowLeft, Mail, ClipboardList, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Mail, ClipboardList, CheckCircle2, TrendingUp } from 'lucide-react'
 import { getInitials } from '@/lib/utils'
 
 interface Props {
@@ -78,6 +78,22 @@ export default async function TeamMemberProfilePage({ params }: Props) {
     .order('updated_at', { ascending: false })
     .limit(20)
 
+  // ── Designer success score ───────────────────────────────────────────────
+  let successScore: number | null = null
+  let totalTasks = 0
+  let doneTasks  = 0
+
+  if (member.role === 'designer') {
+    const { data: allAssigned } = await admin
+      .from('tasks')
+      .select('id, status')
+      .eq('assignee_id', userId)
+
+    totalTasks   = allAssigned?.length ?? 0
+    doneTasks    = allAssigned?.filter((t) => t.status === 'done').length ?? 0
+    successScore = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : null
+  }
+
   const displayName = member.full_name || member.email
   const initials = getInitials(displayName)
 
@@ -139,6 +155,54 @@ export default async function TeamMemberProfilePage({ params }: Props) {
           </div>
         </div>
       </div>
+
+      {/* ── Designer Performance ─────────────────────────────────────────── */}
+      {member.role === 'designer' && (
+        <section className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp size={14} strokeWidth={1.5} className="text-zinc-400" />
+            <h2 className="text-sm font-semibold text-black">Performance</h2>
+          </div>
+          <div className="bg-white border border-zinc-100 rounded-xl p-6">
+            <div className="flex items-center justify-between gap-6 flex-wrap">
+              {/* Success score */}
+              <div>
+                <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-1">Success Rate</p>
+                {successScore !== null ? (
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-3xl font-semibold text-black">{successScore}%</span>
+                    <span className="text-sm text-zinc-400">completion</span>
+                  </div>
+                ) : (
+                  <p className="text-sm text-zinc-400">No tasks assigned yet</p>
+                )}
+              </div>
+              {/* Task counts */}
+              <div className="flex items-center gap-6 text-center">
+                <div>
+                  <p className="text-2xl font-semibold text-black">{doneTasks}</p>
+                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">Completed</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-semibold text-black">{totalTasks}</p>
+                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">Total</p>
+                </div>
+              </div>
+            </div>
+            {/* Progress bar */}
+            {successScore !== null && (
+              <div className="mt-5">
+                <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-black rounded-full transition-all duration-700"
+                    style={{ width: `${successScore}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ── Active Tasks ─────────────────────────────────────────────────── */}
       <section className="mb-8">

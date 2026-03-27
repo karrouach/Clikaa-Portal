@@ -78,13 +78,13 @@ export default async function DashboardPage() {
   // ── Workspaces (all roles) ─────────────────────────────────────────────────
   const { data: memberships } = await supabase
     .from('workspace_members')
-    .select('workspaces(id, name, slug, description)')
+    .select('workspaces(id, name, slug, description, current_phase)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
 
   const workspaces = (memberships ?? [])
     .map((m) => m.workspaces)
-    .filter(Boolean) as { id: string; name: string; slug: string; description: string | null }[]
+    .filter(Boolean) as { id: string; name: string; slug: string; description: string | null; current_phase: number }[]
 
   // ══════════════════════════════════════════════════════════════════════════
   // ADMIN DATA
@@ -787,61 +787,56 @@ export default async function DashboardPage() {
                   />
                 </div>
 
-                {/* Project Timeline */}
-                <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-zinc-50">
-                    <h2 className="text-sm font-semibold text-black">Project Timeline</h2>
-                    <p className="text-xs text-zinc-400 mt-0.5">Phase {getCurrentPhase(progressPct) + 1} of {PHASES.length}</p>
-                  </div>
-                  <div className="px-5 py-5">
-                    <div className="relative">
-                      {/* Vertical line */}
-                      <div className="absolute left-[14px] top-0 bottom-0 w-px bg-zinc-100" />
-                      <div className="space-y-0">
-                        {PHASES.map((phase, i) => {
-                          const currentPhase = getCurrentPhase(progressPct)
-                          const isDone    = i < currentPhase
-                          const isCurrent = i === currentPhase
-                          const isFuture  = i > currentPhase
-
-                          return (
-                            <div key={phase} className="flex items-start gap-4 pb-5 last:pb-0 relative">
-                              <div className={`shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center z-10 ${
-                                isDone    ? 'bg-black border-black'
-                                  : isCurrent ? 'bg-white border-black'
-                                  : 'bg-white border-zinc-200'
-                              }`}>
-                                {isDone ? (
-                                  <span className="text-white text-[10px]">✓</span>
-                                ) : isCurrent ? (
-                                  <span className="w-2.5 h-2.5 bg-black rounded-full animate-pulse block" />
-                                ) : (
-                                  <span className="w-2 h-2 bg-zinc-200 rounded-full block" />
-                                )}
-                              </div>
-                              <div className="pt-1">
-                                <p className={`text-sm ${
-                                  isDone ? 'text-zinc-400 line-through' : isCurrent ? 'font-semibold text-black' : 'text-zinc-400'
-                                }`}>
-                                  {phase}
-                                </p>
-                                {isCurrent && (
-                                  <p className="text-[11px] text-zinc-500 mt-0.5">In progress</p>
-                                )}
-                                {isDone && (
-                                  <p className="text-[11px] text-zinc-300 mt-0.5">Completed</p>
-                                )}
-                                {isFuture && (
-                                  <p className="text-[11px] text-zinc-300 mt-0.5">Upcoming</p>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        })}
+                {/* Project Timeline — driven by workspace.current_phase */}
+                {(() => {
+                  const dbPhase = workspaces[0]?.current_phase ?? 1
+                  const currentPhaseIdx = dbPhase - 1
+                  return (
+                    <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+                      <div className="px-5 py-4 border-b border-zinc-50">
+                        <h2 className="text-sm font-semibold text-black">Project Timeline</h2>
+                        <p className="text-xs text-zinc-400 mt-0.5">Phase {dbPhase} of {PHASES.length}</p>
+                      </div>
+                      <div className="px-5 py-5">
+                        <div className="relative">
+                          <div className="absolute left-[14px] top-0 bottom-0 w-px bg-zinc-100" />
+                          <div className="space-y-0">
+                            {PHASES.map((phase, i) => {
+                              const isDone    = i < currentPhaseIdx
+                              const isCurrent = i === currentPhaseIdx
+                              const isFuture  = i > currentPhaseIdx
+                              return (
+                                <div key={phase} className="flex items-start gap-4 pb-5 last:pb-0 relative">
+                                  <div className={`shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center z-10 ${
+                                    isDone    ? 'bg-black border-black'
+                                    : isCurrent ? 'bg-white border-black'
+                                    : 'bg-white border-zinc-200'
+                                  }`}>
+                                    {isDone ? (
+                                      <span className="text-white text-[10px]">✓</span>
+                                    ) : isCurrent ? (
+                                      <span className="w-2.5 h-2.5 bg-black rounded-full animate-pulse block" />
+                                    ) : (
+                                      <span className="w-2 h-2 bg-zinc-200 rounded-full block" />
+                                    )}
+                                  </div>
+                                  <div className="pt-1">
+                                    <p className={`text-sm ${isDone ? 'text-zinc-400 line-through' : isCurrent ? 'font-semibold text-black' : 'text-zinc-400'}`}>
+                                      {phase}
+                                    </p>
+                                    {isCurrent && <p className="text-[11px] text-zinc-500 mt-0.5">In progress</p>}
+                                    {isDone    && <p className="text-[11px] text-zinc-300 mt-0.5">Completed</p>}
+                                    {isFuture  && <p className="text-[11px] text-zinc-300 mt-0.5">Upcoming</p>}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  )
+                })()}
               </div>
 
               {/* ── Bottom split: Recent Files + Recent Invoices ───────────── */}

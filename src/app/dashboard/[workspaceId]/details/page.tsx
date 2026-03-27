@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { Calendar, Clock } from 'lucide-react'
 import { InviteButton } from './InviteButton'
+import { PhaseSelector } from './PhaseSelector'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import type { TaskStatus } from '@/types/database'
@@ -82,10 +83,18 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  // Role check
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  const isAdmin = profile?.role === 'admin'
+
   // Workspace
   const { data: workspace } = await supabase
     .from('workspaces')
-    .select('id, name, description, created_at')
+    .select('id, name, description, created_at, current_phase')
     .eq('id', workspaceId)
     .single()
 
@@ -196,51 +205,21 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
         {/* ── 2-col: Timeline + Team ───────────────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
-          {/* Timeline */}
+          {/* Project Phase */}
           <div className="bg-white border border-zinc-100 rounded-xl">
             <div className="px-6 py-4 border-b border-zinc-100 flex items-center gap-2">
               <Calendar size={13} strokeWidth={1.5} className="text-zinc-400" />
-              <h2 className="text-sm font-semibold text-black">Project Timeline</h2>
+              <h2 className="text-sm font-semibold text-black">Project Phase</h2>
+              <span className="ml-auto text-[10px] text-zinc-400">
+                Phase {workspace.current_phase} of 5
+              </span>
             </div>
-
-            <div className="px-6 py-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
-                  Start date
-                </span>
-                <span className="text-sm text-black">
-                  {formatDate(workspace.created_at)}
-                </span>
-              </div>
-
-              <div className="w-full h-px bg-zinc-50" />
-
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
-                  Est. completion
-                </span>
-                {latestDue ? (
-                  <span className="text-sm text-black">{formatDate(latestDue)}</span>
-                ) : (
-                  <span className="text-sm text-zinc-400">No deadline set</span>
-                )}
-              </div>
-
-              {latestDue && (
-                <>
-                  <div className="w-full h-px bg-zinc-50" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
-                      Days remaining
-                    </span>
-                    <span className="text-sm text-black tabular-nums">
-                      {Math.max(0, Math.ceil(
-                        (new Date(latestDue).getTime() - Date.now()) / 86_400_000
-                      ))}d
-                    </span>
-                  </div>
-                </>
-              )}
+            <div className="px-6 py-5">
+              <PhaseSelector
+                workspaceId={workspaceId}
+                currentPhase={workspace.current_phase}
+                isAdmin={isAdmin}
+              />
             </div>
           </div>
 
