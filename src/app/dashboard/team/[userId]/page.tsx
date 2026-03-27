@@ -86,7 +86,7 @@ export default async function TeamMemberProfilePage({ params }: Props) {
 
       {/* Back link */}
       <Link
-        href="/dashboard/team"
+        href="/dashboard/directory"
         className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-black transition-colors mb-6"
       >
         <ArrowLeft size={14} strokeWidth={1.5} />

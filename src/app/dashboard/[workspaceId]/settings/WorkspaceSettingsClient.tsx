@@ -462,21 +462,29 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
           </table>
         </div>
 
-        {/* ── Role legend ───────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="p-4 border border-zinc-100 bg-white">
-            <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium mb-2 bg-zinc-900 text-white">
-              Admin
-            </span>
-            <p className="text-xs text-zinc-500">Full access — can manage tasks, files, and settings.</p>
+        {/* ── Role legend (admin only) ───────────────────────────────────── */}
+        {isAdmin && (
+          <div className="grid grid-cols-3 gap-3">
+            <div className="p-4 border border-zinc-100 bg-white rounded-xl">
+              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium mb-2 bg-zinc-900 text-white rounded">
+                Admin
+              </span>
+              <p className="text-xs text-zinc-500">Full access — can manage tasks, files, and settings.</p>
+            </div>
+            <div className="p-4 border border-zinc-100 bg-white rounded-xl">
+              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium mb-2 bg-violet-100 text-violet-700 rounded">
+                Designer
+              </span>
+              <p className="text-xs text-zinc-500">Designer access — can submit invoices and manage assigned tasks.</p>
+            </div>
+            <div className="p-4 border border-zinc-100 bg-white rounded-xl">
+              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium mb-2 bg-zinc-100 text-zinc-600 rounded">
+                Client
+              </span>
+              <p className="text-xs text-zinc-500">Client access — can view and update their board.</p>
+            </div>
           </div>
-          <div className="p-4 border border-zinc-100 bg-white">
-            <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium mb-2 bg-zinc-100 text-zinc-600">
-              Client
-            </span>
-            <p className="text-xs text-zinc-500">Client access — can view and update their board.</p>
-          </div>
-        </div>
+        )}
 
         {/* ── Danger Zone ─────────────────────────────────────────────────── */}
         {isAdmin && (

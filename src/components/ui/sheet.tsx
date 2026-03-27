@@ -50,8 +50,9 @@ const SheetContent = React.forwardRef<
         'fixed right-0 top-0 z-50 h-full',
         // Width — comfortable for task detail
         'w-full max-w-[480px]',
-        // Aesthetic — always pristine white, sharp edges
+        // Aesthetic — always pristine white, rounded left edge
         'bg-white shadow-2xl shadow-black/15',
+        'rounded-l-2xl',
         // Flex layout so header/body/footer stack correctly
         'flex flex-col',
         // Slide animations

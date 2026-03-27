@@ -52,8 +52,9 @@ const DialogContent = React.forwardRef<
         '-translate-x-1/2 -translate-y-1/2',
         // Sizing
         'w-full max-w-lg',
-        // Aesthetic — sharp edges, Clikaa style
+        // Aesthetic — rounded, Clikaa style
         'bg-white shadow-2xl shadow-black/10',
+        'rounded-xl',
         'p-8',
         // Animations (see tailwind.config.ts keyframes)
         'data-[state=open]:animate-dialog-show',

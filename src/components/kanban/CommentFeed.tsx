@@ -49,7 +49,10 @@ interface CommentFeedProps {
 export function CommentFeed({ taskId, currentUserProfile, members = [] }: CommentFeedProps) {
   const [comments, setComments] = useState<CommentWithAuthor[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [body, setBody] = useState('')
+  // visibleBody: what the textarea displays (@Name format)
+  // mentionMap: name → uuid for all inserted mentions (used to rebuild raw body on submit)
+  const [visibleBody, setVisibleBody] = useState('')
+  const mentionMapRef = useRef<Map<string, string>>(new Map())
   const [isPending, startTransition] = useTransition()
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -134,10 +137,22 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
   // Resize on mount so placeholder never gets clipped
   useEffect(() => { autoResize() }, [])
 
+  // ── Build raw body (with @[Name](uuid) format) from visibleBody ─────────────
+  function buildRawBody(visible: string): string {
+    // Sort by name length descending so longer names are replaced first (greedy)
+    const names = [...mentionMapRef.current.keys()].sort((a, b) => b.length - a.length)
+    let raw = visible
+    for (const name of names) {
+      const id = mentionMapRef.current.get(name)!
+      raw = raw.split(`@${name}`).join(`@[${name}](${id})`)
+    }
+    return raw
+  }
+
   // ── @mention detection ────────────────────────────────────────────────────
   function handleBodyChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const val = e.target.value
-    setBody(val)
+    setVisibleBody(val)
     autoResize()
 
     const cursor = e.target.selectionStart ?? val.length
@@ -153,10 +168,13 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
   }
 
   function insertMention(member: MemberOption) {
-    const cursor = textareaRef.current?.selectionStart ?? body.length
-    const tag = `@[${member.full_name || member.email}](${member.id}) `
-    const newBody = body.slice(0, mentionAtIndex) + tag + body.slice(cursor)
-    setBody(newBody)
+    const cursor = textareaRef.current?.selectionStart ?? visibleBody.length
+    const name = member.full_name || member.email
+    // Register mention in map for raw-body reconstruction on submit
+    mentionMapRef.current.set(name, member.id)
+    const tag = `@${name} `
+    const newBody = visibleBody.slice(0, mentionAtIndex) + tag + visibleBody.slice(cursor)
+    setVisibleBody(newBody)
     setMentionQuery(null)
     setTimeout(() => {
       textareaRef.current?.focus()
@@ -168,15 +186,18 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
   // ── Submit ────────────────────────────────────────────────────────────────
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const trimmed = body.trim()
-    if (!trimmed || isPending) return
+    const trimmedVisible = visibleBody.trim()
+    if (!trimmedVisible || isPending) return
+
+    // Rebuild raw body with @[Name](uuid) format for storage
+    const rawBody = buildRawBody(trimmedVisible)
 
     const optimisticId = `optimistic-${Date.now()}`
     const optimistic: CommentWithAuthor = {
       id: optimisticId,
       task_id: taskId,
       author_id: currentUserProfile.id,
-      body: trimmed,
+      body: rawBody,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       profiles: {
@@ -187,16 +208,16 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
     }
 
     setComments((prev) => [...prev, optimistic])
-    setBody('')
+    setVisibleBody('')
     setMentionQuery(null)
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
 
     startTransition(async () => {
-      const result = await addComment({ taskId, body: trimmed })
+      const result = await addComment({ taskId, body: rawBody })
 
       if (result.error) {
         setComments((prev) => prev.filter((c) => c.id !== optimisticId))
-        setBody(trimmed)
+        setVisibleBody(trimmedVisible)
         return
       }
 
@@ -341,7 +362,7 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
               {/* Textarea — border-0 + shadow-none strips the Textarea base styles so the parent container owns focus styling */}
               <Textarea
                 ref={textareaRef}
-                value={body}
+                value={visibleBody}
                 onChange={handleBodyChange}
                 onKeyDown={handleKeyDown}
                 placeholder={members.length > 0 ? 'Add a comment… @ to mention' : 'Add a comment…'}
@@ -360,7 +381,7 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
                       disabled={isPending}
                       onMouseDown={(e) => {
                         e.preventDefault()
-                        setBody((prev) => (prev ? prev + ' ' + chip : chip))
+                        setVisibleBody((prev) => (prev ? prev + ' ' + chip : chip))
                         setTimeout(() => {
                           autoResize()
                           textareaRef.current?.focus()
@@ -376,7 +397,7 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
                 {/* Send button */}
                 <button
                   type="submit"
-                  disabled={!body.trim() || isPending}
+                  disabled={!visibleBody.trim() || isPending}
                   className="
                     flex items-center justify-center w-7 h-7 shrink-0
                     bg-black text-white rounded-lg

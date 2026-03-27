@@ -195,7 +195,7 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
                     isClient ? '' : 'hover:bg-zinc-50/60 cursor-pointer',
                   )}
                 >
-                  <td className="px-6 py-4 font-mono text-xs text-zinc-500 whitespace-nowrap">{inv.id}</td>
+                  <td className="px-6 py-4 font-mono text-xs text-zinc-500 whitespace-nowrap">{inv.invoice_number}</td>
                   <td className="px-6 py-4 font-medium text-black whitespace-nowrap group-hover:text-black">{inv.client}</td>
                   <td className="px-6 py-4 text-zinc-400 hidden lg:table-cell whitespace-nowrap">{inv.issued}</td>
                   <td className="px-6 py-4 text-zinc-400 hidden lg:table-cell whitespace-nowrap">{inv.due}</td>

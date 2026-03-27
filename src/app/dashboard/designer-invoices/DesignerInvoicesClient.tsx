@@ -216,7 +216,7 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
   const totalPending = pending.reduce((s, i) => s + i.amount, 0)
 
   return (
-    <div className="animate-fade-in max-w-4xl">
+    <div className="animate-fade-in">
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-black tracking-tight">Payments</h1>

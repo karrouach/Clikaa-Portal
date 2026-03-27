@@ -230,7 +230,7 @@ export default async function CalendarPage({ searchParams }: Props) {
             {days.map(({ dateStr, tasks: dayTasks }) => {
               const isToday = dateStr === todayStr
               return (
-                <div key={dateStr} className={cn('min-h-[200px] p-2 space-y-1', isToday && 'bg-zinc-50/40')}>
+                <div key={dateStr} className={cn('min-h-[520px] p-2 space-y-1', isToday && 'bg-zinc-50/40')}>
                   {dayTasks.length === 0 ? (
                     <div className="h-full flex items-start justify-center pt-8">
                       <span className="text-[10px] text-zinc-200">—</span>
