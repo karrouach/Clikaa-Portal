@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { KanbanBoard } from '@/components/kanban/KanbanBoard'
+import { WorkspaceTaskTabs } from '@/components/kanban/WorkspaceTaskTabs'
 
 interface Props {
   // Next.js 15: params is a Promise
@@ -99,7 +99,7 @@ export default async function WorkspacePage({ params }: Props) {
   // The workspace layout (-mx-6 -my-8, flex-col, h-[calc(100vh-3.5rem)]) provides
   // the full-viewport-height container. KanbanBoard uses h-full to fill it.
   return (
-    <KanbanBoard
+    <WorkspaceTaskTabs
       workspaceId={workspaceId}
       workspaceName={workspace.name}
       initialTasks={tasks ?? []}

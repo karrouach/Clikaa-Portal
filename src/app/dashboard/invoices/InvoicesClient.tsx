@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CreateInvoiceModal } from './CreateInvoiceModal'
 import { InvoiceViewPanel } from './InvoiceViewPanel'
@@ -65,10 +65,6 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
   const [editInvoice, setEditInvoice] = useState<Invoice | null>(null)
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null)
 
-  const totalPending = invoices
-    .filter(i => i.status === 'pending' || i.status === 'overdue')
-    .reduce((sum, i) => sum + parseFloat(i.amount.replace(/[$,]/g, '')), 0)
-
   function handleMarkPaid(id: string) {
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: 'paid' } : i))
     setViewInvoice(prev => prev?.id === id ? { ...prev, status: 'paid' } : prev)
@@ -103,11 +99,55 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
     if (!open) setEditInvoice(null)
   }
 
+  function handleExport() {
+    const headers = ['Invoice #', 'Client', 'Project', 'Amount', 'Status', 'Issued', 'Due']
+    const rows = invoices.map((inv) => [
+      inv.invoice_number ?? inv.id,
+      inv.client,
+      inv.project || '',
+      inv.amount,
+      STATUS_LABELS[inv.status],
+      inv.issued,
+      inv.due,
+    ])
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = 'invoices-export.csv'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  // ── KPI calculations ──────────────────────────────────────────────────────
+  const kpiAll     = invoices.length
+  const kpiDraft   = invoices.filter(i => i.status === 'draft').length
+  const kpiOpen    = invoices.filter(i => i.status === 'pending').length
+  const kpiOverdue = invoices.filter(i => i.status === 'overdue').length
+  const kpiPaid    = invoices.filter(i => i.status === 'paid').length
+
+  const totalPaidAmount = invoices
+    .filter(i => i.status === 'paid')
+    .reduce((sum, i) => sum + parseFloat(i.amount.replace(/[$,]/g, '')), 0)
+
+  const KPI_CARDS = [
+    { label: 'All Invoices',   value: kpiAll,     sub: null },
+    { label: 'Draft / Pending', value: kpiDraft + kpiOpen, sub: `${kpiDraft} draft · ${kpiOpen} pending` },
+    { label: 'Open',           value: kpiOpen,    sub: null },
+    { label: 'Overdue',        value: kpiOverdue, sub: null, highlight: kpiOverdue > 0 },
+    { label: 'Paid',           value: kpiPaid,    sub: `$${totalPaidAmount.toLocaleString('en-US', { minimumFractionDigits: 0 })}` },
+  ]
+
   return (
     <div className="animate-fade-in">
 
       {/* ── Page header ───────────────────────────────────────────────────── */}
-      <div className="mb-8 flex items-start justify-between gap-4">
+      <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-black tracking-tight">
             {isClient ? 'My Invoices' : 'Invoices'}
@@ -120,13 +160,14 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
         </div>
 
         {!isClient && (
-          <div className="flex items-start gap-4 shrink-0">
-            <div className="text-right hidden sm:block">
-              <p className="text-xs text-zinc-400 uppercase tracking-widest">Outstanding</p>
-              <p className="text-2xl font-semibold text-black mt-0.5">
-                ${totalPending.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-              </p>
-            </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-1.5 h-9 px-3.5 bg-white text-zinc-700 text-sm font-medium rounded-lg border border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 transition-colors duration-150"
+            >
+              <Download size={13} strokeWidth={1.5} />
+              Export
+            </button>
             <button
               onClick={() => setCreateOpen(true)}
               className="flex items-center gap-1.5 h-9 px-4 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 active:bg-zinc-900 transition-colors duration-150"
@@ -137,6 +178,27 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
           </div>
         )}
       </div>
+
+      {/* ── KPI cards ─────────────────────────────────────────────────────── */}
+      {!isClient && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+          {KPI_CARDS.map(({ label, value, sub, highlight }) => (
+            <div
+              key={label}
+              className={cn(
+                'bg-white border rounded-xl px-4 py-4 flex flex-col gap-1',
+                highlight ? 'border-red-100 bg-red-50/30' : 'border-zinc-100'
+              )}
+            >
+              <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">{label}</p>
+              <p className={cn('text-2xl font-semibold tabular-nums', highlight ? 'text-red-600' : 'text-black')}>
+                {value}
+              </p>
+              {sub && <p className="text-[11px] text-zinc-400">{sub}</p>}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── Mobile card list ──────────────────────────────────────────────── */}
       <div className="sm:hidden space-y-3">

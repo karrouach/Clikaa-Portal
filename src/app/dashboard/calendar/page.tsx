@@ -117,7 +117,7 @@ export default async function CalendarPage({ searchParams }: Props) {
   const params   = await searchParams
   const today    = new Date()
   const todayStr = today.toISOString().slice(0, 10)
-  const view     = params.view === 'week' ? 'week' : 'month'
+  const view     = params.view === 'month' ? 'month' : 'week'
 
   // ── Week view ───────────────────────────────────────────────────────────────
   if (view === 'week') {
@@ -176,9 +176,9 @@ export default async function CalendarPage({ searchParams }: Props) {
           <div className="flex items-center gap-3">
             {/* View toggle */}
             <div className="flex items-center border border-zinc-200 rounded-lg overflow-hidden h-8">
-              <Link href={monthViewHref} className="px-3 h-full flex items-center text-xs text-zinc-500 hover:bg-zinc-50 transition-colors">Month</Link>
-              <span className="w-px h-4 bg-zinc-200" />
               <span className="px-3 h-full flex items-center text-xs font-medium bg-black text-white">Week</span>
+              <span className="w-px h-4 bg-zinc-200" />
+              <Link href={monthViewHref} className="px-3 h-full flex items-center text-xs text-zinc-500 hover:bg-zinc-50 transition-colors">Month</Link>
             </div>
 
             {/* Week navigation */}
@@ -331,9 +331,9 @@ export default async function CalendarPage({ searchParams }: Props) {
         <div className="flex items-center gap-3">
           {/* View toggle */}
           <div className="flex items-center border border-zinc-200 rounded-lg overflow-hidden h-8">
-            <span className="px-3 h-full flex items-center text-xs font-medium bg-black text-white">Month</span>
-            <span className="w-px h-4 bg-zinc-200" />
             <Link href={weekViewHref} className="px-3 h-full flex items-center text-xs text-zinc-500 hover:bg-zinc-50 transition-colors">Week</Link>
+            <span className="w-px h-4 bg-zinc-200" />
+            <span className="px-3 h-full flex items-center text-xs font-medium bg-black text-white">Month</span>
           </div>
 
           {/* Month navigation */}

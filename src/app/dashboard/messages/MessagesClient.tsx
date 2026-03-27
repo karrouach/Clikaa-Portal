@@ -297,12 +297,12 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
 
       {/* ── Conversation list ──────────────────────────────────────────────── */}
       <div className={cn(
-        'w-full md:w-72 shrink-0 border-r border-zinc-100 flex flex-col',
+        'w-full md:w-80 shrink-0 border-r border-zinc-100 flex flex-col',
         selectedId && !searchOpen ? 'hidden md:flex' : 'flex'
       )}>
         <div className="px-4 py-3 border-b border-zinc-100 flex items-center justify-between gap-2">
           <div>
-            <h2 className="text-sm font-semibold text-black">Inbox</h2>
+            <h2 className="text-sm font-semibold text-black">Messages</h2>
             <p className="text-xs text-zinc-400">{conversations.length} conversation{conversations.length !== 1 ? 's' : ''}</p>
           </div>
           <button
@@ -433,24 +433,28 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
                     key={conv.id}
                     onClick={() => setSelectedId(conv.id)}
                     className={cn(
-                      'w-full text-left px-4 py-3.5 transition-colors hover:bg-zinc-50',
-                      isSelected && 'bg-zinc-50'
+                      'w-full text-left px-4 py-3.5 transition-colors hover:bg-zinc-50/80',
+                      isSelected ? 'bg-zinc-50 border-l-2 border-black' : 'border-l-2 border-transparent'
                     )}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-white text-[10px] font-semibold">
-                        {initials}
+                      <div className="relative shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-zinc-900 flex items-center justify-center text-white text-[10px] font-semibold">
+                          {initials}
+                        </div>
+                        {conv.unread_count > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-black rounded-full text-white text-[9px] font-bold flex items-center justify-center px-0.5">
+                            {conv.unread_count > 9 ? '9+' : conv.unread_count}
+                          </span>
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-medium text-black truncate">{clientName}</p>
+                          <p className={cn('text-sm truncate', conv.unread_count > 0 ? 'font-semibold text-black' : 'font-medium text-zinc-800')}>{clientName}</p>
                           <span className="text-[10px] text-zinc-400 shrink-0">{timeAgo(conv.updated_at)}</span>
                         </div>
-                        <p className="text-xs text-zinc-500 truncate mt-0.5">{conv.subject || 'No subject'}</p>
+                        <p className={cn('text-xs truncate mt-0.5', conv.unread_count > 0 ? 'text-zinc-700' : 'text-zinc-400')}>{conv.subject || 'No subject'}</p>
                       </div>
-                      {conv.unread_count > 0 && (
-                        <span className="shrink-0 w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5" />
-                      )}
                     </div>
                   </button>
                 )
@@ -468,16 +472,17 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
         )}>
           <div className="px-5 py-3.5 border-b border-zinc-100 flex items-center gap-3">
             <button
-              className="md:hidden text-zinc-400 hover:text-black p-1"
+              className="md:hidden w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-black hover:bg-zinc-100 rounded-lg transition-colors"
               onClick={() => setSelectedId(null)}
             >
               ←
             </button>
-            <div>
-              <p className="text-sm font-semibold text-black">{selectedConv.subject || 'No subject'}</p>
-              <p className="text-xs text-zinc-400">
-                {selectedConv.client?.full_name || selectedConv.client?.email}
-              </p>
+            <div className="w-9 h-9 rounded-full bg-zinc-900 shrink-0 hidden md:flex items-center justify-center text-white text-[10px] font-semibold">
+              {getInitials(selectedConv.client?.full_name || selectedConv.client?.email || '?')}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-black truncate">{selectedConv.client?.full_name || selectedConv.client?.email || 'Unknown'}</p>
+              <p className="text-xs text-zinc-400 truncate">{selectedConv.subject || 'No subject'}</p>
             </div>
           </div>
 

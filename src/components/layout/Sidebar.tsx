@@ -17,6 +17,7 @@ import {
   MessageSquare,
   Wallet,
   ClipboardList,
+  Trophy,
 } from 'lucide-react'
 import type { Profile, WorkspaceWithRole } from '@/types/database'
 import { cn, getInitials } from '@/lib/utils'
@@ -368,6 +369,12 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
                   href="/dashboard/designer-invoices"
                   icon={Wallet}
                   label="Payments"
+                  isCollapsed={isCollapsed}
+                />
+                <NavLink
+                  href="/dashboard/leaderboard"
+                  icon={Trophy}
+                  label="Leaderboard"
                   isCollapsed={isCollapsed}
                 />
               </div>

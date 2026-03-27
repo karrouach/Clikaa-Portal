@@ -108,7 +108,7 @@ export default async function DashboardLayout({
 
   return (
     <>
-    <div className="flex h-screen overflow-hidden bg-zinc-50">
+    <div className="flex h-screen overflow-hidden bg-zinc-50" style={{ paddingTop: 'var(--titlebar-height, 0px)' }}>
       {/* ── Mobile top nav — md:hidden ────────────────────────────────────── */}
       <MobileNav />
 
