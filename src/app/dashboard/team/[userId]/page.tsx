@@ -80,8 +80,8 @@ export default async function TeamMemberProfilePage({ params }: Props) {
 
   // ── Designer success score ───────────────────────────────────────────────
   let successScore: number | null = null
-  let totalTasks = 0
-  let doneTasks  = 0
+  let perfTotal = 0
+  let perfDone  = 0
 
   if (member.role === 'designer') {
     const { data: allAssigned } = await admin
@@ -89,9 +89,9 @@ export default async function TeamMemberProfilePage({ params }: Props) {
       .select('id, status')
       .eq('assignee_id', userId)
 
-    totalTasks   = allAssigned?.length ?? 0
-    doneTasks    = allAssigned?.filter((t) => t.status === 'done').length ?? 0
-    successScore = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : null
+    perfTotal    = allAssigned?.length ?? 0
+    perfDone     = allAssigned?.filter((t) => t.status === 'done').length ?? 0
+    successScore = perfTotal > 0 ? Math.round((perfDone / perfTotal) * 100) : null
   }
 
   const displayName = member.full_name || member.email
@@ -180,11 +180,11 @@ export default async function TeamMemberProfilePage({ params }: Props) {
               {/* Task counts */}
               <div className="flex items-center gap-6 text-center">
                 <div>
-                  <p className="text-2xl font-semibold text-black">{doneTasks}</p>
+                  <p className="text-2xl font-semibold text-black">{perfDone}</p>
                   <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">Completed</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-semibold text-black">{totalTasks}</p>
+                  <p className="text-2xl font-semibold text-black">{perfTotal}</p>
                   <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">Total</p>
                 </div>
               </div>
