@@ -8,8 +8,7 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- ── messages ─────────────────────────────────────────────────────────────────
--- Participants in a conversation (sender or the conversation's client/admin)
--- can read messages in that conversation.
+-- Sender, the conversation's client, or any admin can read messages.
 
 DROP POLICY IF EXISTS "messages_select_participant" ON public.messages;
 
@@ -21,8 +20,9 @@ CREATE POLICY "messages_select_participant"
     OR EXISTS (
       SELECT 1 FROM public.conversations c
       WHERE c.id = messages.conversation_id
-        AND (c.client_id = auth.uid() OR c.admin_id = auth.uid())
+        AND c.client_id = auth.uid()
     )
+    OR is_admin()
   );
 
 -- ── notifications ─────────────────────────────────────────────────────────────
@@ -36,18 +36,17 @@ CREATE POLICY "notifications_select_owner"
   USING (auth.uid() = user_id);
 
 -- ── conversations ─────────────────────────────────────────────────────────────
--- Participants can read their own conversations.
+-- The conversation's client or any admin can read conversations.
+-- (Existing policies in 015_messaging.sql already cover this, but we
+--  replace them here to be explicit and avoid duplicates.)
 
 DROP POLICY IF EXISTS "conversations_select_participant" ON public.conversations;
+DROP POLICY IF EXISTS "Clients view own conversations"   ON public.conversations;
 
 CREATE POLICY "conversations_select_participant"
   ON public.conversations
   FOR SELECT
   USING (
-    auth.uid() = client_id
-    OR auth.uid() = admin_id
-    OR EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = auth.uid() AND p.role = 'admin'
-    )
+    client_id = auth.uid()
+    OR is_admin()
   );
