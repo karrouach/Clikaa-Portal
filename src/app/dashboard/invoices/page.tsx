@@ -42,6 +42,7 @@ export default async function InvoicesPage() {
       initialInvoices = rows.map(r => ({
         id: r.id,
         dbId: r.id,
+        invoice_number: r.invoice_number ?? undefined,
         client: r.client_name ?? '—',
         project: '',
         amount: '$' + Number(r.total).toLocaleString('en-US', { minimumFractionDigits: 2 }),
