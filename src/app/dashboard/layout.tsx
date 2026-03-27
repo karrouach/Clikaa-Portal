@@ -113,7 +113,7 @@ export default async function DashboardLayout({
       <MobileNav />
 
       {/* ── Mobile bottom tab bar — md:hidden ─────────────────────────────── */}
-      <BottomNav isAdmin={profile.role === 'admin'} />
+      <BottomNav isAdmin={profile.role === 'admin'} userId={profile.id} unreadMessageCount={unreadMessageCount} />
 
       {/* ── Sidebar — hidden on mobile ────────────────────────────────────── */}
       <Sidebar profile={profile} workspaces={workspaces} unreadMessageCount={unreadMessageCount} />
