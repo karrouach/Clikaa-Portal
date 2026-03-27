@@ -169,24 +169,24 @@ export default async function CalendarPage({ searchParams }: Props) {
         {/* Header */}
         <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-semibold text-black tracking-tight">Calendar</h1>
+            <h1 className="text-2xl font-semibold text-black dark:text-white tracking-tight">Calendar</h1>
             <p className="mt-1 text-sm text-zinc-500">Tasks across all workspaces.</p>
           </div>
 
           <div className="flex items-center gap-3">
             {/* View toggle */}
-            <div className="flex items-center border border-zinc-200 rounded-lg overflow-hidden h-8">
+            <div className="flex items-center border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden h-8">
               <span className="px-3 h-full flex items-center text-xs font-medium bg-black text-white">Week</span>
-              <span className="w-px h-4 bg-zinc-200" />
-              <Link href={monthViewHref} className="px-3 h-full flex items-center text-xs text-zinc-500 hover:bg-zinc-50 transition-colors">Month</Link>
+              <span className="w-px h-4 bg-zinc-200 dark:bg-zinc-700" />
+              <Link href={monthViewHref} className="px-3 h-full flex items-center text-xs text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">Month</Link>
             </div>
 
             {/* Week navigation */}
-            <Link href={`/dashboard/calendar?view=week&weekStart=${prevWeekStart}`} className="flex items-center justify-center w-8 h-8 border border-zinc-200 text-zinc-500 hover:text-black hover:border-zinc-300 transition-colors rounded-lg">
+            <Link href={`/dashboard/calendar?view=week&weekStart=${prevWeekStart}`} className="flex items-center justify-center w-8 h-8 border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors rounded-lg">
               <ChevronLeft size={14} strokeWidth={1.5} />
             </Link>
-            <span className="text-sm font-medium text-black tabular-nums whitespace-nowrap">{weekLabel}</span>
-            <Link href={`/dashboard/calendar?view=week&weekStart=${nextWeekStart}`} className="flex items-center justify-center w-8 h-8 border border-zinc-200 text-zinc-500 hover:text-black hover:border-zinc-300 transition-colors rounded-lg">
+            <span className="text-sm font-medium text-black dark:text-white tabular-nums whitespace-nowrap">{weekLabel}</span>
+            <Link href={`/dashboard/calendar?view=week&weekStart=${nextWeekStart}`} className="flex items-center justify-center w-8 h-8 border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors rounded-lg">
               <ChevronRight size={14} strokeWidth={1.5} />
             </Link>
           </div>
@@ -203,20 +203,20 @@ export default async function CalendarPage({ searchParams }: Props) {
         </div>
 
         {/* Week grid */}
-        <div className="bg-white border border-zinc-100 overflow-hidden rounded-xl">
+        <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 overflow-hidden rounded-xl">
           {/* Day headers */}
-          <div className="grid grid-cols-7 border-b border-zinc-100">
+          <div className="grid grid-cols-7 border-b border-zinc-100 dark:border-zinc-800">
             {days.map(({ label, day, dateStr }) => {
               const isToday = dateStr === todayStr
               return (
                 <div key={dateStr} className={cn(
-                  'px-3 py-3 text-center border-r border-zinc-100 last:border-r-0',
-                  isToday && 'bg-zinc-50'
+                  'px-3 py-3 text-center border-r border-zinc-100 dark:border-zinc-800 last:border-r-0',
+                  isToday && 'bg-zinc-50 dark:bg-zinc-900'
                 )}>
                   <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">{label}</p>
                   <div className={cn(
                     'inline-flex items-center justify-center w-7 h-7 rounded-full mt-1 text-sm font-medium',
-                    isToday ? 'bg-black text-white' : 'text-zinc-700'
+                    isToday ? 'bg-black text-white' : 'text-zinc-700 dark:text-zinc-300'
                   )}>
                     {day}
                   </div>
@@ -226,11 +226,11 @@ export default async function CalendarPage({ searchParams }: Props) {
           </div>
 
           {/* Task columns */}
-          <div className="grid grid-cols-7 divide-x divide-zinc-100">
+          <div className="grid grid-cols-7 divide-x divide-zinc-100 dark:divide-zinc-800">
             {days.map(({ dateStr, tasks: dayTasks }) => {
               const isToday = dateStr === todayStr
               return (
-                <div key={dateStr} className={cn('min-h-[520px] p-2 space-y-1', isToday && 'bg-zinc-50/40')}>
+                <div key={dateStr} className={cn('min-h-[520px] p-2 space-y-1', isToday && 'bg-zinc-50/40 dark:bg-zinc-900/40')}>
                   {dayTasks.length === 0 ? (
                     <div className="h-full flex items-start justify-center pt-8">
                       <span className="text-[10px] text-zinc-200">—</span>
@@ -259,10 +259,10 @@ export default async function CalendarPage({ searchParams }: Props) {
 
         {tasks.length === 0 && (
           <div className="mt-6 flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center mb-3">
+            <div className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-3">
               <CalendarDays size={18} strokeWidth={1.5} className="text-zinc-400" />
             </div>
-            <p className="text-sm font-medium text-zinc-900">No tasks due this week</p>
+            <p className="text-sm font-medium text-zinc-900 dark:text-white">No tasks due this week</p>
             <p className="text-xs text-zinc-400 mt-1">Add due dates to tasks to see them here.</p>
           </div>
         )}
@@ -324,26 +324,26 @@ export default async function CalendarPage({ searchParams }: Props) {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold text-black tracking-tight">Calendar</h1>
+          <h1 className="text-2xl font-semibold text-black dark:text-white tracking-tight">Calendar</h1>
           <p className="mt-1 text-sm text-zinc-500">Tasks with due dates across all workspaces.</p>
         </div>
 
         <div className="flex items-center gap-3">
           {/* View toggle */}
-          <div className="flex items-center border border-zinc-200 rounded-lg overflow-hidden h-8">
-            <Link href={weekViewHref} className="px-3 h-full flex items-center text-xs text-zinc-500 hover:bg-zinc-50 transition-colors">Week</Link>
-            <span className="w-px h-4 bg-zinc-200" />
+          <div className="flex items-center border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden h-8">
+            <Link href={weekViewHref} className="px-3 h-full flex items-center text-xs text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">Week</Link>
+            <span className="w-px h-4 bg-zinc-200 dark:bg-zinc-700" />
             <span className="px-3 h-full flex items-center text-xs font-medium bg-black text-white">Month</span>
           </div>
 
           {/* Month navigation */}
-          <Link href={prevHref} className="flex items-center justify-center w-8 h-8 border border-zinc-200 text-zinc-500 hover:text-black hover:border-zinc-300 transition-colors rounded-lg" aria-label="Previous month">
+          <Link href={prevHref} className="flex items-center justify-center w-8 h-8 border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors rounded-lg" aria-label="Previous month">
             <ChevronLeft size={14} strokeWidth={1.5} />
           </Link>
-          <span className="text-sm font-medium text-black tabular-nums min-w-[120px] text-center">
+          <span className="text-sm font-medium text-black dark:text-white tabular-nums min-w-[120px] text-center">
             {MONTH_NAMES[month - 1]} {year}
           </span>
-          <Link href={nextHref} className="flex items-center justify-center w-8 h-8 border border-zinc-200 text-zinc-500 hover:text-black hover:border-zinc-300 transition-colors rounded-lg" aria-label="Next month">
+          <Link href={nextHref} className="flex items-center justify-center w-8 h-8 border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors rounded-lg" aria-label="Next month">
             <ChevronRight size={14} strokeWidth={1.5} />
           </Link>
         </div>
@@ -360,10 +360,10 @@ export default async function CalendarPage({ searchParams }: Props) {
       </div>
 
       {/* Month grid */}
-      <div className="bg-white border border-zinc-100 overflow-hidden rounded-xl">
-        <div className="grid grid-cols-7 border-b border-zinc-100">
+      <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 overflow-hidden rounded-xl">
+        <div className="grid grid-cols-7 border-b border-zinc-100 dark:border-zinc-800">
           {DAY_LABELS.map((day) => (
-            <div key={day} className="px-3 py-2 text-[10px] font-medium text-zinc-400 uppercase tracking-widest text-center border-r border-zinc-100 last:border-r-0">
+            <div key={day} className="px-3 py-2 text-[10px] font-medium text-zinc-400 uppercase tracking-widest text-center border-r border-zinc-100 dark:border-zinc-800 last:border-r-0">
               {day}
             </div>
           ))}
@@ -377,18 +377,18 @@ export default async function CalendarPage({ searchParams }: Props) {
               <div
                 key={i}
                 className={cn(
-                  'min-h-[100px] p-2 border-b border-r border-zinc-100',
+                  'min-h-[100px] p-2 border-b border-r border-zinc-100 dark:border-zinc-800',
                   (i + 1) % 7 === 0 && 'border-r-0',
                   i >= cells.length - 7 && 'border-b-0',
-                  isWeekend && cell.day && 'bg-zinc-50/40',
-                  !cell.day && 'bg-zinc-50/20',
+                  isWeekend && cell.day && 'bg-zinc-50/40 dark:bg-zinc-900/20',
+                  !cell.day && 'bg-zinc-50/20 dark:bg-zinc-900/10',
                 )}
               >
                 {cell.day !== null && (
                   <>
                     <div className={cn(
                       'inline-flex items-center justify-center w-6 h-6 text-xs font-medium mb-1.5',
-                      isToday ? 'bg-black text-white rounded-full' : 'text-zinc-400'
+                      isToday ? 'bg-black text-white rounded-full' : 'text-zinc-400 dark:text-zinc-500'
                     )}>
                       {cell.day}
                     </div>
@@ -425,7 +425,7 @@ export default async function CalendarPage({ searchParams }: Props) {
           <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center mb-3">
             <CalendarDays size={18} strokeWidth={1.5} className="text-zinc-400" />
           </div>
-          <p className="text-sm font-medium text-zinc-900">No tasks due in {MONTH_NAMES[month - 1]}</p>
+          <p className="text-sm font-medium text-zinc-900 dark:text-white">No tasks due in {MONTH_NAMES[month - 1]}</p>
           <p className="text-xs text-zinc-400 mt-1">Add due dates to tasks on the board to see them here.</p>
         </div>
       )}

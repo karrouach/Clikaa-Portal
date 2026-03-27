@@ -62,6 +62,16 @@ export async function createTask(formData: FormData): Promise<CreateTaskResult> 
 
   if (error) return { error: error.message }
 
+  // ── Log 'created' activity ────────────────────────────────────────────────
+  if (task) {
+    supabase.from('task_activities').insert({
+      task_id: task.id,
+      user_id: user.id,
+      action: 'created',
+      new_status: 'todo',
+    }).then(() => {}) // fire-and-forget; non-critical
+  }
+
   // ── Notify the assignee (if different from creator) ────────────────────────
   if (task && assigneeId && assigneeId !== user.id) {
     const admin = createAdminClient()
@@ -133,12 +143,30 @@ export async function updateTaskStatus({
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorised.' }
 
+  // Capture old status for the audit trail
+  const { data: existingTask } = await supabase
+    .from('tasks')
+    .select('status')
+    .eq('id', taskId)
+    .single()
+
   const { error } = await supabase
     .from('tasks')
     .update({ status, updated_at: new Date().toISOString() })
     .eq('id', taskId)
 
   if (error) return { error: error.message }
+
+  // ── Log 'status_changed' activity ─────────────────────────────────────────
+  if (existingTask && existingTask.status !== status) {
+    supabase.from('task_activities').insert({
+      task_id: taskId,
+      user_id: user.id,
+      action: 'status_changed',
+      old_status: existingTask.status,
+      new_status: status,
+    }).then(() => {}) // fire-and-forget
+  }
 
   // ── Notify client/designer members when a task moves to "review" ──────────
   if (status === 'review') {

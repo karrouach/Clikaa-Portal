@@ -31,8 +31,8 @@ export function WorkspaceSubNav({ workspaceId }: { workspaceId: string }) {
             className={cn(
               'px-4 py-2.5 text-sm transition-colors duration-150 border-b-2 -mb-px whitespace-nowrap',
               isActive
-                ? 'text-black font-medium border-black'
-                : 'text-zinc-400 border-transparent hover:text-zinc-700 hover:border-zinc-300'
+                ? 'text-black dark:text-white font-medium border-black dark:border-white'
+                : 'text-zinc-400 border-transparent hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-600'
             )}
           >
             {label}

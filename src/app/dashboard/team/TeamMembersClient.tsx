@@ -92,7 +92,7 @@ export function TeamMembersClient({ members, currentUserId }: Props) {
       {/* ── Page heading ─────────────────────────────────────────────────── */}
       <div className="mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-black tracking-tight">My Team</h1>
+          <h1 className="text-2xl font-semibold text-black dark:text-white tracking-tight">My Team</h1>
           <p className="mt-1 text-sm text-zinc-500">
             {members.length} internal team member{members.length !== 1 ? 's' : ''} with portal access.
           </p>
@@ -118,10 +118,10 @@ export function TeamMembersClient({ members, currentUserId }: Props) {
       )}
 
       {/* ── Members table ─────────────────────────────────────────────────── */}
-      <div className="bg-white border border-zinc-100 overflow-hidden">
+      <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 overflow-hidden">
         {members.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-sm font-medium text-zinc-900 mb-1">No team members yet</p>
+            <p className="text-sm font-medium text-zinc-900 dark:text-white mb-1">No team members yet</p>
             <p className="text-sm text-zinc-400">
               Invite your first team member to get started.
             </p>
@@ -129,7 +129,7 @@ export function TeamMembersClient({ members, currentUserId }: Props) {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-100 bg-zinc-50">
+              <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                 <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
                   Member
                 </th>
@@ -151,8 +151,8 @@ export function TeamMembersClient({ members, currentUserId }: Props) {
                   <tr
                     key={member.id}
                     className={cn(
-                      'border-b border-zinc-50 last:border-0 transition-colors',
-                      isRemoving ? 'opacity-40' : 'hover:bg-zinc-50/50'
+                      'border-b border-zinc-50 dark:border-zinc-800 last:border-0 transition-colors',
+                      isRemoving ? 'opacity-40' : 'hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50'
                     )}
                   >
                     {/* Member */}
@@ -165,12 +165,12 @@ export function TeamMembersClient({ members, currentUserId }: Props) {
                             className="shrink-0 w-8 h-8 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-semibold text-zinc-600 select-none">
+                          <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center text-xs font-semibold text-zinc-600 dark:text-zinc-300 select-none">
                             {(member.full_name || member.email).slice(0, 2).toUpperCase()}
                           </div>
                         )}
                         <div>
-                          <p className="font-medium text-black">
+                          <p className="font-medium text-black dark:text-white">
                             {member.full_name || '—'}
                             {isYou && (
                               <span className="ml-1.5 text-[10px] text-zinc-400 font-normal">
@@ -212,7 +212,7 @@ export function TeamMembersClient({ members, currentUserId }: Props) {
                         <button
                           onClick={() => handleRemove(member.id)}
                           disabled={isPending}
-                          className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors disabled:pointer-events-none"
+                          className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors disabled:pointer-events-none"
                           title="Remove team member"
                         >
                           {isRemoving ? (

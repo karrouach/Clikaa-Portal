@@ -356,7 +356,7 @@ export function InvoiceViewPanel({
         <DialogPrimitive.Content
           className={cn(
             'fixed right-0 top-0 bottom-0 z-50',
-            'w-[480px] max-w-[95vw] bg-white shadow-2xl shadow-black/10',
+            'w-[480px] max-w-[95vw] bg-white dark:bg-[#1A1A1A] shadow-2xl shadow-black/10',
             'flex flex-col overflow-hidden rounded-l-2xl',
             'data-[state=open]:animate-sheet-slide-in data-[state=closed]:animate-sheet-slide-out',
             'focus:outline-none',
@@ -365,11 +365,11 @@ export function InvoiceViewPanel({
           {invoice && (
             <>
               {/* ── Header ──────────────────────────────────────────────── */}
-              <div className="px-6 py-5 border-b border-zinc-100 shrink-0">
+              <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2.5 flex-wrap mb-1">
-                      <span className="font-mono text-sm font-semibold text-black tracking-wide">
+                      <span className="font-mono text-sm font-semibold text-black dark:text-white tracking-wide">
                         {invoice.id}
                       </span>
 
@@ -416,12 +416,12 @@ export function InvoiceViewPanel({
                         </DropdownMenu>
                       )}
                     </div>
-                    <p className="text-base font-semibold text-black truncate">{invoice.client}</p>
+                    <p className="text-base font-semibold text-black dark:text-white truncate">{invoice.client}</p>
                     {invoice.project && (
                       <p className="text-xs text-zinc-400 mt-0.5 truncate">{invoice.project}</p>
                     )}
                   </div>
-                  <DialogPrimitive.Close className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 transition-all duration-150">
+                  <DialogPrimitive.Close className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-150">
                     <X size={15} strokeWidth={1.5} />
                     <span className="sr-only">Close</span>
                   </DialogPrimitive.Close>
@@ -429,7 +429,7 @@ export function InvoiceViewPanel({
 
                 {/* Amount */}
                 <div className="mt-4 flex items-baseline gap-1.5">
-                  <span className="text-3xl font-semibold text-black tabular-nums">
+                  <span className="text-3xl font-semibold text-black dark:text-white tabular-nums">
                     {invoice.amount}
                   </span>
                   <span className="text-sm text-zinc-400">total</span>
@@ -437,7 +437,7 @@ export function InvoiceViewPanel({
               </div>
 
               {/* ── Quick actions ────────────────────────────────────────── */}
-              <div className="px-4 py-2.5 border-b border-zinc-100 flex items-center gap-1 shrink-0 flex-wrap">
+              <div className="px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1 shrink-0 flex-wrap">
                 {/* Download PDF — available to all roles */}
                 <button
                   onClick={handleDownloadPdf}
@@ -453,7 +453,7 @@ export function InvoiceViewPanel({
                   <>
                     <button
                       onClick={handleSendReminder}
-                      className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors duration-150"
+                      className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-zinc-600 dark:text-zinc-400 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150"
                     >
                       <Send size={13} strokeWidth={1.5} />
                       <span>Send Reminder</span>
@@ -471,7 +471,7 @@ export function InvoiceViewPanel({
                     {/* ⋯ More menu */}
                     <DropdownMenu open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
                       <DropdownMenuTrigger asChild>
-                        <button className="ml-auto flex items-center justify-center w-8 h-8 rounded-lg text-zinc-400 hover:bg-zinc-100 transition-colors duration-150">
+                        <button className="ml-auto flex items-center justify-center w-8 h-8 rounded-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150">
                           <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <circle cx="3" cy="7.5" r="1.25" fill="currentColor" />
                             <circle cx="7.5" cy="7.5" r="1.25" fill="currentColor" />
@@ -505,20 +505,20 @@ export function InvoiceViewPanel({
               <div className="flex-1 overflow-y-auto">
 
                 {/* Invoice details */}
-                <div className="px-6 py-5 border-b border-zinc-100">
+                <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800">
                   <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest mb-3">
                     Invoice Details
                   </p>
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-zinc-500">Issue date</span>
-                      <span className="text-sm text-black">{invoice.issued}</span>
+                      <span className="text-sm text-black dark:text-white">{invoice.issued}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-zinc-500">Due date</span>
                       <span className={cn(
                         'text-sm font-medium',
-                        invoice.status === 'overdue' ? 'text-red-600' : 'text-black'
+                        invoice.status === 'overdue' ? 'text-red-600' : 'text-black dark:text-white'
                       )}>
                         {invoice.due}
                         {invoice.status === 'overdue' && (
@@ -530,7 +530,7 @@ export function InvoiceViewPanel({
                 </div>
 
                 {/* Line items */}
-                <div className="px-6 py-5 border-b border-zinc-100">
+                <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800">
                   <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest mb-3">
                     Line Items
                   </p>
@@ -538,7 +538,7 @@ export function InvoiceViewPanel({
                     {lines.map((line, i) => (
                       <div key={i} className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="text-sm text-black">{line.description}</p>
+                          <p className="text-sm text-black dark:text-white">{line.description}</p>
                           <p className="text-xs text-zinc-400 mt-0.5">
                             {line.qty > 1
                               ? `${line.qty} × ${fmt(line.rate)}`
@@ -546,7 +546,7 @@ export function InvoiceViewPanel({
                             }
                           </p>
                         </div>
-                        <span className="text-sm font-medium text-black tabular-nums shrink-0">
+                        <span className="text-sm font-medium text-black dark:text-white tabular-nums shrink-0">
                           {fmt(line.qty * line.rate)}
                         </span>
                       </div>
@@ -554,14 +554,14 @@ export function InvoiceViewPanel({
                   </div>
 
                   {/* Totals */}
-                  <div className="mt-4 pt-4 border-t border-zinc-100 space-y-2">
+                  <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-zinc-500">Subtotal</span>
-                      <span className="text-sm text-black tabular-nums">{fmt(subtotal)}</span>
+                      <span className="text-sm text-black dark:text-white tabular-nums">{fmt(subtotal)}</span>
                     </div>
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-sm font-semibold text-black">Total</span>
-                      <span className="text-lg font-semibold text-black tabular-nums">
+                      <span className="text-sm font-semibold text-black dark:text-white">Total</span>
+                      <span className="text-lg font-semibold text-black dark:text-white tabular-nums">
                         {invoice.amount}
                       </span>
                     </div>
@@ -577,7 +577,7 @@ export function InvoiceViewPanel({
                   <div className="relative pl-4">
                     {/* Vertical line */}
                     {mergedActivity.length > 1 && (
-                      <div className="absolute left-[5px] top-2 bottom-6 w-px bg-zinc-100" />
+                      <div className="absolute left-[5px] top-2 bottom-6 w-px bg-zinc-100 dark:bg-zinc-800" />
                     )}
 
                     <div className="space-y-5">
@@ -585,10 +585,10 @@ export function InvoiceViewPanel({
                         <div key={i} className="relative">
                           {/* Timeline dot */}
                           <div className={cn(
-                            'absolute -left-[11px] top-[5px] w-2.5 h-2.5 rounded-full ring-2 ring-white',
+                            'absolute -left-[11px] top-[5px] w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-[#1A1A1A]',
                             i === mergedActivity.length - 1 ? 'bg-black' : 'bg-zinc-300',
                           )} />
-                          <p className="text-sm text-black leading-snug">{item.event}</p>
+                          <p className="text-sm text-black dark:text-white leading-snug">{item.event}</p>
                           <p className="text-xs text-zinc-400 mt-0.5">{item.date}</p>
                         </div>
                       ))}

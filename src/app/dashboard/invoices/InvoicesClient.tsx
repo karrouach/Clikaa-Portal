@@ -149,7 +149,7 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
       {/* ── Page header ───────────────────────────────────────────────────── */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-black tracking-tight">
+          <h1 className="text-2xl font-semibold text-black dark:text-white tracking-tight">
             {isClient ? 'My Invoices' : 'Invoices'}
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
@@ -163,14 +163,14 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 h-9 px-3.5 bg-white text-zinc-700 text-sm font-medium rounded-lg border border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 transition-colors duration-150"
+              className="flex items-center gap-1.5 h-9 px-3.5 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-medium rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors duration-150"
             >
               <Download size={13} strokeWidth={1.5} />
               Export
             </button>
             <button
               onClick={() => setCreateOpen(true)}
-              className="flex items-center gap-1.5 h-9 px-4 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 active:bg-zinc-900 transition-colors duration-150"
+              className="flex items-center gap-1.5 h-9 px-4 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:bg-zinc-800 dark:hover:bg-gray-200 active:bg-zinc-900 transition-colors duration-150"
             >
               <Plus size={14} strokeWidth={1.5} />
               Create Invoice
@@ -186,12 +186,12 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
             <div
               key={label}
               className={cn(
-                'bg-white border rounded-xl px-4 py-4 flex flex-col gap-1',
-                highlight ? 'border-red-100 bg-red-50/30' : 'border-zinc-100'
+                'bg-white dark:bg-[#1A1A1A] border rounded-xl px-4 py-4 flex flex-col gap-1',
+                highlight ? 'border-red-100 dark:border-red-900 bg-red-50/30 dark:bg-red-950/20' : 'border-zinc-100 dark:border-zinc-800'
               )}
             >
               <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">{label}</p>
-              <p className={cn('text-2xl font-semibold tabular-nums', highlight ? 'text-red-600' : 'text-black')}>
+              <p className={cn('text-2xl font-semibold tabular-nums', highlight ? 'text-red-600' : 'text-black dark:text-white')}>
                 {value}
               </p>
               {sub && <p className="text-[11px] text-zinc-400">{sub}</p>}
@@ -207,13 +207,13 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
             key={inv.id}
             onClick={() => !isClient && setViewInvoice(inv)}
             className={cn(
-              'w-full text-left bg-white border border-zinc-100 rounded-xl p-4 transition-colors',
-              isClient ? 'cursor-default' : 'hover:border-zinc-200 active:bg-zinc-50',
+              'w-full text-left bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-4 transition-colors',
+              isClient ? 'cursor-default' : 'hover:border-zinc-200 dark:hover:border-zinc-700 active:bg-zinc-50 dark:active:bg-zinc-800',
             )}
           >
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-black truncate">{inv.client}</p>
+                <p className="text-sm font-semibold text-black dark:text-white truncate">{inv.client}</p>
                 <p className="text-xs text-zinc-500 mt-0.5 truncate">{inv.project || inv.id}</p>
               </div>
               <span className={cn('shrink-0 inline-flex items-center px-2 py-0.5 text-xs font-medium border rounded-full', STATUS_STYLES[inv.status])}>
@@ -222,7 +222,7 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
             </div>
             <div className="flex items-center justify-between">
               <span className="font-mono text-[11px] text-zinc-400">{inv.id}</span>
-              <span className="text-sm font-semibold text-black tabular-nums">{inv.amount}</span>
+              <span className="text-sm font-semibold text-black dark:text-white tabular-nums">{inv.amount}</span>
             </div>
             <div className="flex items-center gap-3 mt-2">
               <span className="text-[11px] text-zinc-400">Issued {inv.issued}</span>
@@ -234,11 +234,11 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
       </div>
 
       {/* ── Desktop table ─────────────────────────────────────────────────── */}
-      <div className="hidden sm:block bg-white border border-zinc-100 overflow-hidden rounded-xl">
+      <div className="hidden sm:block bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 overflow-hidden rounded-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-100 bg-zinc-50">
+              <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                 <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Invoice</th>
                 <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Client</th>
                 <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden lg:table-cell whitespace-nowrap">Issued</th>
@@ -254,15 +254,15 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
                   key={inv.id}
                   onClick={() => !isClient && setViewInvoice(inv)}
                   className={cn(
-                    'border-b border-zinc-50 last:border-0 transition-colors group',
-                    isClient ? '' : 'hover:bg-zinc-50/60 cursor-pointer',
+                    'border-b border-zinc-50 dark:border-zinc-800 last:border-0 transition-colors group',
+                    isClient ? '' : 'hover:bg-zinc-50/60 dark:hover:bg-zinc-800/60 cursor-pointer',
                   )}
                 >
                   <td className="px-6 py-4 font-mono text-xs text-zinc-500 whitespace-nowrap">{inv.invoice_number ?? inv.id}</td>
-                  <td className="px-6 py-4 font-medium text-black whitespace-nowrap group-hover:text-black">{inv.client}</td>
+                  <td className="px-6 py-4 font-medium text-black dark:text-white whitespace-nowrap">{inv.client}</td>
                   <td className="px-6 py-4 text-zinc-400 hidden lg:table-cell whitespace-nowrap">{inv.issued}</td>
                   <td className="px-6 py-4 text-zinc-400 hidden lg:table-cell whitespace-nowrap">{inv.due}</td>
-                  <td className="px-6 py-4 text-right font-medium text-black tabular-nums whitespace-nowrap">{inv.amount}</td>
+                  <td className="px-6 py-4 text-right font-medium text-black dark:text-white tabular-nums whitespace-nowrap">{inv.amount}</td>
                   <td className="px-6 py-4">
                     <span className={cn('inline-flex items-center px-2 py-0.5 text-xs font-medium border rounded-full', STATUS_STYLES[inv.status])}>
                       {STATUS_LABELS[inv.status]}
@@ -272,7 +272,7 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
                     <td className="px-4 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => setViewInvoice(inv)}
-                        className="px-2.5 py-1 text-[11px] font-medium text-zinc-600 hover:text-black border border-zinc-200 hover:border-zinc-300 rounded-lg transition-colors"
+                        className="px-2.5 py-1 text-[11px] font-medium text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 rounded-lg transition-colors"
                       >
                         View
                       </button>

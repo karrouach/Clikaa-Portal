@@ -68,11 +68,11 @@ export function NeedsApprovalPanel({ initialTasks, currentUserProfile }: Props) 
 
   return (
     <>
-      <div className="divide-y divide-zinc-50">
+      <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
         {tasks.map((task) => (
           <div
             key={task.id}
-            className="px-5 py-4 hover:bg-zinc-50/60 transition-colors cursor-pointer group/card"
+            className="px-5 py-4 hover:bg-zinc-50/60 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer group/card"
             onClick={(e) => {
               // Don't open sheet if clicking the action buttons
               if ((e.target as HTMLElement).closest('button, [role="button"]')) return
@@ -84,7 +84,7 @@ export function NeedsApprovalPanel({ initialTasks, currentUserProfile }: Props) 
                 <FileText size={13} strokeWidth={1.5} className="text-amber-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-black leading-snug group-hover/card:text-zinc-700 transition-colors">
+                <p className="text-sm font-medium text-black dark:text-white leading-snug group-hover/card:text-zinc-700 dark:group-hover/card:text-zinc-200 transition-colors">
                   {task.title}
                 </p>
                 {task.due_date && (

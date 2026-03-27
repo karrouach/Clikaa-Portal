@@ -146,9 +146,9 @@ export function CreateTaskDialog({
           className="
             fixed bottom-24 right-4 z-30
             w-14 h-14 rounded-full
-            bg-black text-white shadow-xl shadow-black/20
+            bg-black dark:bg-white text-white dark:text-black shadow-xl shadow-black/20
             flex items-center justify-center
-            active:bg-zinc-800 transition-colors
+            active:bg-zinc-800 dark:active:bg-gray-200 transition-colors
           "
         >
           <Plus size={22} strokeWidth={1.5} />
@@ -158,8 +158,8 @@ export function CreateTaskDialog({
           onClick={() => setOpen(true)}
           className="
             flex items-center gap-1.5 h-9 px-4
-            bg-black text-white text-sm font-medium rounded-lg
-            hover:bg-zinc-800 active:bg-zinc-900
+            bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg
+            hover:bg-zinc-800 dark:hover:bg-gray-200 active:bg-zinc-900
             transition-colors duration-150
           "
         >
@@ -175,7 +175,7 @@ export function CreateTaskDialog({
             <DialogTitle>Create new task</DialogTitle>
             <DialogDescription>
               This task will appear at the top of the{' '}
-              <span className="text-black font-medium">To Do</span> column.
+              <span className="text-black dark:text-white font-medium">To Do</span> column.
             </DialogDescription>
           </DialogHeader>
 
@@ -192,7 +192,7 @@ export function CreateTaskDialog({
             <div className="space-y-1.5">
               <label
                 htmlFor="task-title"
-                className="block text-[11px] font-medium text-zinc-600 uppercase tracking-widest"
+                className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-widest"
               >
                 Title <span className="text-red-400 normal-case tracking-normal">*</span>
               </label>
@@ -214,7 +214,7 @@ export function CreateTaskDialog({
             <div className="space-y-1.5">
               <label
                 htmlFor="task-description"
-                className="block text-[11px] font-medium text-zinc-600 uppercase tracking-widest"
+                className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-widest"
               >
                 Description
               </label>
@@ -228,7 +228,7 @@ export function CreateTaskDialog({
 
             {/* ── Priority ──────────────────────────────────────────────── */}
             <div className="space-y-1.5">
-              <label className="block text-[11px] font-medium text-zinc-600 uppercase tracking-widest">
+              <label className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-widest">
                 Priority
               </label>
               <Select value={priority} onValueChange={setPriority}>
@@ -248,7 +248,7 @@ export function CreateTaskDialog({
             <div className="grid grid-cols-2 gap-4">
               {/* Start Date */}
               <div className="space-y-1.5">
-                <p className="text-[11px] font-medium text-zinc-600 uppercase tracking-widest">
+                <p className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-widest">
                   Start Date
                 </p>
                 <Popover open={startOpen} onOpenChange={setStartOpen}>
@@ -257,13 +257,13 @@ export function CreateTaskDialog({
                       type="button"
                       className="
                         w-full flex items-center gap-2 h-9 px-3 text-sm
-                        rounded-lg border border-zinc-200 bg-white
-                        hover:border-zinc-300 transition-colors duration-150
-                        focus-visible:outline-none focus-visible:border-zinc-300 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]
+                        rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800
+                        hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors duration-150
+                        focus-visible:outline-none focus-visible:border-zinc-300 dark:focus-visible:border-zinc-600 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]
                       "
                     >
                       <CalendarIcon size={13} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
-                      <span className={startDate ? 'text-black' : 'text-zinc-400'}>
+                      <span className={startDate ? 'text-black dark:text-zinc-100' : 'text-zinc-400'}>
                         {startDate ? formatDate(startDate) : 'Pick date'}
                       </span>
                     </button>
@@ -281,7 +281,7 @@ export function CreateTaskDialog({
 
               {/* Due Date */}
               <div className="space-y-1.5">
-                <p className="text-[11px] font-medium text-zinc-600 uppercase tracking-widest">
+                <p className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-widest">
                   Due Date <span className="text-red-400">*</span>
                 </p>
                 <Popover open={dueOpen} onOpenChange={setDueOpen}>
@@ -290,16 +290,16 @@ export function CreateTaskDialog({
                       type="button"
                       className={cn(
                         'w-full flex items-center gap-2 h-9 px-3 text-sm',
-                        'rounded-lg border bg-white',
-                        'hover:border-zinc-300 transition-colors duration-150',
+                        'rounded-lg border bg-white dark:bg-zinc-800',
+                        'hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors duration-150',
                         'focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]',
                         fieldErrors.dueDate
                           ? 'border-red-300 focus-visible:border-red-400'
-                          : 'border-zinc-200 focus-visible:border-zinc-300',
+                          : 'border-zinc-200 dark:border-zinc-700 focus-visible:border-zinc-300 dark:focus-visible:border-zinc-600',
                       )}
                     >
                       <CalendarIcon size={13} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
-                      <span className={dueDate ? 'text-black' : 'text-zinc-400'}>
+                      <span className={dueDate ? 'text-black dark:text-zinc-100' : 'text-zinc-400'}>
                         {dueDate ? formatDate(dueDate) : 'Pick date'}
                       </span>
                     </button>
@@ -327,7 +327,7 @@ export function CreateTaskDialog({
             {/* ── Assignee ──────────────────────────────────────────────── */}
             {hasMembers && (
               <div className="space-y-1.5">
-                <label className="block text-[11px] font-medium text-zinc-600 uppercase tracking-widest">
+                <label className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-widest">
                   Assignee <span className="text-red-400">*</span>
                 </label>
                 <Select
@@ -349,7 +349,7 @@ export function CreateTaskDialog({
                           {selectedMember.avatar_url && (
                             <AvatarImage src={selectedMember.avatar_url} />
                           )}
-                          <AvatarFallback className="text-[8px] bg-zinc-100 text-zinc-600">
+                          <AvatarFallback className="text-[8px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                             {getInitials(selectedMember.full_name || selectedMember.email)}
                           </AvatarFallback>
                         </Avatar>
@@ -370,7 +370,7 @@ export function CreateTaskDialog({
                         <div className="flex items-center gap-2">
                           <Avatar className="h-5 w-5 shrink-0">
                             {m.avatar_url && <AvatarImage src={m.avatar_url} />}
-                            <AvatarFallback className="text-[8px] bg-zinc-100 text-zinc-600">
+                            <AvatarFallback className="text-[8px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                               {getInitials(m.full_name || m.email)}
                             </AvatarFallback>
                           </Avatar>
@@ -387,12 +387,12 @@ export function CreateTaskDialog({
             )}
 
             {/* ── Actions ───────────────────────────────────────────────── */}
-            <div className="flex items-center justify-end gap-3 pt-1 border-t border-zinc-100">
+            <div className="flex items-center justify-end gap-3 pt-1 border-t border-zinc-100 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={() => handleOpenChange(false)}
                 disabled={isPending}
-                className="h-9 px-4 text-sm text-zinc-500 hover:text-black transition-colors disabled:opacity-50"
+                className="h-9 px-4 text-sm text-zinc-500 hover:text-black dark:hover:text-white transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -402,8 +402,8 @@ export function CreateTaskDialog({
                 disabled={isPending}
                 className="
                   flex items-center gap-2 h-9 px-5
-                  bg-black text-white text-sm font-medium rounded-lg
-                  hover:bg-zinc-800 transition-colors
+                  bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg
+                  hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors
                   disabled:opacity-60 disabled:cursor-not-allowed
                 "
               >

@@ -69,10 +69,10 @@ function getFileIcon(fileType: string) {
 }
 
 function getIconBg(fileType: string): string {
-  if (fileType.startsWith('image/'))   return 'bg-violet-50 text-violet-400'
-  if (fileType.includes('pdf'))        return 'bg-red-50 text-red-400'
-  if (fileType.includes('zip') || fileType.includes('archive')) return 'bg-amber-50 text-amber-400'
-  return 'bg-zinc-100 text-zinc-400'
+  if (fileType.startsWith('image/'))   return 'bg-violet-50 dark:bg-violet-900/20 text-violet-400'
+  if (fileType.includes('pdf'))        return 'bg-red-50 dark:bg-red-900/20 text-red-400'
+  if (fileType.includes('zip') || fileType.includes('archive')) return 'bg-amber-50 dark:bg-amber-900/20 text-amber-400'
+  return 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500'
 }
 
 // ─── File Card ───────────────────────────────────────────────────────────────
@@ -114,9 +114,9 @@ function FileCard({
   }
 
   return (
-    <div className="group bg-white border border-zinc-100 rounded-xl overflow-hidden flex flex-col hover:border-zinc-200 hover:shadow-md transition-all duration-200">
+    <div className="group bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden flex flex-col hover:border-zinc-200 dark:hover:border-zinc-700 hover:shadow-md transition-all duration-200">
       {/* ── Preview area ──────────────────────────────────────────────── */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-zinc-50 shrink-0">
+      <div className="relative aspect-[4/3] overflow-hidden bg-zinc-50 dark:bg-zinc-900 shrink-0">
         {isImage && asset.previewUrl ? (
           <img
             src={asset.previewUrl}
@@ -153,7 +153,7 @@ function FileCard({
       {/* ── File info ─────────────────────────────────────────────────── */}
       <div className="p-3 flex flex-col gap-2 flex-1">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-black truncate leading-snug">
+          <p className="text-sm font-medium text-black dark:text-white truncate leading-snug">
             {asset.file_name}
           </p>
           <p className="text-[11px] text-zinc-400 mt-0.5">
@@ -164,7 +164,7 @@ function FileCard({
         <button
           onClick={handleDownload}
           disabled={downloading}
-          className="w-full flex items-center justify-center gap-1.5 h-8 bg-black text-white text-xs font-medium rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-60"
+          className="w-full flex items-center justify-center gap-1.5 h-8 bg-black dark:bg-white text-white dark:text-black text-xs font-medium rounded-lg hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-60"
         >
           {downloading
             ? <Loader2  size={12} strokeWidth={1.5} className="animate-spin" />
@@ -272,12 +272,12 @@ function UploadModal({
             </label>
             <div
               onClick={() => fileRef.current?.click()}
-              className="w-full border border-dashed border-zinc-200 rounded-xl p-6 flex flex-col items-center gap-2 cursor-pointer hover:border-zinc-400 hover:bg-zinc-50 transition-colors"
+              className="w-full border border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl p-6 flex flex-col items-center gap-2 cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
             >
               <Upload size={20} strokeWidth={1.5} className="text-zinc-400" />
               {file ? (
                 <>
-                  <p className="text-sm font-medium text-black truncate max-w-full px-4">{file.name}</p>
+                  <p className="text-sm font-medium text-black dark:text-white truncate max-w-full px-4">{file.name}</p>
                   <p className="text-xs text-zinc-400">{formatSize(file.size)}</p>
                 </>
               ) : (
@@ -300,7 +300,7 @@ function UploadModal({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full bg-transparent text-sm text-black border-0 border-b border-zinc-200 focus:outline-none focus:border-black transition-colors h-9 cursor-pointer appearance-none"
+              className="w-full bg-transparent text-sm text-black dark:text-white border-0 border-b border-zinc-200 dark:border-zinc-700 focus:outline-none focus:border-black dark:focus:border-zinc-500 transition-colors h-9 cursor-pointer appearance-none"
             >
               {UPLOAD_CATEGORIES.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
@@ -309,18 +309,18 @@ function UploadModal({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3 pt-1 border-t border-zinc-100">
+          <div className="flex items-center gap-3 pt-1 border-t border-zinc-100 dark:border-zinc-800">
             <button
               onClick={handleClose}
               disabled={isPending}
-              className="flex-1 h-9 text-sm text-zinc-500 hover:text-black transition-colors disabled:opacity-50"
+              className="flex-1 h-9 text-sm text-zinc-500 hover:text-black dark:hover:text-white transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleUpload}
               disabled={!file || isPending}
-              className="flex-1 h-9 flex items-center justify-center gap-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 h-9 flex items-center justify-center gap-2 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isPending && <Loader2 size={13} strokeWidth={1.5} className="animate-spin" />}
               {isPending ? 'Uploading…' : 'Upload'}
@@ -371,8 +371,8 @@ export function AssetVaultClient({ workspaceId, initialAssets, isAdmin, userId }
               className={cn(
                 'shrink-0 px-3 h-8 text-xs font-medium transition-colors rounded-lg',
                 activeFilter === cat.value
-                  ? 'bg-black text-white'
-                  : 'text-zinc-500 hover:text-black hover:bg-zinc-100'
+                  ? 'bg-black dark:bg-white text-white dark:text-black'
+                  : 'text-zinc-500 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
               )}
             >
               {cat.label}
@@ -383,7 +383,7 @@ export function AssetVaultClient({ workspaceId, initialAssets, isAdmin, userId }
         {/* Upload button — available to all workspace members */}
         <button
           onClick={() => setUploadOpen(true)}
-          className="shrink-0 flex items-center gap-1.5 h-8 px-4 bg-black text-white text-xs font-medium rounded-lg hover:bg-zinc-800 transition-colors"
+          className="shrink-0 flex items-center gap-1.5 h-8 px-4 bg-black dark:bg-white text-white dark:text-black text-xs font-medium rounded-lg hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors"
         >
           <Plus size={13} strokeWidth={1.5} />
           Upload Asset
@@ -393,10 +393,10 @@ export function AssetVaultClient({ workspaceId, initialAssets, isAdmin, userId }
       {/* ── Grid ─────────────────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="w-12 h-12 bg-zinc-100 flex items-center justify-center mb-4">
+          <div className="w-12 h-12 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
             <File size={20} strokeWidth={1.5} className="text-zinc-400" />
           </div>
-          <p className="text-sm font-medium text-black">
+          <p className="text-sm font-medium text-black dark:text-white">
             {activeFilter === 'all' ? 'No assets yet' : `No ${activeFilter.replace('_', ' ')} yet`}
           </p>
           {activeFilter === 'all' && (

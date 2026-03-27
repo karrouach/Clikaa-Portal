@@ -53,7 +53,7 @@ const DialogContent = React.forwardRef<
         // Sizing
         'w-full max-w-lg',
         // Aesthetic — rounded, Clikaa style
-        'bg-white shadow-2xl shadow-black/10',
+        'bg-white dark:bg-[#1A1A1A] shadow-2xl shadow-black/10',
         'rounded-xl',
         'p-8',
         // Animations (see tailwind.config.ts keyframes)
@@ -69,7 +69,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Close
         className="
           absolute right-5 top-5
-          text-zinc-400 hover:text-black
+          text-zinc-400 hover:text-black dark:hover:text-white
           transition-colors duration-150
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
         "
@@ -97,7 +97,7 @@ const DialogFooter = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn('flex items-center justify-end gap-3 pt-4 border-t border-zinc-100', className)}
+    className={cn('flex items-center justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800', className)}
     {...props}
   />
 )
@@ -110,7 +110,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn('text-lg font-semibold text-zinc-900 tracking-tight', className)}
+    className={cn('text-lg font-semibold text-zinc-900 dark:text-white tracking-tight', className)}
     {...props}
   />
 ))

@@ -263,12 +263,12 @@ export function AttachmentPanel({
             return (
               <li
                 key={att.id}
-                className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-zinc-50 group"
+                className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-zinc-50 dark:hover:bg-zinc-800 group"
               >
                 <FileIcon fileType={att.file_type} />
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-black truncate leading-none">{att.file_name}</p>
+                  <p className="text-xs text-black dark:text-white truncate leading-none">{att.file_name}</p>
                   <p className="text-[10px] text-zinc-400 mt-0.5">
                     {formatFileSize(att.file_size)} · {formatRelativeTime(att.created_at)}
                   </p>
@@ -281,7 +281,7 @@ export function AttachmentPanel({
                   title="Download"
                   className="
                     shrink-0 w-6 h-6 flex items-center justify-center rounded
-                    text-zinc-400 hover:text-black hover:bg-zinc-100
+                    text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700
                     transition-colors disabled:opacity-30
                   "
                 >
@@ -300,7 +300,7 @@ export function AttachmentPanel({
                     title="Delete"
                     className="
                       shrink-0 w-6 h-6 flex items-center justify-center rounded
-                      text-zinc-400 hover:text-red-500 hover:bg-red-50
+                      text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40
                       transition-colors opacity-0 group-hover:opacity-100
                       disabled:opacity-30
                     "
@@ -324,7 +324,7 @@ export function AttachmentPanel({
                 strokeWidth={1.5}
                 className="shrink-0 text-zinc-400 animate-spin"
               />
-              <p className="text-xs text-black truncate flex-1">{fileName}</p>
+              <p className="text-xs text-black dark:text-white truncate flex-1">{fileName}</p>
               <span className="text-[10px] text-zinc-400 shrink-0">Uploading…</span>
             </li>
           ))}
@@ -341,15 +341,15 @@ export function AttachmentPanel({
           'flex items-center gap-2 px-3 py-2.5 cursor-pointer rounded',
           'border border-dashed transition-colors duration-150',
           isDragging
-            ? 'border-black bg-zinc-50'
-            : 'border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50'
+            ? 'border-black dark:border-white bg-zinc-50 dark:bg-zinc-800'
+            : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
         )}
       >
         <Upload size={13} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
         <div>
-          <p className="text-xs text-zinc-500 leading-none">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-none">
             Drop files or{' '}
-            <span className="text-black font-medium">click to upload</span>
+            <span className="text-black dark:text-white font-medium">click to upload</span>
           </p>
           <p className="text-[10px] text-zinc-400 mt-0.5">Max 50 MB per file</p>
         </div>

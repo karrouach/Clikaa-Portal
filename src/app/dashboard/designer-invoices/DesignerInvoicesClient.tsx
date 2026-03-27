@@ -219,7 +219,7 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
     <div className="animate-fade-in">
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-black tracking-tight">Payments</h1>
+          <h1 className="text-2xl font-semibold text-black dark:text-white tracking-tight">Payments</h1>
           <p className="mt-1 text-sm text-zinc-500">
             {isAdmin
               ? 'Manage designer payouts and invoices.'
@@ -241,22 +241,22 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white border border-zinc-100 rounded-xl p-5">
+        <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-5">
           <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-3">Outstanding</p>
-          <p className="text-2xl font-semibold text-black">{formatCurrency(totalPending)}</p>
+          <p className="text-2xl font-semibold text-black dark:text-white">{formatCurrency(totalPending)}</p>
           <p className="mt-1 text-xs text-zinc-400">{pending.length} invoice{pending.length !== 1 ? 's' : ''} pending</p>
         </div>
-        <div className="bg-white border border-zinc-100 rounded-xl p-5">
+        <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-5">
           <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-3">Total Paid</p>
-          <p className="text-2xl font-semibold text-black">
+          <p className="text-2xl font-semibold text-black dark:text-white">
             {formatCurrency(paid.reduce((s, i) => s + i.amount, 0))}
           </p>
           <p className="mt-1 text-xs text-zinc-400">{paid.length} invoice{paid.length !== 1 ? 's' : ''} paid</p>
         </div>
         {isAdmin && designers.length > 0 && (
-          <div className="bg-white border border-zinc-100 rounded-xl p-5">
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-5">
             <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-3">Designers</p>
-            <p className="text-2xl font-semibold text-black">{designers.length}</p>
+            <p className="text-2xl font-semibold text-black dark:text-white">{designers.length}</p>
             <p className="mt-1 text-xs text-zinc-400">with retainer agreements</p>
           </div>
         )}
@@ -265,19 +265,19 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
       {/* Designer retainer rates (admin only) */}
       {isAdmin && designers.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-sm font-semibold text-black mb-3">Designer Retainers</h2>
-          <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+          <h2 className="text-sm font-semibold text-black dark:text-white mb-3">Designer Retainers</h2>
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-100 bg-zinc-50">
+                <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                   <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Designer</th>
                   <th className="px-5 py-3 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Monthly Rate</th>
                 </tr>
               </thead>
               <tbody>
                 {designers.map((d) => (
-                  <tr key={d.id} className="border-b border-zinc-50 last:border-0">
-                    <td className="px-5 py-3 font-medium text-black">{d.name}</td>
+                  <tr key={d.id} className="border-b border-zinc-50 dark:border-zinc-800 last:border-0">
+                    <td className="px-5 py-3 font-medium text-black dark:text-white">{d.name}</td>
                     <td className="px-5 py-3 text-right text-zinc-700 tabular-nums">
                       {d.monthly_retainer ? formatCurrency(d.monthly_retainer) : <span className="text-zinc-300">—</span>}
                     </td>
@@ -292,7 +292,7 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
       {/* Invoice list */}
       <div>
         <div className="flex items-center justify-between mb-3 gap-3">
-          <h2 className="text-sm font-semibold text-black">All Invoices</h2>
+          <h2 className="text-sm font-semibold text-black dark:text-white">All Invoices</h2>
           {isAdmin && designers.length > 0 && (
             <Select value={filterDesignerId} onValueChange={setFilterDesignerId}>
               <SelectTrigger className="h-8 w-auto text-xs rounded-lg min-w-[160px]">
@@ -308,7 +308,7 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
           )}
         </div>
         {displayedInvoices.length === 0 ? (
-          <div className="bg-white border border-zinc-100 rounded-xl flex flex-col items-center justify-center py-16 text-center">
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl flex flex-col items-center justify-center py-16 text-center">
             <Receipt size={28} strokeWidth={1} className="text-zinc-200 mb-3" />
             <p className="text-sm text-zinc-400">No invoices yet.</p>
             <p className="text-xs text-zinc-300 mt-1">
@@ -316,11 +316,11 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
             </p>
           </div>
         ) : (
-          <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-100 bg-zinc-50">
+                  <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                     <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Invoice</th>
                     {isAdmin && (
                       <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Designer</th>
@@ -339,9 +339,9 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
                       <tr
                         key={inv.id}
                         onClick={() => setDetailInvoice(inv)}
-                        className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50 transition-colors cursor-pointer"
+                        className="border-b border-zinc-50 dark:border-zinc-800 last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer"
                       >
-                        <td className="px-5 py-3.5 font-medium text-black">{inv.invoice_number}</td>
+                        <td className="px-5 py-3.5 font-medium text-black dark:text-white">{inv.invoice_number}</td>
                         {isAdmin && (
                           <td className="px-5 py-3.5 text-zinc-500 hidden md:table-cell">{designer?.name ?? '—'}</td>
                         )}
@@ -351,7 +351,7 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
                         <td className="px-5 py-3.5 text-zinc-400 text-xs hidden md:table-cell max-w-[160px] truncate">
                           {inv.description || <span className="text-zinc-200">—</span>}
                         </td>
-                        <td className="px-5 py-3.5 text-right font-medium text-black tabular-nums">
+                        <td className="px-5 py-3.5 text-right font-medium text-black dark:text-white tabular-nums">
                           {formatCurrency(inv.amount)}
                         </td>
                         <td className="px-5 py-3.5">
@@ -391,14 +391,14 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
                 {isAdmin && (
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-zinc-400 uppercase tracking-wide">Designer</span>
-                    <span className="text-sm font-medium text-black">
+                    <span className="text-sm font-medium text-black dark:text-white">
                       {designers.find((d) => d.id === detailInvoice.designer_id)?.name ?? '—'}
                     </span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-zinc-400 uppercase tracking-wide">Amount</span>
-                  <span className="text-xl font-semibold text-black tabular-nums">{formatCurrency(detailInvoice.amount)}</span>
+                  <span className="text-xl font-semibold text-black dark:text-white tabular-nums">{formatCurrency(detailInvoice.amount)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-zinc-400 uppercase tracking-wide">Status</span>
@@ -415,14 +415,14 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
                 {detailInvoice.description && (
                   <div>
                     <p className="text-xs text-zinc-400 uppercase tracking-wide mb-1">Description</p>
-                    <p className="text-sm text-zinc-700">{detailInvoice.description}</p>
+                    <p className="text-sm text-zinc-700 dark:text-zinc-300">{detailInvoice.description}</p>
                   </div>
                 )}
                 {detailInvoice.paid_at && (
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-zinc-400 uppercase tracking-wide">Paid on</span>
-                    <span className="text-sm text-black">
-                      {new Date(detailInvoice.paid_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    <span className="text-sm text-black dark:text-white">
+  {new Date(detailInvoice.paid_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
                   </div>
                 )}
@@ -580,8 +580,8 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
                 className={cn(
                   'w-full h-20 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1.5 text-xs transition-colors',
                   submitFile
-                    ? 'border-zinc-400 bg-zinc-50 text-zinc-700'
-                    : 'border-zinc-200 hover:border-zinc-400 text-zinc-400 hover:text-zinc-600'
+                    ? 'border-zinc-400 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                    : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
                 )}
               >
                 {submitFile ? (

@@ -46,21 +46,21 @@ export const KanbanCard = memo(function KanbanCard({ task, index, onClick }: Kan
           }}
           className={cn(
             // Base
-            'bg-white border border-zinc-100 rounded-lg p-3.5 select-none',
+            'bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-lg p-3.5 select-none',
             // Use targeted transitions — NOT transition-all (too expensive during drag)
             'transition-[box-shadow,border-color,opacity] duration-150',
             // Cursor
             onClick ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing',
             // Resting hover
             !snapshot.isDragging &&
-              'hover:border-zinc-200 hover:-translate-y-0.5 hover:shadow-md',
+              'hover:border-zinc-200 dark:hover:border-zinc-700 hover:-translate-y-0.5 hover:shadow-md',
             // Active drag — elevated with slight rotation for tactile feel
             snapshot.isDragging &&
-              'border-zinc-200 shadow-2xl rotate-[1deg] scale-[1.02] opacity-95'
+              'border-zinc-200 dark:border-zinc-700 shadow-2xl rotate-[1deg] scale-[1.02] opacity-95'
           )}
         >
           {/* ── Title ─────────────────────────────────────────────────────── */}
-          <p className="text-sm font-medium text-black leading-snug break-words">
+          <p className="text-sm font-medium text-black dark:text-white leading-snug break-words">
             {task.title}
           </p>
 

@@ -403,21 +403,21 @@ export default async function DashboardPage() {
             <NewWorkspaceButton />
             <Link
               href="/dashboard/invoices"
-              className="inline-flex items-center gap-1.5 h-8 px-3.5 text-xs font-medium text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 hover:border-zinc-300 transition-all"
+              className="inline-flex items-center gap-1.5 h-8 px-3.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
             >
               <Receipt size={13} strokeWidth={1.5} />
               Create Invoice
             </Link>
             <Link
               href="/dashboard/directory"
-              className="inline-flex items-center gap-1.5 h-8 px-3.5 text-xs font-medium text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 hover:border-zinc-300 transition-all"
+              className="inline-flex items-center gap-1.5 h-8 px-3.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
             >
               <UserPlus size={13} strokeWidth={1.5} />
               Add Client
             </Link>
             <Link
               href="/dashboard/contracts"
-              className="inline-flex items-center gap-1.5 h-8 px-3.5 text-xs font-medium text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 hover:border-zinc-300 transition-all"
+              className="inline-flex items-center gap-1.5 h-8 px-3.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
             >
               <FolderUp size={13} strokeWidth={1.5} />
               New Contract
@@ -426,28 +426,28 @@ export default async function DashboardPage() {
 
           {/* Metric Cards — monochrome brand */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
-            <div className="bg-white border border-zinc-100 rounded-xl p-4 md:p-5">
+            <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-4 md:p-5">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Projects</p>
-                <div className="w-7 h-7 rounded-lg bg-zinc-100 flex items-center justify-center">
-                  <LayoutDashboard size={13} strokeWidth={1.5} className="text-zinc-600" />
+                <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                  <LayoutDashboard size={13} strokeWidth={1.5} className="text-zinc-600 dark:text-zinc-400" />
                 </div>
               </div>
-              <p className="text-2xl font-semibold text-black tracking-tight">{activeProjectsCount}</p>
+              <p className="text-2xl font-semibold text-black dark:text-white tracking-tight">{activeProjectsCount}</p>
               <p className="mt-1 text-xs text-zinc-400 flex items-center gap-1">
                 <TrendingUp size={10} strokeWidth={2} className="text-emerald-500" />
                 Active workspaces
               </p>
             </div>
 
-            <div className="bg-white border border-zinc-100 rounded-xl p-4 md:p-5">
+            <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-4 md:p-5">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Invoices</p>
-                <div className="w-7 h-7 rounded-lg bg-zinc-100 flex items-center justify-center">
-                  <Receipt size={13} strokeWidth={1.5} className="text-zinc-600" />
+                <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                  <Receipt size={13} strokeWidth={1.5} className="text-zinc-600 dark:text-zinc-400" />
                 </div>
               </div>
-              <p className="text-2xl font-semibold text-black tracking-tight">
+              <p className="text-2xl font-semibold text-black dark:text-white tracking-tight">
                 {pendingInvoicesTotal > 0 ? formatCurrency(pendingInvoicesTotal) : '—'}
               </p>
               <p className="mt-1 text-xs text-zinc-400">
@@ -455,25 +455,25 @@ export default async function DashboardPage() {
               </p>
             </div>
 
-            <div className="bg-white border border-zinc-100 rounded-xl p-4 md:p-5">
+            <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-4 md:p-5">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Due</p>
-                <div className="w-7 h-7 rounded-lg bg-zinc-100 flex items-center justify-center">
-                  <CalendarCheck size={13} strokeWidth={1.5} className="text-zinc-600" />
+                <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                  <CalendarCheck size={13} strokeWidth={1.5} className="text-zinc-600 dark:text-zinc-400" />
                 </div>
               </div>
-              <p className="text-2xl font-semibold text-black tracking-tight">{tasksDueCount}</p>
+              <p className="text-2xl font-semibold text-black dark:text-white tracking-tight">{tasksDueCount}</p>
               <p className="mt-1 text-xs text-zinc-400">Tasks due this week</p>
             </div>
 
-            <div className="bg-white border border-zinc-100 rounded-xl p-4 md:p-5">
+            <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-4 md:p-5">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Revenue {monthName}</p>
-                <div className="w-7 h-7 rounded-lg bg-zinc-100 flex items-center justify-center">
-                  <TrendingUp size={13} strokeWidth={1.5} className="text-zinc-600" />
+                <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                  <TrendingUp size={13} strokeWidth={1.5} className="text-zinc-600 dark:text-zinc-400" />
                 </div>
               </div>
-              <p className="text-2xl font-semibold text-black tracking-tight">
+              <p className="text-2xl font-semibold text-black dark:text-white tracking-tight">
                 {revenueThisMonth > 0 ? formatCurrency(revenueThisMonth) : '—'}
               </p>
               <p className="mt-1 text-xs flex items-center gap-1">
@@ -497,9 +497,9 @@ export default async function DashboardPage() {
           {/* Activity + Side panel */}
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 mb-8 items-start">
             <div className="lg:col-span-7 h-full">
-              <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden h-full">
-                <div className="px-5 py-4 border-b border-zinc-50 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-black">Recent Activity</h2>
+              <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden h-full">
+                <div className="px-5 py-4 border-b border-zinc-50 dark:border-zinc-800 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-black dark:text-white">Recent Activity</h2>
                   <p className="text-xs text-zinc-400">Latest comments</p>
                 </div>
                 {activityItems.length === 0 ? (
@@ -508,17 +508,17 @@ export default async function DashboardPage() {
                     <p className="text-xs text-zinc-300 mt-1">Comments on tasks will appear here.</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-zinc-50">
+                  <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
                     {activityItems.map((item) => (
-                      <div key={item.id} className="px-5 py-3.5 flex items-start gap-3 hover:bg-zinc-50/50 transition-colors">
-                        <div className="shrink-0 w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center text-[10px] font-semibold text-zinc-600 mt-0.5">
+                      <div key={item.id} className="px-5 py-3.5 flex items-start gap-3 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
+                        <div className="shrink-0 w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 mt-0.5">
                           {item.authorName.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm text-zinc-800 leading-snug">
+                          <p className="text-sm text-zinc-800 dark:text-zinc-200 leading-snug">
                             <span className="font-medium">{item.authorName}</span>
                             {' '}commented on{' '}
-                            <span className="font-medium text-black">{item.taskTitle}</span>
+                            <span className="font-medium text-black dark:text-white">{item.taskTitle}</span>
                           </p>
                           <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">{item.body}</p>
                           <p className="text-[10px] text-zinc-300 mt-0.5">
@@ -526,8 +526,8 @@ export default async function DashboardPage() {
                             {timeAgo(item.createdAt)}
                           </p>
                         </div>
-                        <div className="shrink-0 w-6 h-6 rounded-lg bg-zinc-100 flex items-center justify-center mt-0.5">
-                          <MessageSquare size={11} strokeWidth={1.5} className="text-zinc-500" />
+                        <div className="shrink-0 w-6 h-6 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mt-0.5">
+                          <MessageSquare size={11} strokeWidth={1.5} className="text-zinc-500 dark:text-zinc-400" />
                         </div>
                       </div>
                     ))}
@@ -538,9 +538,9 @@ export default async function DashboardPage() {
 
             <div className="lg:col-span-3 space-y-4">
               {/* Messages Preview */}
-              <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-                <div className="px-4 py-3.5 border-b border-zinc-50 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-black">Messages</h2>
+              <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+                <div className="px-4 py-3.5 border-b border-zinc-50 dark:border-zinc-800 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-black dark:text-white">Messages</h2>
                   <Link href="/dashboard/messages" className="text-xs text-zinc-400 hover:text-black transition-colors">
                     Open inbox →
                   </Link>
@@ -550,14 +550,14 @@ export default async function DashboardPage() {
                     <p className="text-xs text-zinc-400">No messages yet.</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-zinc-50">
+                  <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
                     {latestConversations.map((conv) => (
-                      <Link key={conv.id} href="/dashboard/messages" className="flex items-start gap-3 px-4 py-3 hover:bg-zinc-50 transition-colors">
-                        <div className="shrink-0 w-7 h-7 rounded-full bg-zinc-900 flex items-center justify-center text-white text-[10px] font-semibold mt-0.5">
+                      <Link key={conv.id} href="/dashboard/messages" className="flex items-start gap-3 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
+                        <div className="shrink-0 w-7 h-7 rounded-full bg-zinc-900 dark:bg-zinc-700 flex items-center justify-center text-white text-[10px] font-semibold mt-0.5">
                           {conv.clientName.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-black truncate">{conv.clientName}</p>
+                          <p className="text-xs font-medium text-black dark:text-white truncate">{conv.clientName}</p>
                           <p className="text-[11px] text-zinc-500 truncate">{conv.subject || 'No subject'}</p>
                           <p className="text-[10px] text-zinc-400 mt-0.5">{timeAgo(conv.updatedAt)}</p>
                         </div>
@@ -568,16 +568,16 @@ export default async function DashboardPage() {
               </div>
 
               {/* Upcoming Deadlines */}
-              <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-                <div className="px-4 py-3.5 border-b border-zinc-50">
-                  <h2 className="text-sm font-semibold text-black">Upcoming Deadlines</h2>
+              <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+                <div className="px-4 py-3.5 border-b border-zinc-50 dark:border-zinc-800">
+                  <h2 className="text-sm font-semibold text-black dark:text-white">Upcoming Deadlines</h2>
                 </div>
                 {upcomingDeadlines.length === 0 ? (
                   <div className="px-4 py-6 text-center">
                     <p className="text-xs text-zinc-400">No upcoming deadlines.</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-zinc-50">
+                  <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
                     {upcomingDeadlines.map((task) => {
                       const label = daysUntilLabel(task.dueDate)
                       const isToday = label === 'Today'
@@ -587,7 +587,7 @@ export default async function DashboardPage() {
                             <CalendarClock size={12} strokeWidth={1.5} className={isToday ? 'text-red-500' : 'text-zinc-500'} />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-xs font-medium text-black truncate">{task.title}</p>
+                            <p className="text-xs font-medium text-black dark:text-white truncate">{task.title}</p>
                             {task.workspaceName && <p className="text-[10px] text-zinc-400">{task.workspaceName}</p>}
                           </div>
                           <span className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full ${
@@ -607,20 +607,20 @@ export default async function DashboardPage() {
           {/* Client Overview Table */}
           <div className="mb-8">
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-black tracking-tight">Client Overview</h2>
+              <h2 className="text-lg font-semibold text-black dark:text-white tracking-tight">Client Overview</h2>
               <p className="mt-1 text-sm text-zinc-500">Status and activity across all client accounts.</p>
             </div>
             {clientOverview.length === 0 ? (
-              <div className="bg-white border border-zinc-100 rounded-xl flex flex-col items-center justify-center py-16 text-center">
+              <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl flex flex-col items-center justify-center py-16 text-center">
                 <p className="text-sm text-zinc-400">No clients yet.</p>
                 <p className="text-xs text-zinc-300 mt-1">Invite clients to workspaces to see their activity here.</p>
               </div>
             ) : (
-              <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+              <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-zinc-100 bg-zinc-50">
+                      <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                         <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Client</th>
                         <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap hidden sm:table-cell">Workspace</th>
                         <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Status</th>
@@ -633,23 +633,23 @@ export default async function DashboardPage() {
                       {clientOverview.map((row) => {
                         const initials = (row.fullName.charAt(0) || '?').toUpperCase()
                         return (
-                          <tr key={row.userId} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/40 transition-colors">
+                          <tr key={row.userId} className="border-b border-zinc-50 dark:border-zinc-800 last:border-0 hover:bg-zinc-50/40 dark:hover:bg-zinc-800/40 transition-colors">
                             <td className="px-6 py-3.5">
                               <div className="flex items-center gap-3">
                                 {row.avatarUrl ? (
                                   <img src={row.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
                                 ) : (
-                                  <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-semibold text-zinc-600 shrink-0">
+                                  <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xs font-semibold text-zinc-600 dark:text-zinc-400 shrink-0">
                                     {initials}
                                   </div>
                                 )}
                                 <div className="min-w-0">
-                                  <p className="font-medium text-black text-sm truncate">{row.fullName}</p>
+                                  <p className="font-medium text-black dark:text-white text-sm truncate">{row.fullName}</p>
                                   <p className="text-xs text-zinc-400 truncate">{row.email}</p>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-3.5 text-zinc-500 text-sm hidden sm:table-cell whitespace-nowrap">{row.workspaceName}</td>
+                            <td className="px-6 py-3.5 text-zinc-500 dark:text-zinc-400 text-sm hidden sm:table-cell whitespace-nowrap">{row.workspaceName}</td>
                             <td className="px-6 py-3.5">
                               <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-medium border rounded-full whitespace-nowrap ${
                                 row.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
@@ -659,13 +659,13 @@ export default async function DashboardPage() {
                                 {row.status}
                               </span>
                             </td>
-                            <td className="px-6 py-3.5 text-right tabular-nums text-sm text-zinc-700 hidden md:table-cell">
+                            <td className="px-6 py-3.5 text-right tabular-nums text-sm text-zinc-700 dark:text-zinc-300 hidden md:table-cell">
                               {row.openTasks}
                             </td>
                             <td className="px-6 py-3.5 text-zinc-400 text-xs hidden lg:table-cell whitespace-nowrap">
                               {row.lastActivity ? timeAgo(row.lastActivity) : '—'}
                             </td>
-                            <td className="px-6 py-3.5 text-right font-medium text-black tabular-nums text-sm hidden lg:table-cell whitespace-nowrap">
+                            <td className="px-6 py-3.5 text-right font-medium text-black dark:text-white tabular-nums text-sm hidden lg:table-cell whitespace-nowrap">
                               {row.revenue > 0 ? formatCurrency(row.revenue) : '—'}
                             </td>
                           </tr>
@@ -689,7 +689,7 @@ export default async function DashboardPage() {
               <div className="w-12 h-12 border border-zinc-100 rounded-xl flex items-center justify-center mb-4">
                 <LayoutDashboard size={20} strokeWidth={1.5} className="text-zinc-400" />
               </div>
-              <p className="text-sm font-medium text-black">Your workspace is being prepared</p>
+              <p className="text-sm font-medium text-black dark:text-white">Your workspace is being prepared</p>
               <p className="mt-1 text-sm text-zinc-500 max-w-xs">Your Clikaa team will set up your workspace and invite you shortly.</p>
               <Link href="/dashboard/support" className="mt-6 inline-flex items-center justify-center h-9 px-6 bg-black text-white text-sm font-medium hover:bg-zinc-800 transition-colors rounded-lg">
                 Contact Us
@@ -705,15 +705,15 @@ export default async function DashboardPage() {
               />
 
               {/* ── Current Project header + progress bar ─────────────────── */}
-              <div className="mb-6 bg-white border border-zinc-100 rounded-xl px-6 py-5">
+              <div className="mb-6 bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl px-6 py-5">
                 <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-1">Current Project</p>
-                <h2 className="text-xl font-semibold text-black tracking-tight">{workspaces[0]?.name}</h2>
+                <h2 className="text-xl font-semibold text-black dark:text-white tracking-tight">{workspaces[0]?.name}</h2>
                 <div className="mt-3">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-xs text-zinc-500">Overall progress</span>
-                    <span className="text-xs font-semibold text-black">{progressPct}%</span>
+                    <span className="text-xs font-semibold text-black dark:text-white">{progressPct}%</span>
                   </div>
-                  <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-black rounded-full transition-all duration-700"
                       style={{ width: `${progressPct}%` }}
@@ -725,34 +725,34 @@ export default async function DashboardPage() {
               {/* ── Summary Cards ─────────────────────────────────────────── */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                 {/* Awaiting Review */}
-                <div className="bg-white border border-zinc-100 rounded-xl p-5">
+                <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-5">
                   <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-2">Awaiting Review</p>
-                  <p className="text-3xl font-semibold text-black">{reviewTasks.length}</p>
+                  <p className="text-3xl font-semibold text-black dark:text-white">{reviewTasks.length}</p>
                   <p className="mt-1 text-xs text-zinc-400">
                     {reviewTasks.length === 0 ? 'Nothing pending' : 'Items need your sign-off'}
                   </p>
                 </div>
 
                 {/* Next Deliverable */}
-                <div className="bg-white border border-zinc-100 rounded-xl p-5">
+                <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-5">
                   <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-2">Next Deliverable</p>
                   {nextDeliverable ? (
                     <>
-                      <p className="text-sm font-semibold text-black leading-snug line-clamp-2">{nextDeliverable.title}</p>
+                      <p className="text-sm font-semibold text-black dark:text-white leading-snug line-clamp-2">{nextDeliverable.title}</p>
                       <p className="mt-1 text-xs text-zinc-400">{formatDate(nextDeliverable.due_date)}</p>
                     </>
                   ) : (
                     <>
-                      <p className="text-2xl font-semibold text-black">—</p>
+                      <p className="text-2xl font-semibold text-black dark:text-white">—</p>
                       <p className="mt-1 text-xs text-zinc-400">No upcoming deadlines</p>
                     </>
                   )}
                 </div>
 
                 {/* Invoices */}
-                <div className="bg-white border border-zinc-100 rounded-xl p-5">
+                <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-5">
                   <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-2">Invoices</p>
-                  <p className="text-sm font-semibold text-black">
+                  <p className="text-sm font-semibold text-black dark:text-white">
                     {totalPaid > 0 ? formatCurrency(totalPaid) : '—'} <span className="font-normal text-zinc-400">paid</span>
                   </p>
                   {totalBalance > 0 && (
@@ -770,9 +770,9 @@ export default async function DashboardPage() {
               {/* ── Middle split: Needs Approval + Project Timeline ────────── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Needs Approval */}
-                <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-zinc-50">
-                    <h2 className="text-sm font-semibold text-black">Needs Your Approval</h2>
+                <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-50 dark:border-zinc-800">
+                    <h2 className="text-sm font-semibold text-black dark:text-white">Needs Your Approval</h2>
                     <p className="text-xs text-zinc-400 mt-0.5">Review and approve deliverables below</p>
                   </div>
                   <NeedsApprovalPanel
@@ -792,14 +792,14 @@ export default async function DashboardPage() {
                   const dbPhase = workspaces[0]?.current_phase ?? 1
                   const currentPhaseIdx = dbPhase - 1
                   return (
-                    <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-                      <div className="px-5 py-4 border-b border-zinc-50">
-                        <h2 className="text-sm font-semibold text-black">Project Timeline</h2>
+                    <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+                      <div className="px-5 py-4 border-b border-zinc-50 dark:border-zinc-800">
+                        <h2 className="text-sm font-semibold text-black dark:text-white">Project Timeline</h2>
                         <p className="text-xs text-zinc-400 mt-0.5">Phase {dbPhase} of {PHASES.length}</p>
                       </div>
                       <div className="px-5 py-5">
                         <div className="relative">
-                          <div className="absolute left-[14px] top-0 bottom-0 w-px bg-zinc-100" />
+                          <div className="absolute left-[14px] top-0 bottom-0 w-px bg-zinc-100 dark:bg-zinc-800" />
                           <div className="space-y-0">
                             {PHASES.map((phase, i) => {
                               const isDone    = i < currentPhaseIdx
@@ -808,20 +808,20 @@ export default async function DashboardPage() {
                               return (
                                 <div key={phase} className="flex items-start gap-4 pb-5 last:pb-0 relative">
                                   <div className={`shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center z-10 ${
-                                    isDone    ? 'bg-black border-black'
-                                    : isCurrent ? 'bg-white border-black'
-                                    : 'bg-white border-zinc-200'
+                                    isDone    ? 'bg-black border-black dark:bg-white dark:border-white'
+                                    : isCurrent ? 'bg-white dark:bg-zinc-900 border-black dark:border-white'
+                                    : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700'
                                   }`}>
                                     {isDone ? (
-                                      <span className="text-white text-[10px]">✓</span>
+                                      <span className="text-white dark:text-black text-[10px]">✓</span>
                                     ) : isCurrent ? (
-                                      <span className="w-2.5 h-2.5 bg-black rounded-full animate-pulse block" />
+                                      <span className="w-2.5 h-2.5 bg-black dark:bg-white rounded-full animate-pulse block" />
                                     ) : (
-                                      <span className="w-2 h-2 bg-zinc-200 rounded-full block" />
+                                      <span className="w-2 h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full block" />
                                     )}
                                   </div>
                                   <div className="pt-1">
-                                    <p className={`text-sm ${isDone ? 'text-zinc-400 line-through' : isCurrent ? 'font-semibold text-black' : 'text-zinc-400'}`}>
+                                    <p className={`text-sm ${isDone ? 'text-zinc-400 line-through' : isCurrent ? 'font-semibold text-black dark:text-white' : 'text-zinc-400'}`}>
                                       {phase}
                                     </p>
                                     {isCurrent && <p className="text-[11px] text-zinc-500 mt-0.5">In progress</p>}
@@ -842,11 +842,11 @@ export default async function DashboardPage() {
               {/* ── Bottom split: Recent Files + Recent Invoices ───────────── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 {/* Recent Files */}
-                <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-zinc-50 flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-black">Recent Files</h2>
+                <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-50 dark:border-zinc-800 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-black dark:text-white">Recent Files</h2>
                     {workspaces[0] && (
-                      <Link href={`/dashboard/${workspaces[0].id}/files`} className="text-xs text-zinc-400 hover:text-black transition-colors">
+                      <Link href={`/dashboard/${workspaces[0].id}/files`} className="text-xs text-zinc-400 hover:text-black dark:hover:text-white transition-colors">
                         View all →
                       </Link>
                     )}
@@ -856,19 +856,19 @@ export default async function DashboardPage() {
                       <p className="text-sm text-zinc-400">No files uploaded yet.</p>
                     </div>
                   ) : (
-                    <div className="divide-y divide-zinc-50">
+                    <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
                       {recentFiles.map((file) => (
                         <div key={file.id} className="flex items-center gap-3 px-5 py-3">
-                          <div className="shrink-0 w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center">
-                            <FileText size={14} strokeWidth={1.5} className="text-zinc-500" />
+                          <div className="shrink-0 w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                            <FileText size={14} strokeWidth={1.5} className="text-zinc-500 dark:text-zinc-400" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-black truncate">{file.file_name}</p>
+                            <p className="text-sm font-medium text-black dark:text-white truncate">{file.file_name}</p>
                             <p className="text-[10px] text-zinc-400">{formatDate(file.created_at)}</p>
                           </div>
                           <Link
                             href={workspaces[0] ? `/dashboard/${workspaces[0].id}/files` : '/dashboard'}
-                            className="shrink-0 w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-black hover:bg-zinc-100 rounded-lg transition-colors"
+                            className="shrink-0 w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
                           >
                             <Download size={13} strokeWidth={1.5} />
                           </Link>
@@ -879,10 +879,10 @@ export default async function DashboardPage() {
                 </div>
 
                 {/* Recent Invoices */}
-                <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-zinc-50 flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-black">Invoices</h2>
-                    <Link href="/dashboard/invoices" className="text-xs text-zinc-400 hover:text-black transition-colors">
+                <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-50 dark:border-zinc-800 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-black dark:text-white">Invoices</h2>
+                    <Link href="/dashboard/invoices" className="text-xs text-zinc-400 hover:text-black dark:hover:text-white transition-colors">
                       View all →
                     </Link>
                   </div>
@@ -891,16 +891,16 @@ export default async function DashboardPage() {
                       <p className="text-sm text-zinc-400">No invoices yet.</p>
                     </div>
                   ) : (
-                    <div className="divide-y divide-zinc-50">
+                    <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
                       {clientInvoices.map((inv) => (
                         <div key={inv.id} className="flex items-center gap-3 px-5 py-3">
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-black">{inv.invoice_number}</p>
+                            <p className="text-sm font-medium text-black dark:text-white">{inv.invoice_number}</p>
                             {inv.due_date && (
                               <p className="text-[10px] text-zinc-400">Due {formatDate(inv.due_date)}</p>
                             )}
                           </div>
-                          <p className="text-sm font-medium text-black tabular-nums shrink-0">{formatCurrency(inv.total)}</p>
+                          <p className="text-sm font-medium text-black dark:text-white tabular-nums shrink-0">{formatCurrency(inv.total)}</p>
                           <span className={`shrink-0 inline-flex items-center px-2 py-0.5 text-[10px] font-medium border rounded-full ${
                             inv.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
                               : inv.status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-100'
@@ -992,9 +992,9 @@ export default async function DashboardPage() {
                 { label: 'Completed This Week',    value: completedWeekCount,    sub: 'Finished last 7 days' },
                 { label: 'Awaiting Client Feedback', value: awaitingFeedbackCount, sub: 'In review' },
               ].map(({ label, value, sub }) => (
-                <div key={label} className="bg-white border border-zinc-100 rounded-xl p-4 md:p-5">
+                <div key={label} className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-4 md:p-5">
                   <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-3">{label}</p>
-                  <p className="text-2xl font-semibold text-black tracking-tight">{value}</p>
+                  <p className="text-2xl font-semibold text-black dark:text-white tracking-tight">{value}</p>
                   <p className="mt-1 text-xs text-zinc-400">{sub}</p>
                 </div>
               ))}
@@ -1005,9 +1005,9 @@ export default async function DashboardPage() {
               {/* My Tasks */}
               <div className="lg:col-span-7 space-y-4">
                 {/* TODAY */}
-                <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-zinc-50">
-                    <h2 className="text-sm font-semibold text-black">Today</h2>
+                <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-50 dark:border-zinc-800">
+                    <h2 className="text-sm font-semibold text-black dark:text-white">Today</h2>
                     <p className="text-xs text-zinc-400 mt-0.5">Tasks due today</p>
                   </div>
                   {myTasksToday.length === 0 ? (
@@ -1015,17 +1015,17 @@ export default async function DashboardPage() {
                       <p className="text-sm text-zinc-400">Nothing due today.</p>
                     </div>
                   ) : (
-                    <div className="divide-y divide-zinc-50">
+                    <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
                       {myTasksToday.map((t) => (
                         <div key={t.id} className="flex items-center gap-3 px-5 py-3.5">
                           <div className={`shrink-0 w-2 h-2 rounded-full ${
-                            t.priority === 'urgent' ? 'bg-red-500' : t.priority === 'high' ? 'bg-amber-500' : 'bg-zinc-300'
+                            t.priority === 'urgent' ? 'bg-red-500' : t.priority === 'high' ? 'bg-amber-500' : 'bg-zinc-300 dark:bg-zinc-600'
                           }`} />
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-black truncate">{t.title}</p>
+                            <p className="text-sm font-medium text-black dark:text-white truncate">{t.title}</p>
                             <p className="text-xs text-zinc-400">{designerWorkspaceNames[t.workspace_id] || ''}</p>
                           </div>
-                          <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-500 capitalize">
+                          <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 capitalize">
                             {t.status.replace('_', ' ')}
                           </span>
                         </div>
@@ -1035,9 +1035,9 @@ export default async function DashboardPage() {
                 </div>
 
                 {/* WAITING ON CLIENT */}
-                <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-zinc-50">
-                    <h2 className="text-sm font-semibold text-black">Waiting on Client</h2>
+                <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-50 dark:border-zinc-800">
+                    <h2 className="text-sm font-semibold text-black dark:text-white">Waiting on Client</h2>
                     <p className="text-xs text-zinc-400 mt-0.5">Submitted for review</p>
                   </div>
                   {waitingOnClient.length === 0 ? (
@@ -1045,12 +1045,12 @@ export default async function DashboardPage() {
                       <p className="text-sm text-zinc-400">Nothing in review.</p>
                     </div>
                   ) : (
-                    <div className="divide-y divide-zinc-50">
+                    <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
                       {waitingOnClient.map((t) => (
                         <div key={t.id} className="flex items-center gap-3 px-5 py-3.5">
                           <div className="shrink-0 w-2 h-2 rounded-full bg-violet-400" />
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-black truncate">{t.title}</p>
+                            <p className="text-sm font-medium text-black dark:text-white truncate">{t.title}</p>
                             <p className="text-xs text-zinc-400">{designerWorkspaceNames[t.workspace_id] || ''}</p>
                           </div>
                           {t.due_date && (
@@ -1063,9 +1063,9 @@ export default async function DashboardPage() {
                 </div>
 
                 {/* RECENTLY COMPLETED */}
-                <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-zinc-50">
-                    <h2 className="text-sm font-semibold text-black">Recently Completed</h2>
+                <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-50 dark:border-zinc-800">
+                    <h2 className="text-sm font-semibold text-black dark:text-white">Recently Completed</h2>
                     <p className="text-xs text-zinc-400 mt-0.5">Done in the last 7 days</p>
                   </div>
                   {recentlyDone.length === 0 ? (
@@ -1073,7 +1073,7 @@ export default async function DashboardPage() {
                       <p className="text-sm text-zinc-400">No completions this week yet.</p>
                     </div>
                   ) : (
-                    <div className="divide-y divide-zinc-50">
+                    <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
                       {recentlyDone.map((t) => (
                         <div key={t.id} className="flex items-center gap-3 px-5 py-3.5">
                           <div className="shrink-0 w-2 h-2 rounded-full bg-emerald-400" />
@@ -1092,27 +1092,27 @@ export default async function DashboardPage() {
               {/* Right column: Client Feedback + Upcoming Deadlines */}
               <div className="lg:col-span-3 space-y-4">
                 {/* Client Feedback */}
-                <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-zinc-50">
-                    <h2 className="text-sm font-semibold text-black">Client Feedback</h2>
+                <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-50 dark:border-zinc-800">
+                    <h2 className="text-sm font-semibold text-black dark:text-white">Client Feedback</h2>
                   </div>
                   {designerClientFeedback.length === 0 ? (
                     <div className="px-5 py-6 text-center">
                       <p className="text-xs text-zinc-400">No client comments yet.</p>
                     </div>
                   ) : (
-                    <div className="divide-y divide-zinc-50">
+                    <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
                       {designerClientFeedback.map((fb) => (
                         <div key={fb.id} className="px-5 py-3.5">
                           <div className="flex items-center gap-2 mb-1">
-                            <div className="w-5 h-5 rounded-full bg-zinc-100 flex items-center justify-center text-[9px] font-semibold text-zinc-600 shrink-0">
+                            <div className="w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[9px] font-semibold text-zinc-600 dark:text-zinc-400 shrink-0">
                               {fb.authorName.charAt(0).toUpperCase()}
                             </div>
-                            <p className="text-xs font-medium text-zinc-700 truncate">{fb.authorName}</p>
-                            <span className="ml-auto text-[10px] text-zinc-300 shrink-0">{timeAgo(fb.createdAt)}</span>
+                            <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300 truncate">{fb.authorName}</p>
+                            <span className="ml-auto text-[10px] text-zinc-300 dark:text-zinc-600 shrink-0">{timeAgo(fb.createdAt)}</span>
                           </div>
-                          <p className="text-xs text-zinc-500 line-clamp-2 pl-7">{fb.body}</p>
-                          <p className="text-[10px] text-zinc-300 mt-0.5 pl-7 truncate">on: {fb.taskTitle}</p>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 pl-7">{fb.body}</p>
+                          <p className="text-[10px] text-zinc-300 dark:text-zinc-600 mt-0.5 pl-7 truncate">on: {fb.taskTitle}</p>
                         </div>
                       ))}
                     </div>
@@ -1120,27 +1120,27 @@ export default async function DashboardPage() {
                 </div>
 
                 {/* Upcoming Deadlines */}
-                <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-zinc-50">
-                    <h2 className="text-sm font-semibold text-black">Upcoming Deadlines</h2>
+                <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+                  <div className="px-5 py-4 border-b border-zinc-50 dark:border-zinc-800">
+                    <h2 className="text-sm font-semibold text-black dark:text-white">Upcoming Deadlines</h2>
                   </div>
                   {upcomingDLs.length === 0 ? (
                     <div className="px-5 py-6 text-center">
                       <p className="text-xs text-zinc-400">No upcoming deadlines.</p>
                     </div>
                   ) : (
-                    <div className="divide-y divide-zinc-50">
+                    <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
                       {upcomingDLs.map((t) => {
                         const label = daysUntilLabel(t.due_date!)
                         const isToday = label === 'Today'
                         return (
                           <div key={t.id} className="flex items-center gap-3 px-5 py-3">
                             <div className="min-w-0 flex-1">
-                              <p className="text-xs font-medium text-black truncate">{t.title}</p>
+                              <p className="text-xs font-medium text-black dark:text-white truncate">{t.title}</p>
                               <p className="text-[10px] text-zinc-400">{designerWorkspaceNames[t.workspace_id] || ''}</p>
                             </div>
                             <span className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                              isToday ? 'bg-red-50 text-red-600' : label === 'Tomorrow' ? 'bg-amber-50 text-amber-600' : 'bg-zinc-100 text-zinc-500'
+                              isToday ? 'bg-red-50 text-red-600' : label === 'Tomorrow' ? 'bg-amber-50 text-amber-600' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'
                             }`}>
                               {label}
                             </span>

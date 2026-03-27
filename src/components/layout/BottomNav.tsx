@@ -123,7 +123,7 @@ export function BottomNav({ isAdmin, userId, unreadMessageCount = 0 }: BottomNav
   const tabs = isAdmin ? adminTabs : clientTabs
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden" style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/[0.88] dark:bg-zinc-950/90 backdrop-blur-[14px] border-t border-black/[0.06] dark:border-white/10">
       <div className="flex items-center h-16 px-2 justify-around">
         {tabs.map(({ label, icon: Icon, href, isActive, badge }) => (
           <Link
@@ -131,7 +131,7 @@ export function BottomNav({ isAdmin, userId, unreadMessageCount = 0 }: BottomNav
             href={href}
             className={cn(
               'flex flex-col items-center gap-1 flex-1 py-2 transition-colors relative',
-              isActive ? 'text-black' : 'text-zinc-400 hover:text-zinc-600'
+              isActive ? 'text-black dark:text-white' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
             )}
           >
             <span className="relative">

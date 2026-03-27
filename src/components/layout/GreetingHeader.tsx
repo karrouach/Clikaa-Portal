@@ -16,7 +16,7 @@ export function GreetingHeader({ name, subtitle }: GreetingHeaderProps) {
   const firstName = name.split(' ')[0]
   return (
     <div className="mb-4 md:mb-6">
-      <h1 className="text-xl md:text-2xl font-semibold text-black tracking-tight">
+      <h1 className="text-xl md:text-2xl font-semibold text-black dark:text-white tracking-tight">
         {getGreeting()}, {firstName} 👋
       </h1>
       {subtitle && (

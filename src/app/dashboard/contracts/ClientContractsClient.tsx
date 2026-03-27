@@ -37,14 +37,14 @@ export function ClientContractsClient({ initialContracts }: Props) {
     <div className="animate-fade-in max-w-3xl mx-auto">
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="mb-8">
-        <h1 className="text-xl font-semibold text-black tracking-tight">Contracts</h1>
+        <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">Contracts</h1>
         <p className="mt-1 text-sm text-zinc-500">Review and sign agreements from your agency.</p>
       </div>
 
       {contracts.length === 0 ? (
-        <div className="bg-white border border-zinc-100 rounded-xl flex flex-col items-center justify-center py-20 text-center gap-2">
+        <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl flex flex-col items-center justify-center py-20 text-center gap-2">
           <FileText size={28} strokeWidth={1} className="text-zinc-300 mb-1" />
-          <p className="text-sm font-medium text-zinc-900">No contracts yet</p>
+          <p className="text-sm font-medium text-zinc-900 dark:text-white">No contracts yet</p>
           <p className="text-sm text-zinc-400">Your agreements will appear here once they're sent.</p>
         </div>
       ) : (
@@ -52,7 +52,7 @@ export function ClientContractsClient({ initialContracts }: Props) {
           {/* Pending signature — highlighted */}
           {pending.length > 0 && (
             <section>
-              <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest mb-3">
+              <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-3">
                 Action Required
               </p>
               <div className="space-y-3">
@@ -72,7 +72,7 @@ export function ClientContractsClient({ initialContracts }: Props) {
           {rest.length > 0 && (
             <section>
               {pending.length > 0 && (
-                <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest mb-3">
+                <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-3">
                   All Contracts
                 </p>
               )}
@@ -113,11 +113,11 @@ function ContractCard({
     <button
       onClick={onClick}
       className={cn(
-        'w-full text-left bg-white border rounded-xl p-5 transition-all duration-150',
+        'w-full text-left bg-white dark:bg-[#1A1A1A] border rounded-xl p-5 transition-all duration-150',
         'hover:shadow-sm active:scale-[0.995]',
         highlight
           ? 'border-amber-200 hover:border-amber-300 ring-1 ring-amber-100'
-          : 'border-zinc-100 hover:border-zinc-200',
+          : 'border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700',
       )}
     >
       <div className="flex items-start justify-between gap-4">
@@ -130,7 +130,7 @@ function ContractCard({
               {STATUS_LABELS[contract.status]}
             </span>
           </div>
-          <p className="font-semibold text-black text-sm leading-snug truncate">{contract.title}</p>
+          <p className="font-semibold text-black dark:text-white text-sm leading-snug truncate">{contract.title}</p>
           {contract.status === 'signed' && contract.client_signature_name && (
             <p className="text-xs text-zinc-400 mt-1">
               Signed by {contract.client_signature_name}
@@ -143,7 +143,7 @@ function ContractCard({
             <p className="text-xs text-amber-600 mt-1 font-medium">Tap to review and sign →</p>
           )}
         </div>
-        <div className="shrink-0 w-9 h-9 rounded-xl bg-zinc-50 flex items-center justify-center">
+        <div className="shrink-0 w-9 h-9 rounded-xl bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center">
           <FileText size={16} strokeWidth={1.5} className="text-zinc-400" />
         </div>
       </div>

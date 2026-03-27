@@ -73,7 +73,7 @@ function MemberAvatar({ name, avatarUrl }: { name: string; avatarUrl: string | n
   return avatarUrl ? (
     <img src={avatarUrl} alt="" className="shrink-0 w-8 h-8 rounded-full object-cover" />
   ) : (
-    <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-semibold text-zinc-600 select-none">
+    <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center text-xs font-semibold text-zinc-600 dark:text-zinc-300 select-none">
       {getInitials(name)}
     </div>
   )
@@ -162,7 +162,7 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
       {/* ── Page heading ───────────────────────────────────────────────── */}
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-black tracking-tight">Directory</h1>
+          <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">Directory</h1>
           <p className="mt-1 text-sm text-zinc-500">Internal team members and external clients.</p>
         </div>
 
@@ -200,7 +200,7 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
       )}
 
       {/* ── Tabs ───────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-0.5 mb-6 border-b border-zinc-100">
+      <div className="flex items-center gap-0.5 mb-6 border-b border-zinc-100 dark:border-zinc-800">
         {tabs.map(({ key, label, count }) => (
           <button
             key={key}
@@ -208,14 +208,14 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
             className={cn(
               'relative px-4 pb-3 pt-1 text-sm font-medium transition-colors duration-150',
               activeTab === key
-                ? 'text-black after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-black'
-                : 'text-zinc-400 hover:text-zinc-600'
+                ? 'text-black dark:text-white after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-black dark:after:bg-white'
+                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
             )}
           >
             {label}
             <span className={cn(
               'ml-1.5 text-[10px] tabular-nums px-1.5 py-0.5 rounded-full',
-              activeTab === key ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-500'
+              activeTab === key ? 'bg-zinc-900 dark:bg-white text-white dark:text-black' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'
             )}>
               {count}
             </span>
@@ -228,16 +228,16 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
         const rows = activeTab === 'admins' ? admins : designers
         const emptyLabel = activeTab === 'admins' ? 'No admins yet' : 'No designers yet'
         return (
-          <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
             {rows.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <p className="text-sm font-medium text-zinc-900 mb-1">{emptyLabel}</p>
+                <p className="text-sm font-medium text-zinc-900 dark:text-white mb-1">{emptyLabel}</p>
                 <p className="text-sm text-zinc-400">Invite a team member to get started.</p>
               </div>
             ) : (
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-100 bg-zinc-50">
+                  <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                     <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Member</th>
                     <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Role</th>
                     <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Joined</th>
@@ -253,8 +253,8 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
                       <tr
                         key={member.id}
                         className={cn(
-                          'border-b border-zinc-50 last:border-0 transition-colors',
-                          isRemoving ? 'opacity-40' : 'hover:bg-zinc-50/50'
+                          'border-b border-zinc-50 dark:border-zinc-800 last:border-0 transition-colors',
+                          isRemoving ? 'opacity-40' : 'hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50'
                         )}
                       >
                         <td className="px-6 py-3.5">
@@ -263,7 +263,7 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
                             <div>
                               <Link
                                 href={`/dashboard/team/${member.id}`}
-                                className="font-medium text-black hover:underline underline-offset-2"
+                                className="font-medium text-black dark:text-white hover:underline underline-offset-2"
                               >
                                 {displayName}
                                 {isYou && <span className="ml-1.5 text-[10px] text-zinc-400 font-normal">(you)</span>}
@@ -289,7 +289,7 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
                             <button
                               onClick={() => handleRemove(member.id)}
                               disabled={isPending}
-                              className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors disabled:pointer-events-none"
+                              className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors disabled:pointer-events-none"
                               title="Remove member"
                             >
                               {isRemoving
@@ -311,16 +311,16 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
 
       {/* ── Clients Tab ────────────────────────────────────────────────── */}
       {activeTab === 'clients' && (
-        <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
           {clients.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-sm font-medium text-zinc-900 mb-1">No clients yet</p>
+              <p className="text-sm font-medium text-zinc-900 dark:text-white mb-1">No clients yet</p>
               <p className="text-sm text-zinc-400">Add your first client using the button above.</p>
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-100 bg-zinc-50">
+                <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                   <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Client</th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Role</th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Joined</th>
@@ -331,12 +331,12 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
                 {clients.map((client) => {
                   const displayName = client.full_name || client.email
                   return (
-                    <tr key={`${client.userId}-${client.workspaceId}`} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/50 transition-colors">
+                    <tr key={`${client.userId}-${client.workspaceId}`} className="border-b border-zinc-50 dark:border-zinc-800 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
                       <td className="px-6 py-3.5">
                         <div className="flex items-center gap-3">
                           <MemberAvatar name={displayName} avatarUrl={client.avatar_url} />
                           <div>
-                            <p className="font-medium text-black">{displayName}</p>
+                            <p className="font-medium text-black dark:text-white">{displayName}</p>
                             {client.title ? (
                               <p className="text-xs text-zinc-500">{client.title}</p>
                             ) : (
@@ -346,7 +346,7 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded bg-zinc-100 text-zinc-600">
+                        <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                           client
                         </span>
                       </td>
@@ -356,7 +356,7 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
                       <td className="px-4 py-3.5 hidden md:table-cell">
                         <Link
                           href={`/dashboard/${client.workspaceId}/settings`}
-                          className="text-sm text-zinc-600 hover:text-black hover:underline underline-offset-2 transition-colors"
+                          className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:underline underline-offset-2 transition-colors"
                         >
                           {client.workspaceName}
                         </Link>

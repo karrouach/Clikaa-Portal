@@ -53,11 +53,11 @@ const STATUS_LABEL: Record<TaskStatus, string> = {
 }
 
 const STATUS_BADGE: Record<TaskStatus, string> = {
-  todo:        'bg-zinc-100 text-zinc-500',
-  pending:     'bg-amber-50 text-amber-700',
-  in_progress: 'bg-blue-50 text-blue-700',
-  review:      'bg-purple-50 text-purple-700',
-  done:        'bg-green-50 text-green-700',
+  todo:        'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400',
+  pending:     'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400',
+  in_progress: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400',
+  review:      'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400',
+  done:        'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400',
 }
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────
@@ -146,16 +146,16 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
 
         {/* ── Heading ──────────────────────────────────────────────────── */}
         <div>
-          <h1 className="text-xl font-semibold text-black tracking-tight">Details</h1>
+          <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">Details</h1>
           <p className="mt-1 text-sm text-zinc-500">
             {workspace.description || 'Project overview, progress, and team.'}
           </p>
         </div>
 
         {/* ── Overall Progress ─────────────────────────────────────────── */}
-        <div className="bg-white border border-zinc-100 rounded-xl">
-          <div className="px-6 py-4 border-b border-zinc-100">
-            <h2 className="text-sm font-semibold text-black">Overall Progress</h2>
+        <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl">
+          <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
+            <h2 className="text-sm font-semibold text-black dark:text-white">Overall Progress</h2>
           </div>
 
           <div className="px-6 py-6">
@@ -165,15 +165,15 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
                   ? 'No tasks yet'
                   : `${done} of ${total} task${total !== 1 ? 's' : ''} completed`}
               </p>
-              <span className="text-3xl font-semibold text-black tabular-nums">
+              <span className="text-3xl font-semibold text-black dark:text-white tabular-nums">
                 {pct}%
               </span>
             </div>
 
             {/* Progress track */}
-            <div className="h-1.5 w-full bg-zinc-100 overflow-hidden">
+            <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
               <div
-                className="h-full bg-black transition-all duration-500"
+                className="h-full bg-black dark:bg-white transition-all duration-500"
                 style={{ width: `${pct}%` }}
               />
             </div>
@@ -206,10 +206,10 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
           {/* Project Phase */}
-          <div className="bg-white border border-zinc-100 rounded-xl">
-            <div className="px-6 py-4 border-b border-zinc-100 flex items-center gap-2">
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl">
+            <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
               <Calendar size={13} strokeWidth={1.5} className="text-zinc-400" />
-              <h2 className="text-sm font-semibold text-black">Project Phase</h2>
+              <h2 className="text-sm font-semibold text-black dark:text-white">Project Phase</h2>
               <span className="ml-auto text-[10px] text-zinc-400">
                 Phase {workspace.current_phase} of 5
               </span>
@@ -224,9 +224,9 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
           </div>
 
           {/* Team */}
-          <div className="bg-white border border-zinc-100 rounded-xl">
-            <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-black">
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl">
+            <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-black dark:text-white">
                 Team
                 <span className="ml-1.5 text-[10px] font-normal text-zinc-400">
                   {members.length} member{members.length !== 1 ? 's' : ''}
@@ -235,7 +235,7 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
               <InviteButton workspaceId={workspaceId} />
             </div>
 
-            <div className="divide-y divide-zinc-50">
+            <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
               {members.length === 0 ? (
                 <p className="px-6 py-5 text-sm text-zinc-400">No members yet.</p>
               ) : (
@@ -256,7 +256,7 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
                       </Avatar>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-black truncate">
+                        <p className="text-sm font-medium text-black dark:text-white truncate">
                           {displayName}
                           {m.userId === user.id && (
                             <span className="ml-1.5 text-[10px] text-zinc-400 font-normal">(you)</span>
@@ -272,7 +272,7 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
                       </div>
 
                       <span className={`shrink-0 inline-flex items-center px-2 py-0.5 text-[10px] font-medium ${
-                        m.role === 'admin' ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600'
+                        m.role === 'admin' ? 'bg-zinc-900 dark:bg-zinc-700 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
                       }`}>
                         {m.role === 'admin' ? 'Admin' : 'Client'}
                       </span>
@@ -285,10 +285,10 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
         </div>
 
         {/* ── Recent Activity ───────────────────────────────────────────── */}
-        <div className="bg-white border border-zinc-100 rounded-xl">
-          <div className="px-6 py-4 border-b border-zinc-100 flex items-center gap-2">
+        <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl">
+          <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
             <Clock size={13} strokeWidth={1.5} className="text-zinc-400" />
-            <h2 className="text-sm font-semibold text-black">Recent Activity</h2>
+            <h2 className="text-sm font-semibold text-black dark:text-white">Recent Activity</h2>
           </div>
 
           {recentTasks.length === 0 ? (
@@ -301,9 +301,9 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
                 {recentTasks.map((task) => (
                   <tr
                     key={task.id}
-                    className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/50 transition-colors"
+                    className="border-b border-zinc-50 dark:border-zinc-800 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors"
                   >
-                    <td className="px-6 py-3.5 font-medium text-black">
+                    <td className="px-6 py-3.5 font-medium text-black dark:text-white">
                       {task.title}
                     </td>
                     <td className="px-6 py-3.5">

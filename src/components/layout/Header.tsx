@@ -9,6 +9,7 @@ import { signOut } from '@/app/actions'
 import { getInitials } from '@/lib/utils'
 import { NotificationBell } from './NotificationBell'
 import { CommandMenu } from './CommandMenu'
+import { ThemeToggleCompact } from '@/components/ui/ThemeToggle'
 
 interface HeaderProps {
   profile: Profile
@@ -64,7 +65,7 @@ export function Header({ profile, workspaces }: HeaderProps) {
   }, [menuOpen])
 
   return (
-    <header className="hidden md:flex h-14 border-b border-zinc-100 bg-white items-center justify-between px-6 shrink-0">
+    <header className="hidden md:flex h-14 border-b border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 items-center justify-between px-6 shrink-0">
       {/* Left: Breadcrumbs */}
       <nav aria-label="Breadcrumb">
         <ol className="flex items-center gap-2 text-sm">
@@ -78,12 +79,12 @@ export function Header({ profile, workspaces }: HeaderProps) {
                 {crumb.href && !isLast ? (
                   <Link
                     href={crumb.href}
-                    className="text-[#6B7280] font-medium hover:text-zinc-900 transition-colors duration-150"
+                    className="text-[#6B7280] dark:text-zinc-500 font-medium hover:text-zinc-900 dark:hover:text-white transition-colors duration-150"
                   >
                     {crumb.label}
                   </Link>
                 ) : (
-                  <span className={isLast ? 'text-black font-semibold' : 'text-[#6B7280] font-medium'}>
+                  <span className={isLast ? 'text-black dark:text-white font-semibold' : 'text-[#6B7280] dark:text-zinc-500 font-medium'}>
                     {crumb.label}
                   </span>
                 )}
@@ -99,13 +100,19 @@ export function Header({ profile, workspaces }: HeaderProps) {
         <CommandMenu isAdmin={profile.role === 'admin'} workspaces={workspaces} />
 
         {/* Divider */}
-        <div className="w-px h-5 bg-zinc-100" />
+        <div className="w-px h-5 bg-zinc-100 dark:bg-zinc-800" />
+
+        {/* Theme toggle */}
+        <ThemeToggleCompact />
+
+        {/* Divider */}
+        <div className="w-px h-5 bg-zinc-100 dark:bg-zinc-800" />
 
         {/* Notification bell */}
         <NotificationBell userId={profile.id} />
 
         {/* Divider */}
-        <div className="w-px h-5 bg-zinc-100" />
+        <div className="w-px h-5 bg-zinc-100 dark:bg-zinc-800" />
 
         {/* Avatar with user popover */}
         <div className="relative" ref={menuRef}>
@@ -126,9 +133,9 @@ export function Header({ profile, workspaces }: HeaderProps) {
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-9 w-56 bg-white border border-zinc-200 rounded-xl shadow-lg z-50 overflow-hidden">
+            <div className="absolute right-0 top-9 w-56 bg-white dark:bg-[#1A1A1A] border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg z-50 overflow-hidden">
               {/* User info */}
-              <div className="px-4 py-3 border-b border-zinc-100">
+              <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-9 h-9 bg-black rounded-lg flex items-center justify-center text-white text-xs font-semibold shrink-0">
                     {profile.avatar_url ? (
@@ -138,7 +145,7 @@ export function Header({ profile, workspaces }: HeaderProps) {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-black truncate">
+                    <p className="text-sm font-semibold text-black dark:text-white truncate">
                       {profile.full_name || 'No name set'}
                     </p>
                     <p className="text-xs text-zinc-500 truncate">{profile.email}</p>
@@ -154,14 +161,14 @@ export function Header({ profile, workspaces }: HeaderProps) {
                 <Link
                   href="/dashboard/settings"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 rounded-lg transition-colors w-full"
+                  className="flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-lg transition-colors w-full"
                 >
                   Settings
                 </Link>
                 <button
                   onClick={handleSignOut}
                   disabled={isPending}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors disabled:opacity-50"
                 >
                   {isPending
                     ? <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />

@@ -44,11 +44,11 @@ export function GoalsEditor({ workspaceId, initialValue }: GoalsEditorProps) {
         rows={6}
         placeholder="Describe the project goals, vision, and desired outcomes…"
         className="
-          w-full rounded-lg border border-zinc-200 bg-white
-          text-sm text-zinc-900 placeholder:text-zinc-400
+          w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800
+          text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500
           px-3 py-2.5 resize-none leading-relaxed
-          hover:border-zinc-300
-          focus-visible:outline-none focus-visible:border-zinc-300
+          hover:border-zinc-300 dark:hover:border-zinc-600
+          focus-visible:outline-none focus-visible:border-zinc-300 dark:focus-visible:border-zinc-600
           focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.05)]
           transition-all duration-200 ease-in-out
         "
@@ -64,8 +64,8 @@ export function GoalsEditor({ workspaceId, initialValue }: GoalsEditorProps) {
           disabled={isPending}
           className="
             flex items-center gap-1.5 h-8 px-4
-            bg-zinc-900 text-white text-xs font-medium rounded-lg
-            hover:bg-zinc-700 transition-colors duration-150
+            bg-zinc-900 dark:bg-white text-white dark:text-black text-xs font-medium rounded-lg
+            hover:bg-zinc-700 dark:hover:bg-gray-200 transition-colors duration-150
             disabled:opacity-60 disabled:cursor-not-allowed
           "
         >
@@ -182,7 +182,7 @@ export function BrandColors({ workspaceId }: BrandColorsProps) {
           {/* Swatch + delete button */}
           <div className="relative">
             <label
-              className="block w-16 h-16 rounded-xl border border-zinc-200 group-hover/swatch:border-zinc-300 transition-colors duration-150 relative overflow-hidden cursor-pointer"
+              className="block w-16 h-16 rounded-xl border border-zinc-200 dark:border-zinc-700 group-hover/swatch:border-zinc-300 dark:group-hover/swatch:border-zinc-600 transition-colors duration-150 relative overflow-hidden cursor-pointer"
               title={`Change ${color.name.toLowerCase()} brand colour`}
               style={{ backgroundColor: color.hex }}
             >
@@ -203,7 +203,7 @@ export function BrandColors({ workspaceId }: BrandColorsProps) {
                 aria-label={`Remove ${color.name}`}
                 className="
                   absolute -top-2 -right-2 w-5 h-5
-                  bg-white border border-zinc-200 rounded-full
+                  bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full
                   flex items-center justify-center
                   text-zinc-400 hover:text-red-500 hover:border-red-200
                   shadow-sm transition-all duration-150
@@ -217,7 +217,7 @@ export function BrandColors({ workspaceId }: BrandColorsProps) {
           </div>
 
           <div>
-            <p className="text-xs font-medium text-zinc-700">{color.name}</p>
+            <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{color.name}</p>
             <p className="text-[11px] text-zinc-400 font-mono uppercase">{color.hex}</p>
           </div>
         </div>
@@ -230,11 +230,11 @@ export function BrandColors({ workspaceId }: BrandColorsProps) {
           title="Add a brand colour"
           className="flex flex-col gap-2 group"
         >
-          <div className="w-16 h-16 rounded-xl border-2 border-dashed border-zinc-200 group-hover:border-zinc-400 transition-colors duration-150 flex items-center justify-center text-zinc-300 group-hover:text-zinc-500">
+          <div className="w-16 h-16 rounded-xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 group-hover:border-zinc-400 dark:group-hover:border-zinc-500 transition-colors duration-150 flex items-center justify-center text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400">
             <span className="text-xl leading-none select-none">+</span>
           </div>
           <div>
-            <p className="text-xs font-medium text-zinc-400 group-hover:text-zinc-600 transition-colors">Add</p>
+            <p className="text-xs font-medium text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">Add</p>
           </div>
         </button>
       )}

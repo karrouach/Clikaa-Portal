@@ -131,7 +131,7 @@ export function ProfileForm({
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-zinc-100 flex items-center justify-center text-zinc-500 text-lg font-semibold select-none">
+            <div className="w-full h-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center text-zinc-500 dark:text-zinc-300 text-lg font-semibold select-none">
               {initials}
             </div>
           )}
@@ -175,7 +175,7 @@ export function ProfileForm({
         <div className="space-y-1.5">
           <label
             htmlFor="full_name"
-            className="block text-xs font-medium text-zinc-700 tracking-wide uppercase"
+            className="block text-xs font-medium text-zinc-700 dark:text-zinc-400 tracking-wide uppercase"
           >
             Full name
           </label>
@@ -188,9 +188,9 @@ export function ProfileForm({
             placeholder="Jane Smith"
             className="
               w-full h-10 px-0 py-2
-              border-0 border-b border-zinc-200
-              bg-transparent text-sm text-black placeholder:text-zinc-400
-              focus:outline-none focus:border-black
+              border-0 border-b border-zinc-200 dark:border-zinc-700
+              bg-transparent text-sm text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500
+              focus:outline-none focus:border-black dark:focus:border-zinc-500
               transition-colors duration-150
             "
           />
@@ -200,7 +200,7 @@ export function ProfileForm({
         <div className="space-y-1.5">
           <label
             htmlFor="title"
-            className="block text-xs font-medium text-zinc-700 tracking-wide uppercase"
+            className="block text-xs font-medium text-zinc-700 dark:text-zinc-400 tracking-wide uppercase"
           >
             Title
           </label>
@@ -212,9 +212,9 @@ export function ProfileForm({
             placeholder="e.g. Senior Designer, Project Manager"
             className="
               w-full h-10 px-0 py-2
-              border-0 border-b border-zinc-200
-              bg-transparent text-sm text-black placeholder:text-zinc-400
-              focus:outline-none focus:border-black
+              border-0 border-b border-zinc-200 dark:border-zinc-700
+              bg-transparent text-sm text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500
+              focus:outline-none focus:border-black dark:focus:border-zinc-500
               transition-colors duration-150
             "
           />
@@ -224,7 +224,7 @@ export function ProfileForm({
         <div className="space-y-1.5">
           <label
             htmlFor="email"
-            className="block text-xs font-medium text-zinc-700 tracking-wide uppercase"
+            className="block text-xs font-medium text-zinc-700 dark:text-zinc-400 tracking-wide uppercase"
           >
             Email address
           </label>
@@ -235,8 +235,8 @@ export function ProfileForm({
             value={email}
             className="
               w-full h-10 px-0 py-2
-              border-0 border-b border-zinc-100
-              bg-transparent text-sm text-zinc-400
+              border-0 border-b border-zinc-100 dark:border-zinc-800
+              bg-transparent text-sm text-zinc-400 dark:text-zinc-500
               cursor-not-allowed
             "
           />
@@ -244,8 +244,8 @@ export function ProfileForm({
 
         {/* Role — read-only badge */}
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-zinc-700 tracking-wide uppercase">Role</p>
-          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-zinc-100 text-zinc-600 capitalize">
+          <p className="text-xs font-medium text-zinc-700 dark:text-zinc-400 tracking-wide uppercase">Role</p>
+          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 capitalize">
             {role}
           </span>
         </div>
@@ -272,8 +272,8 @@ export function ProfileForm({
         disabled={isBusy}
         className="
           h-10 px-6 flex items-center gap-2
-          bg-black text-white text-sm font-medium tracking-wide
-          hover:bg-zinc-800 active:bg-zinc-900
+          bg-black dark:bg-white text-white dark:text-black text-sm font-medium tracking-wide
+          hover:bg-zinc-800 dark:hover:bg-gray-200 active:bg-zinc-900
           transition-colors duration-150
           disabled:opacity-60 disabled:cursor-not-allowed
         "

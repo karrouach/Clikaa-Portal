@@ -69,7 +69,7 @@ export function MyTasksClient({ tasks: initialTasks }: Props) {
     <div className="animate-fade-in">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-black tracking-tight">My Tasks</h1>
+          <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">My Tasks</h1>
           <p className="mt-1 text-sm text-zinc-500">
             {initialTasks.length} task{initialTasks.length !== 1 ? 's' : ''} assigned to you across all workspaces.
           </p>
@@ -80,7 +80,7 @@ export function MyTasksClient({ tasks: initialTasks }: Props) {
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as SortKey)}
-            className="appearance-none h-8 pl-3 pr-8 text-xs border border-zinc-200 rounded-lg bg-white text-zinc-700 focus:outline-none focus:border-zinc-400 cursor-pointer"
+            className="appearance-none h-8 pl-3 pr-8 text-xs border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-[#1A1A1A] text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 cursor-pointer"
           >
             <option value="priority">Sort by Priority</option>
             <option value="due_date">Sort by Due Date</option>
@@ -91,9 +91,9 @@ export function MyTasksClient({ tasks: initialTasks }: Props) {
       </div>
 
       {initialTasks.length === 0 ? (
-        <div className="bg-white border border-zinc-100 rounded-xl flex flex-col items-center justify-center py-20 text-center gap-2">
+        <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl flex flex-col items-center justify-center py-20 text-center gap-2">
           <ClipboardList size={28} strokeWidth={1} className="text-zinc-200 mb-2" />
-          <p className="text-sm font-medium text-zinc-900">No tasks assigned</p>
+          <p className="text-sm font-medium text-zinc-900 dark:text-white">No tasks assigned</p>
           <p className="text-sm text-zinc-400">Tasks assigned to you will appear here.</p>
         </div>
       ) : (
@@ -107,7 +107,7 @@ export function MyTasksClient({ tasks: initialTasks }: Props) {
               <Link
                 key={task.id}
                 href={`/dashboard/${task.workspace_id}`}
-                className="block bg-white border border-zinc-100 rounded-xl px-5 py-4 flex items-start gap-4 hover:border-zinc-300 hover:shadow-sm transition-all cursor-pointer"
+                className="block bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl px-5 py-4 flex items-start gap-4 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-sm transition-all cursor-pointer"
               >
                 {/* Priority dot */}
                 <div className={cn(
@@ -120,7 +120,7 @@ export function MyTasksClient({ tasks: initialTasks }: Props) {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <p className="text-sm font-medium text-black leading-snug">{task.title}</p>
+                    <p className="text-sm font-medium text-black dark:text-white leading-snug">{task.title}</p>
                     <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
                       <span className={cn(
                         'inline-flex items-center px-2 py-0.5 text-[10px] font-medium border rounded-full',

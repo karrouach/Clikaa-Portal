@@ -65,7 +65,7 @@ interface Props {
 const ROLE_BADGE: Record<Role, string> = {
   admin:    'bg-zinc-900 text-white',
   designer: 'bg-violet-100 text-violet-700',
-  client:   'bg-zinc-100 text-zinc-600',
+  client:   'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300',
 }
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -198,7 +198,7 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
 
         {/* ── Heading ──────────────────────────────────────────────────────── */}
         <div>
-          <h1 className="text-xl font-semibold text-black tracking-tight">Workspace Settings</h1>
+          <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">Workspace Settings</h1>
           <p className="mt-1 text-sm text-zinc-500">
             Manage this workspace's name and member access.
           </p>
@@ -206,9 +206,9 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
 
         {/* ── General — edit workspace name ─────────────────────────────────── */}
         {isAdmin && (
-          <div className="bg-white border border-zinc-100">
-            <div className="px-6 py-4 border-b border-zinc-100">
-              <h2 className="text-sm font-semibold text-black">General</h2>
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800">
+            <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
+              <h2 className="text-sm font-semibold text-black dark:text-white">General</h2>
             </div>
 
             <div className="px-6 py-5 space-y-6">
@@ -220,11 +220,11 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
                 </Label>
                 <div className="flex items-center gap-4">
                   {/* Preview — forced square via CSS (object-cover) */}
-                  <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-zinc-100 flex items-center justify-center border border-zinc-200">
+                  <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center border border-zinc-200 dark:border-zinc-700">
                     {logoPreview ? (
                       <img src={logoPreview} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-lg font-semibold text-zinc-500 select-none">
+                      <span className="text-lg font-semibold text-zinc-500 dark:text-zinc-400 select-none">
                         {workspace.name.charAt(0).toUpperCase()}
                       </span>
                     )}
@@ -235,7 +235,7 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
                       type="button"
                       onClick={() => logoInputRef.current?.click()}
                       disabled={isLogoPending}
-                      className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium border border-zinc-200 rounded-lg hover:border-zinc-300 hover:bg-zinc-50 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium border border-zinc-200 dark:border-zinc-700 rounded-lg hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50 dark:text-zinc-300"
                     >
                       {isLogoPending ? (
                         <Loader2 size={11} strokeWidth={1.5} className="animate-spin" />
@@ -307,7 +307,7 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-black">{wsName}</span>
+                    <span className="text-sm text-black dark:text-white">{wsName}</span>
                     {nameSaved && (
                       <span className="flex items-center gap-1 text-xs text-emerald-600">
                         <Check size={12} strokeWidth={2} /> Saved
@@ -315,7 +315,7 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
                     )}
                     <button
                       onClick={() => setEditingName(true)}
-                      className="flex items-center gap-1 text-xs text-zinc-400 hover:text-black transition-colors"
+                      className="flex items-center gap-1 text-xs text-zinc-400 hover:text-black dark:hover:text-white transition-colors"
                     >
                       <Pencil size={11} strokeWidth={1.5} />
                       Edit
@@ -336,10 +336,10 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
         )}
 
         {/* ── Manage Access ─────────────────────────────────────────────────── */}
-        <div className="bg-white border border-zinc-100">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
+        <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
             <div>
-              <h2 className="text-sm font-semibold text-black">Manage Access</h2>
+              <h2 className="text-sm font-semibold text-black dark:text-white">Manage Access</h2>
               <p className="text-xs text-zinc-400 mt-0.5">
                 {members.length} member{members.length !== 1 ? 's' : ''} in this workspace
               </p>
@@ -368,7 +368,7 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
 
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-100 bg-zinc-50">
+              <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                 <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
                   Member
                 </th>
@@ -390,8 +390,8 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
                   <tr
                     key={member.membershipId}
                     className={cn(
-                      'border-b border-zinc-50 last:border-0 transition-colors',
-                      isRemoving ? 'opacity-40' : 'hover:bg-zinc-50/40'
+                      'border-b border-zinc-50 dark:border-zinc-800 last:border-0 transition-colors',
+                      isRemoving ? 'opacity-40' : 'hover:bg-zinc-50/40 dark:hover:bg-zinc-800/40'
                     )}
                   >
                     {/* Member info */}
@@ -404,12 +404,12 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
                             className="shrink-0 w-8 h-8 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-semibold text-zinc-600 select-none">
+                          <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center text-xs font-semibold text-zinc-600 dark:text-zinc-300 select-none">
                             {initials}
                           </div>
                         )}
                         <div>
-                          <p className="font-medium text-black text-sm">
+                          <p className="font-medium text-black dark:text-white text-sm">
                             {displayName}
                             {isYou && (
                               <span className="ml-1.5 text-[10px] text-zinc-400 font-normal">(you)</span>
@@ -444,7 +444,7 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
                             onClick={() => handleRemoveMember(member.membershipId, member.userId)}
                             disabled={isMemberPending}
                             title="Remove from workspace"
-                            className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors disabled:pointer-events-none"
+                            className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors disabled:pointer-events-none"
                           >
                             {isRemoving ? (
                               <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
@@ -465,31 +465,31 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
         {/* ── Role legend (admin only) ───────────────────────────────────── */}
         {isAdmin && (
           <div className="grid grid-cols-3 gap-3">
-            <div className="p-4 border border-zinc-100 bg-white rounded-xl">
+            <div className="p-4 border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-[#1A1A1A] rounded-xl">
               <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium mb-2 bg-zinc-900 text-white rounded">
                 Admin
               </span>
-              <p className="text-xs text-zinc-500">Full access — can manage tasks, files, and settings.</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">Full access — can manage tasks, files, and settings.</p>
             </div>
-            <div className="p-4 border border-zinc-100 bg-white rounded-xl">
+            <div className="p-4 border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-[#1A1A1A] rounded-xl">
               <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium mb-2 bg-violet-100 text-violet-700 rounded">
                 Designer
               </span>
-              <p className="text-xs text-zinc-500">Designer access — can submit invoices and manage assigned tasks.</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">Designer access — can submit invoices and manage assigned tasks.</p>
             </div>
-            <div className="p-4 border border-zinc-100 bg-white rounded-xl">
-              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium mb-2 bg-zinc-100 text-zinc-600 rounded">
+            <div className="p-4 border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-[#1A1A1A] rounded-xl">
+              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium mb-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded">
                 Client
               </span>
-              <p className="text-xs text-zinc-500">Client access — can view and update their board.</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">Client access — can view and update their board.</p>
             </div>
           </div>
         )}
 
         {/* ── Danger Zone ─────────────────────────────────────────────────── */}
         {isAdmin && (
-          <div className="border border-red-200 bg-red-50/30 rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-red-100">
+          <div className="border border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-950/10 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-red-100 dark:border-red-900">
               <h2 className="text-sm font-semibold text-red-700">Danger Zone</h2>
               <p className="text-xs text-red-500/80 mt-0.5">
                 Irreversible actions — proceed with caution.
@@ -497,7 +497,7 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
             </div>
             <div className="px-6 py-5 flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-zinc-900">Delete this workspace</p>
+                <p className="text-sm font-medium text-zinc-900 dark:text-white">Delete this workspace</p>
                 <p className="text-xs text-zinc-500 mt-0.5">
                   Permanently deletes the workspace, all tasks, files, and member data. This cannot be undone.
                 </p>

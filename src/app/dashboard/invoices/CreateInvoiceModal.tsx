@@ -56,10 +56,10 @@ const fmt = (n: number) =>
 
 // ─── Shared input class ───────────────────────────────────────────────────────
 const field =
-  'w-full h-9 px-3 text-sm bg-white border border-zinc-200 rounded-lg ' +
-  'text-zinc-900 placeholder:text-zinc-400 ' +
-  'hover:border-zinc-300 ' +
-  'focus-visible:outline-none focus-visible:border-zinc-300 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)] ' +
+  'w-full h-9 px-3 text-sm bg-white dark:bg-[#1A1A1A] border border-zinc-200 dark:border-zinc-700 rounded-lg ' +
+  'text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 ' +
+  'hover:border-zinc-300 dark:hover:border-zinc-600 ' +
+  'focus-visible:outline-none focus-visible:border-zinc-300 dark:focus-visible:border-zinc-500 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)] ' +
   'transition-colors duration-150'
 
 // ─── DateButton ───────────────────────────────────────────────────────────────
@@ -84,7 +84,7 @@ function DateButton({
           className={cn(field, 'flex items-center gap-2 text-left cursor-pointer')}
         >
           <CalendarIcon size={13} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
-          <span className={value ? 'text-zinc-900' : 'text-zinc-400'}>
+          <span className={value ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400'}>
             {value ? formatDate(value) : placeholder}
           </span>
         </button>
@@ -263,23 +263,23 @@ export function CreateInvoiceModal({
           className={cn(
             'fixed z-50 left-1/2 top-1/2',
             'w-[95vw] max-w-5xl max-h-[90vh]',
-            'bg-white rounded-2xl shadow-2xl shadow-black/15 flex flex-col overflow-hidden',
+            'bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-2xl shadow-black/15 flex flex-col overflow-hidden',
             'data-[state=open]:animate-dialog-show data-[state=closed]:animate-dialog-hide',
             'focus:outline-none',
           )}
           style={{ transform: 'translate(-50%, -50%)' }}
         >
           {/* ── Header ──────────────────────────────────────────────────── */}
-          <div className="flex items-start justify-between px-6 py-5 border-b border-zinc-100 shrink-0">
+          <div className="flex items-start justify-between px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
             <div>
-              <h2 className="text-base font-semibold text-black">
+              <h2 className="text-base font-semibold text-black dark:text-white">
                 {isEdit ? 'Edit Invoice' : 'Create New Invoice'}
               </h2>
               <p className="text-xs text-zinc-400 mt-0.5">
                 {isEdit ? 'Update the invoice details below.' : 'Fill in the details below to draft or send.'}
               </p>
             </div>
-            <DialogPrimitive.Close className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 transition-all duration-150">
+            <DialogPrimitive.Close className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-150">
               <X size={15} strokeWidth={1.5} />
               <span className="sr-only">Close</span>
             </DialogPrimitive.Close>
@@ -301,7 +301,7 @@ export function CreateInvoiceModal({
                     <Select value={workspaceId} onValueChange={setWorkspaceId}>
                       <SelectTrigger className="rounded-lg">
                         {workspaceId !== '__none__'
-                          ? <span className="text-sm text-zinc-900">{workspaces.find(w => w.id === workspaceId)?.name}</span>
+                          ? <span className="text-sm text-zinc-900 dark:text-zinc-100">{workspaces.find(w => w.id === workspaceId)?.name}</span>
                           : <span className="text-sm text-zinc-400">Select a workspace…</span>
                         }
                       </SelectTrigger>
@@ -367,7 +367,7 @@ export function CreateInvoiceModal({
                 </p>
 
                 {/* Desktop table header */}
-                <div className="hidden sm:grid grid-cols-[1fr_72px_96px_88px_32px] gap-x-2 px-3 py-1.5 bg-zinc-50 rounded-lg border border-zinc-100 mb-2">
+                <div className="hidden sm:grid grid-cols-[1fr_72px_96px_88px_32px] gap-x-2 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800 mb-2">
                   <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Description</span>
                   <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest text-center">Qty</span>
                   <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Rate ($)</span>
@@ -382,7 +382,7 @@ export function CreateInvoiceModal({
                     return (
                       <div key={item.id}>
                         {/* Mobile layout */}
-                        <div className="sm:hidden bg-zinc-50/60 border border-zinc-100 rounded-lg p-3 space-y-2">
+                        <div className="sm:hidden bg-zinc-50/60 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-lg p-3 space-y-2">
                           <input
                             value={item.description}
                             onChange={e => updateItem(item.id, 'description', e.target.value)}
@@ -405,7 +405,7 @@ export function CreateInvoiceModal({
                               placeholder="0.00"
                               className={cn(field, 'flex-1')}
                             />
-                            <span className="text-sm font-medium text-zinc-900 tabular-nums w-20 text-right shrink-0">
+                            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 tabular-nums w-20 text-right shrink-0">
                               {amount > 0 ? fmt(amount) : <span className="text-zinc-300">—</span>}
                             </span>
                             <button
@@ -440,7 +440,7 @@ export function CreateInvoiceModal({
                             placeholder="0.00"
                             className={field}
                           />
-                          <span className="text-sm font-medium text-zinc-900 tabular-nums text-right">
+                          <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 tabular-nums text-right">
                             {amount > 0 ? fmt(amount) : <span className="text-zinc-300">—</span>}
                           </span>
                           <button
@@ -460,7 +460,7 @@ export function CreateInvoiceModal({
                 <button
                   type="button"
                   onClick={addItem}
-                  className="mt-3 flex items-center gap-1.5 text-xs text-zinc-400 hover:text-black transition-colors duration-150"
+                  className="mt-3 flex items-center gap-1.5 text-xs text-zinc-400 hover:text-black dark:hover:text-white transition-colors duration-150"
                 >
                   <Plus size={12} strokeWidth={1.5} />
                   Add line item
@@ -468,7 +468,7 @@ export function CreateInvoiceModal({
               </div>
 
               {/* ── Notes + Totals ──────────────────────────────────────── */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-zinc-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-zinc-100 dark:border-zinc-800">
 
                 {/* Notes */}
                 <div className="space-y-1.5">
@@ -481,10 +481,10 @@ export function CreateInvoiceModal({
                     rows={5}
                     placeholder="Payment terms, bank details, or any notes for your client…"
                     className={cn(
-                      'w-full px-3 py-2.5 text-sm bg-white border border-zinc-200 rounded-lg',
-                      'text-zinc-900 placeholder:text-zinc-400 resize-none',
-                      'hover:border-zinc-300',
-                      'focus-visible:outline-none focus-visible:border-zinc-300 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]',
+                      'w-full px-3 py-2.5 text-sm bg-white dark:bg-[#1A1A1A] border border-zinc-200 dark:border-zinc-700 rounded-lg',
+                      'text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 resize-none',
+                      'hover:border-zinc-300 dark:hover:border-zinc-600',
+                      'focus-visible:outline-none focus-visible:border-zinc-300 dark:focus-visible:border-zinc-500 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]',
                       'transition-colors duration-150',
                     )}
                   />
@@ -492,10 +492,10 @@ export function CreateInvoiceModal({
 
                 {/* Totals */}
                 <div className="flex flex-col justify-end">
-                  <div className="bg-zinc-50 rounded-xl border border-zinc-100 p-5 space-y-3">
+                  <div className="bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800 p-5 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-zinc-500">Subtotal</span>
-                      <span className="text-sm font-medium text-zinc-900 tabular-nums">{fmt(subtotal)}</span>
+                      <span className="text-sm font-medium text-zinc-900 dark:text-zinc-300 tabular-nums">{fmt(subtotal)}</span>
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-sm text-zinc-500 shrink-0">Tax (%)</span>
@@ -505,16 +505,17 @@ export function CreateInvoiceModal({
                         type="number" min="0" max="100" step="0.1"
                         placeholder="0"
                         className={cn(
-                          'w-24 h-8 px-2.5 text-sm text-right bg-white border border-zinc-200 rounded-lg',
-                          'focus-visible:outline-none focus-visible:border-zinc-300 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]',
+                          'w-24 h-8 px-2.5 text-sm text-right bg-white dark:bg-[#1A1A1A] border border-zinc-200 dark:border-zinc-700 rounded-lg',
+                          'text-zinc-900 dark:text-zinc-100',
+                          'focus-visible:outline-none focus-visible:border-zinc-300 dark:focus-visible:border-zinc-500 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]',
                           'transition-colors duration-150',
                         )}
                       />
                     </div>
-                    <div className="h-px bg-zinc-200" />
+                    <div className="h-px bg-zinc-200 dark:bg-zinc-700" />
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-black">Total</span>
-                      <span className="text-xl font-semibold text-black tabular-nums">{fmt(total)}</span>
+                      <span className="text-sm font-semibold text-black dark:text-white">Total</span>
+                      <span className="text-xl font-semibold text-black dark:text-white tabular-nums">{fmt(total)}</span>
                     </div>
                   </div>
                 </div>
@@ -524,10 +525,10 @@ export function CreateInvoiceModal({
           </div>
 
           {/* ── Footer ──────────────────────────────────────────────────── */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-zinc-100 shrink-0 bg-white">
+          <div className="flex items-center justify-between px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 shrink-0 bg-white dark:bg-[#1A1A1A]">
             <DialogPrimitive.Close
               disabled={saving}
-              className="h-9 px-4 text-sm text-zinc-500 hover:text-black transition-colors duration-150 rounded-lg hover:bg-zinc-50 disabled:opacity-50"
+              className="h-9 px-4 text-sm text-zinc-500 hover:text-black dark:hover:text-white transition-colors duration-150 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50"
             >
               Cancel
             </DialogPrimitive.Close>
@@ -536,7 +537,7 @@ export function CreateInvoiceModal({
                 type="button"
                 disabled={saving}
                 onClick={() => handleSubmit('draft')}
-                className="h-9 px-4 text-sm font-medium text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:border-zinc-300 hover:bg-zinc-50 transition-colors duration-150 disabled:opacity-50"
+                className="h-9 px-4 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors duration-150 disabled:opacity-50"
               >
                 {saving ? 'Saving…' : 'Save Draft'}
               </button>

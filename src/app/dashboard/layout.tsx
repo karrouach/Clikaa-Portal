@@ -106,9 +106,59 @@ export default async function DashboardLayout({
       role: m.role as 'admin' | 'client',
     }))
 
+  // ── Role-based sidebar badge counts ───────────────────────────────────────
+  const badgeCounts = { invoices: 0, contracts: 0, myTasks: 0, payments: 0 }
+  const wsIds = workspaces.map((w) => w.id)
+
+  try {
+    const { createAdminClient: adminFactory } = await import('@/lib/supabase/admin')
+    const adminBadge = adminFactory()
+
+    if (profile.role === 'client' && wsIds.length > 0) {
+      const [{ count: invCount }, { count: conCount }] = await Promise.all([
+        adminBadge
+          .from('invoices')
+          .select('id', { count: 'exact', head: true })
+          .in('workspace_id', wsIds)
+          .in('status', ['pending', 'overdue']),
+        adminBadge
+          .from('contracts')
+          .select('id', { count: 'exact', head: true })
+          .in('workspace_id', wsIds)
+          .eq('status', 'pending_signature'),
+      ])
+      badgeCounts.invoices  = invCount  ?? 0
+      badgeCounts.contracts = conCount  ?? 0
+    } else if (profile.role === 'designer') {
+      const [{ count: taskCount }, { count: payCount }] = await Promise.all([
+        adminBadge
+          .from('tasks')
+          .select('id', { count: 'exact', head: true })
+          .eq('assignee_id', profile.id)
+          .in('status', ['todo', 'in_progress']),
+        adminBadge
+          .from('designer_invoices')
+          .select('id', { count: 'exact', head: true })
+          .eq('designer_id', profile.id)
+          .eq('status', 'pending'),
+      ])
+      badgeCounts.myTasks  = taskCount ?? 0
+      badgeCounts.payments = payCount  ?? 0
+
+      if (wsIds.length > 0) {
+        const { count: conCount } = await adminBadge
+          .from('contracts')
+          .select('id', { count: 'exact', head: true })
+          .in('workspace_id', wsIds)
+          .eq('status', 'pending_signature')
+        badgeCounts.contracts = conCount ?? 0
+      }
+    }
+  } catch { /* badge counts are non-critical */ }
+
   return (
     <>
-    <div className="flex h-screen overflow-hidden bg-zinc-50" style={{ paddingTop: 'var(--titlebar-height, 0px)' }}>
+    <div className="flex h-screen overflow-hidden bg-zinc-50 dark:bg-[#0A0A0A]" style={{ paddingTop: 'var(--titlebar-height, 0px)' }}>
       {/* ── Mobile top nav — md:hidden ────────────────────────────────────── */}
       <MobileNav />
 
@@ -116,13 +166,13 @@ export default async function DashboardLayout({
       <BottomNav isAdmin={profile.role === 'admin'} userId={profile.id} unreadMessageCount={unreadMessageCount} />
 
       {/* ── Sidebar — hidden on mobile ────────────────────────────────────── */}
-      <Sidebar profile={profile} workspaces={workspaces} unreadMessageCount={unreadMessageCount} />
+      <Sidebar profile={profile} workspaces={workspaces} unreadMessageCount={unreadMessageCount} badgeCounts={badgeCounts} />
 
       {/* ── Main area ────────────────────────────────────────────────────── */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden pt-14 md:pt-0 transition-[width] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
         <Header profile={profile} workspaces={workspaces} />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto dark:bg-[#0A0A0A]">
           <div className="w-full px-4 py-6 pb-24 md:px-6 md:py-8 md:pb-8">
             {children}
           </div>

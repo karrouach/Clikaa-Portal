@@ -21,8 +21,8 @@ function SubmitButton() {
       disabled={pending}
       className="
         w-full h-11 flex items-center justify-center gap-2
-        bg-black text-white text-sm font-medium tracking-wide
-        hover:bg-zinc-800 active:bg-zinc-900
+        bg-black dark:bg-white text-white dark:text-black text-sm font-medium tracking-wide
+        hover:bg-zinc-800 dark:hover:bg-gray-200 active:bg-zinc-900
         transition-colors duration-150
         disabled:opacity-60 disabled:cursor-not-allowed
       "
@@ -78,7 +78,7 @@ function WorkspaceDialog({ open, onOpenChange }: DialogProps) {
           <div className="space-y-1.5">
             <label
               htmlFor="ws-name"
-              className="block text-xs font-medium text-zinc-700 tracking-wide uppercase"
+              className="block text-xs font-medium text-zinc-700 dark:text-zinc-400 tracking-wide uppercase"
             >
               Workspace name
             </label>
@@ -93,9 +93,9 @@ function WorkspaceDialog({ open, onOpenChange }: DialogProps) {
               placeholder="e.g. Acme Corp Rebrand"
               className="
                 w-full h-10 px-0 py-2
-                border-0 border-b border-zinc-200
-                bg-transparent text-sm text-black placeholder:text-zinc-400
-                focus:outline-none focus:border-black
+                border-0 border-b border-zinc-200 dark:border-zinc-700
+                bg-transparent text-sm text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500
+                focus:outline-none focus:border-black dark:focus:border-zinc-400
                 transition-colors duration-150
               "
             />
@@ -126,13 +126,13 @@ export function NewWorkspaceButton({ variant = 'default' }: NewWorkspaceButtonPr
         className={
           variant === 'ghost'
             ? `
-                flex items-center gap-1.5 text-sm text-zinc-500
-                hover:text-black transition-colors duration-150
+                flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400
+                hover:text-black dark:hover:text-white transition-colors duration-150
               `
             : `
                 flex items-center gap-1.5 h-9 px-4 rounded-lg
-                bg-black text-white text-sm font-medium
-                hover:bg-zinc-800 active:bg-zinc-900
+                bg-black dark:bg-white text-white dark:text-black text-sm font-medium
+                hover:bg-zinc-800 dark:hover:bg-gray-200 active:bg-zinc-900
                 transition-colors duration-150
               `
         }

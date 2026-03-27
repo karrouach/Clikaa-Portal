@@ -66,7 +66,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
       <div className="animate-fade-in">
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-black tracking-tight">Leaderboard</h1>
+            <h1 className="text-2xl font-semibold text-black dark:text-white tracking-tight">Leaderboard</h1>
             <p className="mt-1 text-sm text-zinc-500">Rankings based on completed tasks.</p>
           </div>
           <Suspense>
@@ -130,15 +130,15 @@ export default async function LeaderboardPage({ searchParams }: Props) {
       {/* Header */}
       <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold text-black tracking-tight">Leaderboard</h1>
+          <h1 className="text-2xl font-semibold text-black dark:text-white tracking-tight">Leaderboard</h1>
           <p className="mt-1 text-sm text-zinc-500">
             {group === 'designers' ? 'Designer rankings' : 'Team rankings'} · {periodLabel}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 rounded-lg">
-            <Star size={13} strokeWidth={1.5} className="text-zinc-500" />
-            <span className="text-xs font-medium text-zinc-600">{ranked.length} members</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+            <Star size={13} strokeWidth={1.5} className="text-zinc-500 dark:text-zinc-400" />
+            <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">{ranked.length} members</span>
           </div>
           <Suspense>
             <LeaderboardFilters timeframe={timeframe} group={group} />
@@ -165,17 +165,17 @@ export default async function LeaderboardPage({ searchParams }: Props) {
                       getInitials(designer.name)
                     )}
                   </div>
-                  <p className="text-xs font-semibold text-black text-center truncate max-w-[80px]">{designer.name.split(' ')[0]}</p>
+                  <p className="text-xs font-semibold text-black dark:text-white text-center truncate max-w-[80px]">{designer.name.split(' ')[0]}</p>
                   <p className="text-[10px] text-zinc-500">{designer.completedTasks} tasks</p>
                 </div>
                 <div
                   className={cn(
                     'w-full rounded-t-lg flex items-end justify-center pb-2',
                     heights[podiumIndex],
-                    rank === 1 ? 'bg-zinc-900' : rank === 2 ? 'bg-zinc-300' : 'bg-zinc-200'
+                    rank === 1 ? 'bg-zinc-900 dark:bg-zinc-100' : rank === 2 ? 'bg-zinc-300 dark:bg-zinc-600' : 'bg-zinc-200 dark:bg-zinc-700'
                   )}
                 >
-                  <span className={cn('text-sm font-bold', rank === 1 ? 'text-white' : 'text-zinc-600')}>#{rank}</span>
+                  <span className={cn('text-sm font-bold', rank === 1 ? 'text-white dark:text-black' : 'text-zinc-600 dark:text-zinc-300')}>#{rank}</span>
                 </div>
               </div>
             )
@@ -184,8 +184,8 @@ export default async function LeaderboardPage({ searchParams }: Props) {
       )}
 
       {/* Full ranked list */}
-      <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-        <div className="px-5 py-3 border-b border-zinc-100 bg-zinc-50">
+      <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+        <div className="px-5 py-3 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
           <div className="grid grid-cols-[2rem_1fr_8rem_5rem] gap-4 items-center">
             <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">#</span>
             <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Member</span>
@@ -194,7 +194,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
           </div>
         </div>
 
-        <div className="divide-y divide-zinc-50">
+        <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
           {ranked.map((member, index) => {
             const rank      = index + 1
             const score     = maxTasks > 0 ? Math.round((member.completedTasks / maxTasks) * 100) : 0
@@ -203,7 +203,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
             return (
               <div
                 key={member.id}
-                className="px-5 py-4 grid grid-cols-[2rem_1fr_8rem_5rem] gap-4 items-center hover:bg-zinc-50/50 transition-colors"
+                className="px-5 py-4 grid grid-cols-[2rem_1fr_8rem_5rem] gap-4 items-center hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors"
               >
                 {/* Rank badge */}
                 <div className={cn('w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0', rankStyle)}>
@@ -220,7 +220,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-black truncate">{member.name}</p>
+                    <p className="text-sm font-medium text-black dark:text-white truncate">{member.name}</p>
                     {group === 'everyone' && (
                       <p className="text-[10px] text-zinc-400 capitalize">{member.role}</p>
                     )}
@@ -229,9 +229,9 @@ export default async function LeaderboardPage({ searchParams }: Props) {
 
                 {/* Progress bar */}
                 <div className="hidden sm:flex items-center gap-2">
-                  <div className="flex-1 h-2 bg-zinc-100 rounded-full overflow-hidden">
+                  <div className="flex-1 h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-zinc-900 rounded-full transition-all duration-500"
+                      className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full transition-all duration-500"
                       style={{ width: `${score}%` }}
                     />
                   </div>
@@ -239,7 +239,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
                 </div>
 
                 {/* Task count */}
-                <p className="text-sm font-semibold text-black tabular-nums text-right">
+                <p className="text-sm font-semibold text-black dark:text-white tabular-nums text-right">
                   {member.completedTasks}
                 </p>
               </div>

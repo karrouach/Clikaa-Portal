@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 const ROLE_BADGE: Record<string, string> = {
   admin:    'bg-zinc-900 text-white',
-  designer: 'bg-violet-50 text-violet-700',
-  client:   'bg-blue-50 text-blue-700',
+  designer: 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400',
+  client:   'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400',
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ export default async function StrategyPage({ params }: Props) {
 
       {/* ── Page heading ──────────────────────────────────────────────────── */}
       <div>
-        <h1 className="text-xl font-semibold text-black tracking-tight">
+        <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">
           Strategy Brief
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
@@ -104,12 +104,12 @@ export default async function StrategyPage({ params }: Props) {
       <div className="space-y-6">
 
         {/* ── Project Goals ────────────────────────────────────────────── */}
-        <section className="bg-white border border-zinc-100 rounded-xl p-6">
+        <section className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-6">
           <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-7 h-7 bg-zinc-50 border border-zinc-100 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-7 h-7 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-lg flex items-center justify-center shrink-0">
               <Target size={14} strokeWidth={1.5} className="text-zinc-500" />
             </div>
-            <h2 className="text-sm font-semibold text-zinc-900">Project Goals</h2>
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">Project Goals</h2>
           </div>
 
           {isAdmin ? (
@@ -118,7 +118,7 @@ export default async function StrategyPage({ params }: Props) {
               initialValue={workspace.description}
             />
           ) : (
-            <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-wrap">
+            <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">
               {workspace.description?.trim()
                 ? workspace.description
                 : 'No project goals have been defined yet.'}
@@ -127,24 +127,24 @@ export default async function StrategyPage({ params }: Props) {
         </section>
 
         {/* ── Brand Identity ───────────────────────────────────────────── */}
-        <section className="bg-white border border-zinc-100 rounded-xl p-6">
+        <section className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-6">
           <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-7 h-7 bg-zinc-50 border border-zinc-100 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-7 h-7 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-lg flex items-center justify-center shrink-0">
               <Palette size={14} strokeWidth={1.5} className="text-zinc-500" />
             </div>
-            <h2 className="text-sm font-semibold text-zinc-900">Brand Identity</h2>
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">Brand Identity</h2>
           </div>
 
           <BrandColors workspaceId={workspaceId} />
         </section>
 
         {/* ── Stakeholders ─────────────────────────────────────────────── */}
-        <section className="bg-white border border-zinc-100 rounded-xl p-6">
+        <section className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-6">
           <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-7 h-7 bg-zinc-50 border border-zinc-100 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-7 h-7 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-lg flex items-center justify-center shrink-0">
               <Users size={14} strokeWidth={1.5} className="text-zinc-500" />
             </div>
-            <h2 className="text-sm font-semibold text-zinc-900">Stakeholders</h2>
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">Stakeholders</h2>
           </div>
 
           {stakeholders.length === 0 ? (
@@ -154,7 +154,7 @@ export default async function StrategyPage({ params }: Props) {
               {stakeholders.map((s) => (
                 <li key={s.id} className="flex items-center gap-3">
                   {/* Avatar */}
-                  <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center text-[10px] font-semibold text-zinc-600 shrink-0 overflow-hidden">
+                  <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 shrink-0 overflow-hidden">
                     {s.avatar_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -169,7 +169,7 @@ export default async function StrategyPage({ params }: Props) {
 
                   {/* Name + email */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900 truncate">
+                    <p className="text-sm font-medium text-zinc-900 dark:text-white truncate">
                       {s.name}
                     </p>
                     <p className="text-xs text-zinc-400 truncate">{s.email}</p>

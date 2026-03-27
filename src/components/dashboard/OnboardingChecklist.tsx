@@ -83,11 +83,11 @@ export function OnboardingChecklist({
   if (allDone) return null
 
   return (
-    <div className="mb-8 bg-white border border-zinc-100 rounded-xl p-6">
+    <div className="mb-8 bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-6">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h2 className="text-sm font-semibold text-zinc-900">Getting Started</h2>
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">Getting Started</h2>
           <p className="mt-0.5 text-xs text-zinc-400">
             {completedCount} of {items.length} steps complete
           </p>
@@ -96,9 +96,9 @@ export function OnboardingChecklist({
       </div>
 
       {/* Progress bar */}
-      <div className="h-1 bg-zinc-100 rounded-full mb-5 overflow-hidden">
+      <div className="h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full mb-5 overflow-hidden">
         <div
-          className="h-full bg-zinc-900 rounded-full transition-all duration-500"
+          className="h-full bg-zinc-900 dark:bg-white rounded-full transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -114,7 +114,7 @@ export function OnboardingChecklist({
                 'flex items-start gap-3 p-3 rounded-lg transition-colors duration-150',
                 item.completed
                   ? 'opacity-50'
-                  : 'hover:bg-zinc-50 cursor-pointer'
+                  : 'hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer'
               )}
               onClick={() => {
                 if (canToggle) markChecked(item.id)
@@ -140,7 +140,7 @@ export function OnboardingChecklist({
                 <p
                   className={cn(
                     'text-sm font-medium',
-                    item.completed ? 'line-through text-zinc-400' : 'text-zinc-900'
+                    item.completed ? 'line-through text-zinc-400' : 'text-zinc-900 dark:text-white'
                   )}
                 >
                   {item.label}

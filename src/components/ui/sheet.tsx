@@ -51,7 +51,7 @@ const SheetContent = React.forwardRef<
         // Width — comfortable for task detail
         'w-full max-w-[480px]',
         // Aesthetic — always pristine white, rounded left edge
-        'bg-white shadow-2xl shadow-black/15',
+        'bg-white dark:bg-[#1A1A1A] shadow-2xl shadow-black/15',
         'rounded-l-2xl',
         // Flex layout so header/body/footer stack correctly
         'flex flex-col',
@@ -68,7 +68,7 @@ const SheetContent = React.forwardRef<
       <SheetClose
         className="
           absolute right-5 top-5
-          text-zinc-400 hover:text-black
+          text-zinc-400 hover:text-black dark:hover:text-white
           transition-colors duration-150
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
         "
@@ -87,7 +87,7 @@ const SheetHeader = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn('px-6 pt-6 pb-4 border-b border-zinc-100 shrink-0', className)}
+    className={cn('px-6 pt-6 pb-4 border-b border-zinc-100 dark:border-zinc-800 shrink-0', className)}
     {...props}
   />
 )
@@ -111,7 +111,7 @@ const SheetFooter = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn('px-6 py-4 border-t border-zinc-100 shrink-0', className)}
+    className={cn('px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 shrink-0', className)}
     {...props}
   />
 )
@@ -124,7 +124,7 @@ const SheetTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn('text-sm font-semibold text-zinc-900 tracking-tight pr-8', className)}
+    className={cn('text-sm font-semibold text-zinc-900 dark:text-white tracking-tight pr-8', className)}
     {...props}
   />
 ))

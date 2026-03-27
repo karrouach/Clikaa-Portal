@@ -46,9 +46,9 @@ export const KanbanColumn = memo(function KanbanColumn({ columnId, label, dotCla
               // Base column body
               'flex-1 overflow-y-auto p-2 space-y-2 transition-colors duration-150',
               // Resting state
-              'bg-zinc-50',
+              'bg-zinc-50 dark:bg-zinc-900',
               // Active drop target — subtle highlight so the user sees where the card will land
-              snapshot.isDraggingOver && 'bg-zinc-100 ring-1 ring-inset ring-zinc-200',
+              snapshot.isDraggingOver && 'bg-zinc-100 dark:bg-zinc-800 ring-1 ring-inset ring-zinc-200 dark:ring-zinc-700',
               // Ensure empty columns are droppable
               'min-h-[120px]'
             )}

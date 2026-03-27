@@ -293,21 +293,21 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
   }
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] md:h-[calc(100vh-6rem)] overflow-hidden rounded-xl border border-zinc-100 bg-white">
+    <div className="flex h-[calc(100vh-7rem)] md:h-[calc(100vh-6rem)] overflow-hidden rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-[#1A1A1A]">
 
       {/* ── Conversation list ──────────────────────────────────────────────── */}
       <div className={cn(
-        'w-full md:w-80 shrink-0 border-r border-zinc-100 flex flex-col',
+        'w-full md:w-80 shrink-0 border-r border-zinc-100 dark:border-zinc-800 flex flex-col',
         selectedId && !searchOpen ? 'hidden md:flex' : 'flex'
       )}>
-        <div className="px-4 py-3 border-b border-zinc-100 flex items-center justify-between gap-2">
+        <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-2">
           <div>
-            <h2 className="text-sm font-semibold text-black">Messages</h2>
+            <h2 className="text-sm font-semibold text-black dark:text-white">Messages</h2>
             <p className="text-xs text-zinc-400">{conversations.length} conversation{conversations.length !== 1 ? 's' : ''}</p>
           </div>
           <button
             onClick={() => { setSearchOpen((v) => !v); setNewTarget(null); setSearchQuery('') }}
-            className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 transition-colors"
+            className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             title="New message"
           >
             {searchOpen ? <X size={14} strokeWidth={1.5} /> : <Plus size={14} strokeWidth={1.5} />}
@@ -317,8 +317,8 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
         {/* Search / New message panel */}
         {searchOpen ? (
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="p-3 border-b border-zinc-100 space-y-2">
-              <p className="text-xs font-medium text-zinc-500">New message to…</p>
+            <div className="p-3 border-b border-zinc-100 dark:border-zinc-800 space-y-2">
+              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">New message to…</p>
               <div className="relative">
                 <Search size={13} strokeWidth={1.5} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
                 <input
@@ -327,7 +327,7 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search clients or designers…"
-                  className="w-full h-8 pl-7 pr-3 text-xs bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:border-zinc-400 focus:bg-white transition-colors"
+                  className="w-full h-8 pl-7 pr-3 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:bg-white dark:focus:bg-zinc-800 transition-colors placeholder:text-zinc-400"
                 />
               </div>
               {/* Role filter pills */}
@@ -339,8 +339,8 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
                     className={cn(
                       'h-6 px-2.5 text-[10px] font-medium rounded-full border transition-colors',
                       searchFilter === f
-                        ? 'bg-black text-white border-black'
-                        : 'bg-white text-zinc-500 border-zinc-200 hover:border-zinc-400'
+                        ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
+                        : 'bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500'
                     )}
                   >
                     {f === 'all' ? 'All' : f === 'client' ? 'Clients' : 'Designers'}
@@ -365,19 +365,19 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
                     key={u.id}
                     onClick={() => setNewTarget(u)}
                     className={cn(
-                      'w-full text-left px-3 py-2.5 flex items-center gap-2.5 hover:bg-zinc-50 transition-colors',
-                      newTarget?.id === u.id && 'bg-zinc-50'
+                      'w-full text-left px-3 py-2.5 flex items-center gap-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors',
+                      newTarget?.id === u.id && 'bg-zinc-50 dark:bg-zinc-800'
                     )}
                   >
-                    <div className="shrink-0 w-7 h-7 rounded-full bg-zinc-900 flex items-center justify-center text-white text-[10px] font-semibold">
+                    <div className="shrink-0 w-7 h-7 rounded-full bg-zinc-900 dark:bg-zinc-700 flex items-center justify-center text-white text-[10px] font-semibold">
                       {getInitials(u.full_name || u.email)}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-black truncate">{u.full_name || u.email}</p>
+                      <p className="text-sm font-medium text-black dark:text-white truncate">{u.full_name || u.email}</p>
                       <p className="text-[10px] text-zinc-400 capitalize">{u.role}</p>
                     </div>
                     {newTarget?.id === u.id && (
-                      <span className="ml-auto w-1.5 h-1.5 bg-black rounded-full shrink-0" />
+                      <span className="ml-auto w-1.5 h-1.5 bg-black dark:bg-white rounded-full shrink-0" />
                     )}
                   </button>
                 ))
@@ -386,28 +386,28 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
 
             {/* Compose area */}
             {newTarget && (
-              <div className="border-t border-zinc-100 p-3 space-y-2">
-                <p className="text-[11px] text-zinc-500">
-                  To: <span className="font-medium text-black">{newTarget.full_name || newTarget.email}</span>
+              <div className="border-t border-zinc-100 dark:border-zinc-800 p-3 space-y-2">
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  To: <span className="font-medium text-black dark:text-white">{newTarget.full_name || newTarget.email}</span>
                 </p>
                 <input
                   type="text"
                   value={newSubject}
                   onChange={(e) => setNewSubject(e.target.value)}
                   placeholder="Subject…"
-                  className="w-full h-8 px-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:border-zinc-400 transition-colors"
+                  className="w-full h-8 px-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors placeholder:text-zinc-400"
                 />
                 <textarea
                   value={newBody}
                   onChange={(e) => setNewBody(e.target.value)}
                   placeholder="Write a message…"
                   rows={3}
-                  className="w-full px-2.5 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:border-zinc-400 transition-colors resize-none"
+                  className="w-full px-2.5 py-2 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors resize-none placeholder:text-zinc-400"
                 />
                 <button
                   onClick={handleNewConversation}
                   disabled={isPending || !newSubject.trim() || !newBody.trim()}
-                  className="w-full h-8 flex items-center justify-center gap-1.5 bg-black text-white text-xs font-medium rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full h-8 flex items-center justify-center gap-1.5 bg-black dark:bg-white text-white dark:text-black text-xs font-medium rounded-lg hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {isPending ? <Loader2 size={13} className="animate-spin" /> : <Send size={12} strokeWidth={1.5} />}
                   Send
@@ -416,7 +416,7 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
             )}
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto divide-y divide-zinc-50">
+          <div className="flex-1 overflow-y-auto divide-y divide-zinc-50 dark:divide-zinc-800">
             {conversations.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-2 text-center px-4">
                 <MessageSquare size={28} strokeWidth={1} className="text-zinc-200" />
@@ -433,27 +433,27 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
                     key={conv.id}
                     onClick={() => setSelectedId(conv.id)}
                     className={cn(
-                      'w-full text-left px-4 py-3.5 transition-colors hover:bg-zinc-50/80',
-                      isSelected ? 'bg-zinc-50 border-l-2 border-black' : 'border-l-2 border-transparent'
+                      'w-full text-left px-4 py-3.5 transition-colors hover:bg-zinc-50/80 dark:hover:bg-zinc-800/80',
+                      isSelected ? 'bg-zinc-50 dark:bg-zinc-800 border-l-2 border-black dark:border-white' : 'border-l-2 border-transparent'
                     )}
                   >
                     <div className="flex items-start gap-3">
                       <div className="relative shrink-0">
-                        <div className="w-9 h-9 rounded-full bg-zinc-900 flex items-center justify-center text-white text-[10px] font-semibold">
+                        <div className="w-9 h-9 rounded-full bg-zinc-900 dark:bg-zinc-700 flex items-center justify-center text-white text-[10px] font-semibold">
                           {initials}
                         </div>
                         {conv.unread_count > 0 && (
-                          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-black rounded-full text-white text-[9px] font-bold flex items-center justify-center px-0.5">
+                          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-black dark:bg-white dark:text-black rounded-full text-white text-[9px] font-bold flex items-center justify-center px-0.5">
                             {conv.unread_count > 9 ? '9+' : conv.unread_count}
                           </span>
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <p className={cn('text-sm truncate', conv.unread_count > 0 ? 'font-semibold text-black' : 'font-medium text-zinc-800')}>{clientName}</p>
+                          <p className={cn('text-sm truncate', conv.unread_count > 0 ? 'font-semibold text-black dark:text-white' : 'font-medium text-zinc-800 dark:text-zinc-200')}>{clientName}</p>
                           <span className="text-[10px] text-zinc-400 shrink-0">{timeAgo(conv.updated_at)}</span>
                         </div>
-                        <p className={cn('text-xs truncate mt-0.5', conv.unread_count > 0 ? 'text-zinc-700' : 'text-zinc-400')}>{conv.subject || 'No subject'}</p>
+                        <p className={cn('text-xs truncate mt-0.5', conv.unread_count > 0 ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400')}>{conv.subject || 'No subject'}</p>
                       </div>
                     </div>
                   </button>
@@ -470,18 +470,18 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
           'flex-1 flex flex-col min-w-0',
           !selectedId ? 'hidden md:flex' : 'flex'
         )}>
-          <div className="px-5 py-3.5 border-b border-zinc-100 flex items-center gap-3">
+          <div className="px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
             <button
-              className="md:hidden w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-black hover:bg-zinc-100 rounded-lg transition-colors"
+              className="md:hidden w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
               onClick={() => setSelectedId(null)}
             >
               ←
             </button>
-            <div className="w-9 h-9 rounded-full bg-zinc-900 shrink-0 hidden md:flex items-center justify-center text-white text-[10px] font-semibold">
+            <div className="w-9 h-9 rounded-full bg-zinc-900 dark:bg-zinc-700 shrink-0 hidden md:flex items-center justify-center text-white text-[10px] font-semibold">
               {getInitials(selectedConv.client?.full_name || selectedConv.client?.email || '?')}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-black truncate">{selectedConv.client?.full_name || selectedConv.client?.email || 'Unknown'}</p>
+              <p className="text-sm font-semibold text-black dark:text-white truncate">{selectedConv.client?.full_name || selectedConv.client?.email || 'Unknown'}</p>
               <p className="text-xs text-zinc-400 truncate">{selectedConv.subject || 'No subject'}</p>
             </div>
           </div>
@@ -504,7 +504,7 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
                   <div key={msg.id} className={cn('flex gap-3', isCurrentUser && 'flex-row-reverse')}>
                     <div className={cn(
                       'shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold',
-                      isCurrentUser ? 'bg-black text-white' : 'bg-zinc-100 text-zinc-700'
+                      isCurrentUser ? 'bg-black text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                     )}>
                       {initials || <User size={12} />}
                     </div>
@@ -513,7 +513,7 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
                         'rounded-xl px-3.5 py-2.5 text-sm leading-relaxed',
                         isCurrentUser
                           ? 'bg-black text-white rounded-tr-sm'
-                          : 'bg-zinc-100 text-zinc-800 rounded-tl-sm'
+                          : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded-tl-sm'
                       )}>
                         {msg.body.split('\n').map((line, li) => {
                           const m = line.match(/^📎 \[(.+?)\]\((https?:\/\/.+?)\)$/)
@@ -536,9 +536,9 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
             <div ref={threadEndRef} />
           </div>
 
-          <form onSubmit={handleReply} className="px-5 py-4 border-t border-zinc-100 space-y-2">
+          <form onSubmit={handleReply} className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
             {attachFile && (
-              <div className="flex items-center gap-2 px-2 py-1 bg-zinc-50 border border-zinc-200 rounded-lg text-xs text-zinc-600">
+              <div className="flex items-center gap-2 px-2 py-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-600 dark:text-zinc-400">
                 <Paperclip size={11} strokeWidth={1.5} className="shrink-0 text-zinc-400" />
                 <span className="truncate flex-1">{attachFile.name}</span>
                 <button type="button" onClick={() => { setAttachFile(null); if (attachRef.current) attachRef.current.value = '' }} className="shrink-0 text-zinc-400 hover:text-red-500">
@@ -551,7 +551,7 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
               <button
                 type="button"
                 onClick={() => attachRef.current?.click()}
-                className="h-9 w-9 flex items-center justify-center text-zinc-400 hover:text-black hover:bg-zinc-100 rounded-lg transition-colors shrink-0"
+                className="h-9 w-9 flex items-center justify-center text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors shrink-0"
                 title="Attach file"
               >
                 <Paperclip size={14} strokeWidth={1.5} />
@@ -561,13 +561,13 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
                 placeholder="Type a reply…"
-                className="flex-1 h-9 px-3 text-sm bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:border-zinc-400 focus:bg-white transition-colors"
+                className="flex-1 h-9 px-3 text-sm bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:bg-white dark:focus:bg-zinc-800 transition-colors placeholder:text-zinc-400"
                 disabled={isPending || uploading}
               />
               <button
                 type="submit"
                 disabled={isPending || uploading || (!reply.trim() && !attachFile)}
-                className="h-9 w-9 flex items-center justify-center bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                className="h-9 w-9 flex items-center justify-center bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
               >
                 {(isPending || uploading) ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} strokeWidth={1.5} />}
               </button>

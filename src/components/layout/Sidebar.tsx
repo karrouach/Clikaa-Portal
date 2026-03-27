@@ -21,11 +21,20 @@ import {
 } from 'lucide-react'
 import type { Profile, WorkspaceWithRole } from '@/types/database'
 import { cn, getInitials } from '@/lib/utils'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
+
+interface BadgeCounts {
+  invoices: number
+  contracts: number
+  myTasks: number
+  payments: number
+}
 
 interface SidebarProps {
   profile: Profile
   workspaces: WorkspaceWithRole[]
   unreadMessageCount?: number
+  badgeCounts?: BadgeCounts
 }
 
 // ─── Animation variants ────────────────────────────────────────────────────
@@ -195,7 +204,7 @@ function WorkspaceItem({
 }
 
 // ─── Sidebar ───────────────────────────────────────────────────────────────
-export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: SidebarProps) {
+export function Sidebar({ profile, workspaces, unreadMessageCount = 0, badgeCounts }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [msgBadge, setMsgBadge] = useState(unreadMessageCount)
   const pathname  = usePathname()
@@ -417,18 +426,21 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
                 icon={ClipboardList}
                 label="My Tasks"
                 isCollapsed={isCollapsed}
+                badge={badgeCounts?.myTasks}
               />
               <NavLink
                 href="/dashboard/contracts"
                 icon={FileSignature}
                 label="Contracts"
                 isCollapsed={isCollapsed}
+                badge={badgeCounts?.contracts}
               />
               <NavLink
                 href="/dashboard/designer-invoices"
                 icon={Wallet}
                 label="Payments"
                 isCollapsed={isCollapsed}
+                badge={badgeCounts?.payments}
               />
             </div>
 
@@ -469,12 +481,14 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
                 icon={Receipt}
                 label="Invoices"
                 isCollapsed={isCollapsed}
+                badge={badgeCounts?.invoices}
               />
               <NavLink
                 href="/dashboard/contracts"
                 icon={FileSignature}
                 label="Contracts"
                 isCollapsed={isCollapsed}
+                badge={badgeCounts?.contracts}
               />
             </div>
 
@@ -495,7 +509,7 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
         )}
       </div>
 
-      {/* ── Bottom: Help (client + designer) + Settings ───────────────────── */}
+      {/* ── Bottom: Help + Settings + Theme Toggle ────────────────────────── */}
       <div className="px-3 pb-4 border-t border-white/5 pt-3 space-y-0.5">
         {!isAdmin && (
           <NavLink
@@ -511,6 +525,7 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0 }: Sidebar
           label="Settings"
           isCollapsed={isCollapsed}
         />
+        <ThemeToggle isCollapsed={isCollapsed} />
       </div>
     </motion.aside>
   )

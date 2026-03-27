@@ -30,19 +30,19 @@ function renderBody(text: string) {
     const key = i
 
     // headings
-    if (trimmed.startsWith('### ')) return <h3 key={key} className="text-base font-semibold text-black mt-5 mb-1">{trimmed.slice(4)}</h3>
-    if (trimmed.startsWith('## '))  return <h2 key={key} className="text-lg font-semibold text-black mt-6 mb-2 pb-1 border-b border-zinc-100">{trimmed.slice(3)}</h2>
-    if (trimmed.startsWith('# '))   return <h1 key={key} className="text-2xl font-semibold text-black mt-2 mb-4">{trimmed.slice(2)}</h1>
+    if (trimmed.startsWith('### ')) return <h3 key={key} className="text-base font-semibold text-black dark:text-white mt-5 mb-1">{trimmed.slice(4)}</h3>
+    if (trimmed.startsWith('## '))  return <h2 key={key} className="text-lg font-semibold text-black dark:text-white mt-6 mb-2 pb-1 border-b border-zinc-100 dark:border-zinc-800">{trimmed.slice(3)}</h2>
+    if (trimmed.startsWith('# '))   return <h1 key={key} className="text-2xl font-semibold text-black dark:text-white mt-2 mb-4">{trimmed.slice(2)}</h1>
 
     // bullet
     if (trimmed.startsWith('- ')) return (
-      <li key={key} className="text-sm text-zinc-700 leading-relaxed ml-4 list-disc">{inlineFormat(trimmed.slice(2))}</li>
+      <li key={key} className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed ml-4 list-disc">{inlineFormat(trimmed.slice(2))}</li>
     )
 
     // blank line spacer
     if (!trimmed) return <div key={key} className="h-2" />
 
-    return <p key={key} className="text-sm text-zinc-700 leading-relaxed">{inlineFormat(trimmed)}</p>
+    return <p key={key} className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{inlineFormat(trimmed)}</p>
   })
 }
 
@@ -51,7 +51,7 @@ function inlineFormat(text: string): React.ReactNode {
   const boldParts = text.split(/(\*\*[^*]+\*\*)/g)
   return boldParts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} className="font-semibold text-black">{part.slice(2, -2)}</strong>
+      return <strong key={i} className="font-semibold text-black dark:text-white">{part.slice(2, -2)}</strong>
     }
     return <span key={i}>{part}</span>
   })
@@ -105,7 +105,7 @@ export function ContractViewModal({ contract, onClose, onSigned, isAdminView = f
           className={cn(
             'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50',
             'w-[95vw] max-w-3xl max-h-[92vh]',
-            'bg-white rounded-2xl shadow-2xl shadow-black/15 flex flex-col',
+            'bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-2xl shadow-black/15 flex flex-col',
             'data-[state=open]:animate-overlay-show data-[state=closed]:animate-overlay-hide',
             'focus:outline-none',
           )}
@@ -113,7 +113,7 @@ export function ContractViewModal({ contract, onClose, onSigned, isAdminView = f
           {contract && (
             <>
               {/* Header */}
-              <div className="flex items-start justify-between gap-4 px-8 py-5 border-b border-zinc-100 shrink-0">
+              <div className="flex items-start justify-between gap-4 px-8 py-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2.5 flex-wrap mb-0.5">
                     <span className={cn(
@@ -123,9 +123,9 @@ export function ContractViewModal({ contract, onClose, onSigned, isAdminView = f
                       {STATUS_LABELS[contract.status]}
                     </span>
                   </div>
-                  <h2 className="text-lg font-semibold text-black truncate">{contract.title}</h2>
+                  <h2 className="text-lg font-semibold text-black dark:text-white truncate">{contract.title}</h2>
                 </div>
-                <DialogPrimitive.Close className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 transition-all duration-150">
+                <DialogPrimitive.Close className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-150">
                   <X size={15} strokeWidth={1.5} />
                   <span className="sr-only">Close</span>
                 </DialogPrimitive.Close>
@@ -140,11 +140,11 @@ export function ContractViewModal({ contract, onClose, onSigned, isAdminView = f
 
                 {/* ── Signature block ────────────────────────────────────── */}
                 {!isAdminView && contract.status === 'pending_signature' && (
-                  <div className="mt-10 pt-6 border-t border-zinc-200">
-                    <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-6 space-y-5">
+                  <div className="mt-10 pt-6 border-t border-zinc-200 dark:border-zinc-700">
+                    <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-6 space-y-5">
                       <div className="flex items-center gap-2.5">
                         <ShieldCheck size={18} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
-                        <p className="text-sm font-semibold text-black">Electronic Signature</p>
+                        <p className="text-sm font-semibold text-black dark:text-white">Electronic Signature</p>
                       </div>
 
                       {/* Agreement checkbox */}
@@ -156,14 +156,14 @@ export function ContractViewModal({ contract, onClose, onSigned, isAdminView = f
                           disabled={isPending}
                           className="mt-0.5 w-4 h-4 rounded border-zinc-300 accent-black cursor-pointer shrink-0"
                         />
-                        <span className="text-sm text-zinc-700 leading-snug group-hover:text-black transition-colors">
+                        <span className="text-sm text-zinc-700 dark:text-zinc-300 leading-snug group-hover:text-black dark:group-hover:text-white transition-colors">
                           I have read and agree to the terms outlined in this agreement.
                         </span>
                       </label>
 
                       {/* Name input */}
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
+                        <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
                           Print Full Legal Name
                         </label>
                         <Input
@@ -194,8 +194,8 @@ export function ContractViewModal({ contract, onClose, onSigned, isAdminView = f
 
                 {/* ── Signed footer ──────────────────────────────────────── */}
                 {contract.status === 'signed' && contract.client_signature_name && (
-                  <div className="mt-10 pt-6 border-t border-zinc-200">
-                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-6 py-5 flex items-start gap-3">
+                  <div className="mt-10 pt-6 border-t border-zinc-200 dark:border-zinc-700">
+                    <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900 rounded-xl px-6 py-5 flex items-start gap-3">
                       <ShieldCheck size={18} strokeWidth={1.5} className="text-emerald-600 shrink-0 mt-0.5" />
                       <div>
                         <p className="text-sm font-semibold text-emerald-800">Electronically Signed</p>

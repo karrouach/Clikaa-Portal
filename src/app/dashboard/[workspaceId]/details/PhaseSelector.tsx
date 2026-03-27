@@ -75,7 +75,7 @@ export function PhaseSelector({ workspaceId, currentPhase: initialPhase, isAdmin
                   {isDone ? (
                     <span className="text-white text-[10px]">✓</span>
                   ) : isCurrent ? (
-                    <span className="w-2.5 h-2.5 bg-black rounded-full animate-pulse block" />
+                    <span className="w-2.5 h-2.5 bg-black dark:bg-white rounded-full animate-pulse block" />
                   ) : (
                     <span className="w-2 h-2 bg-zinc-200 rounded-full block" />
                   )}

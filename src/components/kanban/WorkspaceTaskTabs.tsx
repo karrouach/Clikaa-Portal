@@ -22,11 +22,11 @@ const TABS: { id: ViewTab; label: string; icon: React.ElementType }[] = [
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 const STATUS_CHIP: Record<TaskStatus, string> = {
-  todo:        'bg-zinc-100 text-zinc-600',
-  pending:     'bg-amber-50 text-amber-700',
-  in_progress: 'bg-blue-50 text-blue-700',
-  review:      'bg-violet-50 text-violet-700',
-  done:        'bg-emerald-50 text-emerald-700',
+  todo:        'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400',
+  pending:     'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400',
+  in_progress: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400',
+  review:      'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400',
+  done:        'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400',
 }
 
 const STATUS_DOT: Record<TaskStatus, string> = {
@@ -96,20 +96,20 @@ function ListView({
               <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">{label}</h3>
               <span className="text-[11px] text-zinc-400">({col.length})</span>
             </div>
-            <div className="bg-white border border-zinc-100 rounded-xl divide-y divide-zinc-50 overflow-hidden">
+            <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl divide-y divide-zinc-50 dark:divide-zinc-800 overflow-hidden">
               {col.map((task) => {
                 const assignee = members.find((m) => m.id === task.assignee_id)
                 return (
                   <button
                     key={task.id}
                     onClick={() => onTaskClick(task)}
-                    className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-zinc-50/60 transition-colors group"
+                    className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-zinc-50/60 dark:hover:bg-zinc-800/60 transition-colors group"
                   >
                     <span
                       className={cn('shrink-0 w-2 h-2 rounded-full', PRIORITY_DOT[task.priority] ?? 'bg-zinc-300')}
                       title={task.priority}
                     />
-                    <span className="flex-1 text-sm font-medium text-black truncate">{task.title}</span>
+                    <span className="flex-1 text-sm font-medium text-black dark:text-white truncate">{task.title}</span>
                     <span className={cn(
                       'shrink-0 hidden sm:inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-full',
                       STATUS_CHIP[task.status as TaskStatus]
@@ -128,7 +128,7 @@ function ListView({
                         )}
                       </div>
                     ) : (
-                      <div className="shrink-0 w-6 h-6 rounded-full bg-zinc-100 flex items-center justify-center" title="Unassigned">
+                      <div className="shrink-0 w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center" title="Unassigned">
                         <User size={10} strokeWidth={1.5} className="text-zinc-400" />
                       </div>
                     )}
@@ -168,11 +168,11 @@ function TableView({
 
   return (
     <div className="px-4 md:px-6 py-5">
-      <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-100 bg-zinc-50">
+              <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                 <th className="px-4 py-3 w-4" />
                 <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Task Name</th>
                 <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Status</th>
@@ -188,12 +188,12 @@ function TableView({
                   <tr
                     key={task.id}
                     onClick={() => onTaskClick(task)}
-                    className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/60 transition-colors cursor-pointer group"
+                    className="border-b border-zinc-50 dark:border-zinc-800 last:border-0 hover:bg-zinc-50/60 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer group"
                   >
                     <td className="px-4 py-3.5">
                       <span className={cn('block w-2 h-2 rounded-full', STATUS_DOT[task.status as TaskStatus])} />
                     </td>
-                    <td className="px-4 py-3.5 font-medium text-black max-w-[200px] truncate">
+                    <td className="px-4 py-3.5 font-medium text-black dark:text-white max-w-[200px] truncate">
                       {task.title}
                     </td>
                     <td className="px-4 py-3.5">
@@ -220,7 +220,7 @@ function TableView({
                               getInitials(assignee.full_name || assignee.email)
                             )}
                           </div>
-                          <span className="text-xs text-zinc-600 truncate">{assignee.full_name || assignee.email}</span>
+                          <span className="text-xs text-zinc-600 dark:text-zinc-400 truncate">{assignee.full_name || assignee.email}</span>
                         </div>
                       ) : (
                         <span className="text-xs text-zinc-400">Unassigned</span>
@@ -284,16 +284,16 @@ function TimelineView({
         <div key={month}>
           {/* Month header */}
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-zinc-900 dark:bg-zinc-700 flex items-center justify-center shrink-0">
               <Calendar size={14} strokeWidth={1.5} className="text-white" />
             </div>
-            <h3 className="text-sm font-semibold text-black">{monthLabel(month)}</h3>
-            <div className="flex-1 h-px bg-zinc-100" />
+            <h3 className="text-sm font-semibold text-black dark:text-white">{monthLabel(month)}</h3>
+            <div className="flex-1 h-px bg-zinc-100 dark:bg-zinc-800" />
             <span className="text-xs text-zinc-400">{monthTasks.length} task{monthTasks.length !== 1 ? 's' : ''}</span>
           </div>
 
           {/* Timeline items */}
-          <div className="relative ml-4 pl-5 border-l-2 border-zinc-100 space-y-2">
+          <div className="relative ml-4 pl-5 border-l-2 border-zinc-100 dark:border-zinc-800 space-y-2">
             {monthTasks.map((task) => {
               const assignee  = members.find((m) => m.id === task.assignee_id)
               const isOverdue = task.due_date && task.due_date < today && task.status !== 'done'
@@ -303,16 +303,16 @@ function TimelineView({
                 <button
                   key={task.id}
                   onClick={() => onTaskClick(task)}
-                  className="relative w-full text-left bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-zinc-200 hover:bg-zinc-50/40 transition-colors group"
+                  className="relative w-full text-left bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-zinc-200 dark:hover:border-zinc-700 hover:bg-zinc-50/40 dark:hover:bg-zinc-800/40 transition-colors group"
                 >
                   {/* Timeline dot */}
                   <div className={cn(
-                    'absolute -left-[1.65rem] top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ring-2 ring-white shrink-0',
-                    isOverdue ? 'bg-red-500' : isToday ? 'bg-black' : 'bg-zinc-300'
+                    'absolute -left-[1.65rem] top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ring-2 ring-white dark:ring-[#0A0A0A] shrink-0',
+                    isOverdue ? 'bg-red-500' : isToday ? 'bg-black dark:bg-white' : 'bg-zinc-300 dark:bg-zinc-600'
                   )} />
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-black truncate">{task.title}</p>
+                    <p className="text-sm font-medium text-black dark:text-white truncate">{task.title}</p>
                     <p className="text-[11px] text-zinc-400 mt-0.5">
                       {assignee?.full_name || assignee?.email || 'Unassigned'}
                     </p>
@@ -327,7 +327,7 @@ function TimelineView({
 
                   <span className={cn(
                     'shrink-0 text-[11px] tabular-nums whitespace-nowrap',
-                    isOverdue ? 'text-red-500 font-semibold' : isToday ? 'text-black font-semibold' : 'text-zinc-400'
+                    isOverdue ? 'text-red-500 font-semibold' : isToday ? 'text-black dark:text-white font-semibold' : 'text-zinc-400'
                   )}>
                     {isToday ? 'Today' : fmtDate(task.due_date)}
                   </span>
@@ -342,11 +342,11 @@ function TimelineView({
       {withoutDate.length > 0 && (
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
               <Calendar size={14} strokeWidth={1.5} className="text-zinc-400" />
             </div>
-            <h3 className="text-sm font-semibold text-zinc-500">No Due Date</h3>
-            <div className="flex-1 h-px bg-zinc-100" />
+            <h3 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">No Due Date</h3>
+            <div className="flex-1 h-px bg-zinc-100 dark:bg-zinc-800" />
             <span className="text-xs text-zinc-400">{withoutDate.length} task{withoutDate.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="space-y-2">
@@ -356,10 +356,10 @@ function TimelineView({
                 <button
                   key={task.id}
                   onClick={() => onTaskClick(task)}
-                  className="w-full text-left bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-zinc-200 hover:bg-zinc-50/40 transition-colors"
+                  className="w-full text-left bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-zinc-200 dark:hover:border-zinc-700 hover:bg-zinc-50/40 dark:hover:bg-zinc-800/40 transition-colors"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-black truncate">{task.title}</p>
+                    <p className="text-sm font-medium text-black dark:text-white truncate">{task.title}</p>
                     <p className="text-[11px] text-zinc-400 mt-0.5">
                       {assignee?.full_name || assignee?.email || 'Unassigned'}
                     </p>
@@ -457,7 +457,7 @@ export function WorkspaceTaskTabs({
   return (
     <div className="flex flex-col h-full">
       {/* ── View tab bar ──────────────────────────────────────────────────── */}
-      <div className="shrink-0 px-4 md:px-6 bg-white border-b border-zinc-100 flex items-end">
+      <div className="shrink-0 px-4 md:px-6 bg-white dark:bg-[#0A0A0A] border-b border-zinc-100 dark:border-zinc-800 flex items-end">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -465,8 +465,8 @@ export function WorkspaceTaskTabs({
             className={cn(
               'flex items-center gap-1.5 px-3 py-2.5 text-sm transition-colors duration-150 border-b-2 -mb-px whitespace-nowrap',
               activeTab === id
-                ? 'text-black font-medium border-black'
-                : 'text-zinc-400 border-transparent hover:text-zinc-700 hover:border-zinc-300'
+                ? 'text-black dark:text-white font-medium border-black dark:border-white'
+                : 'text-zinc-400 border-transparent hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-600'
             )}
           >
             <Icon size={13} strokeWidth={1.5} />
@@ -494,7 +494,7 @@ export function WorkspaceTaskTabs({
 
         {/* List / Table / Timeline — share tasks state from this component */}
         {activeTab !== 'board' && (
-          <div className="flex-1 min-h-0 overflow-y-auto bg-zinc-50/30">
+          <div className="flex-1 min-h-0 overflow-y-auto bg-zinc-50/30 dark:bg-transparent">
             {activeTab === 'list' && (
               <ListView tasks={tasks} members={workspaceMembers} onTaskClick={handleTaskClick} />
             )}

@@ -195,6 +195,51 @@ export type Database = {
           },
         ]
       }
+      task_activities: {
+        Row: {
+          id: string
+          task_id: string
+          user_id: string
+          action: 'created' | 'status_changed'
+          old_status: string | null
+          new_status: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          task_id: string
+          user_id: string
+          action: 'created' | 'status_changed'
+          old_status?: string | null
+          new_status?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          task_id?: string
+          user_id?: string
+          action?: 'created' | 'status_changed'
+          old_status?: string | null
+          new_status?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'task_activities_task_id_fkey'
+            columns: ['task_id']
+            isOneToOne: false
+            referencedRelation: 'tasks'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'task_activities_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       comments: {
         Row: {
           id: string

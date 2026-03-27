@@ -103,28 +103,28 @@ export default async function TeamMemberProfilePage({ params }: Props) {
       {/* Back link */}
       <Link
         href="/dashboard/directory"
-        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-black transition-colors mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-black dark:hover:text-white transition-colors mb-6"
       >
         <ArrowLeft size={14} strokeWidth={1.5} />
         Back to Team
       </Link>
 
       {/* ── Profile card ─────────────────────────────────────────────────── */}
-      <div className="bg-white border border-zinc-100 rounded-xl p-6 mb-8">
+      <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-6 mb-8">
         <div className="flex items-start gap-5">
           {/* Avatar */}
-          <div className="shrink-0 w-16 h-16 rounded-full overflow-hidden bg-zinc-100 flex items-center justify-center">
+          <div className="shrink-0 w-16 h-16 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center">
             {member.avatar_url ? (
               <img src={member.avatar_url} alt={displayName} className="w-full h-full object-cover" />
             ) : (
-              <span className="text-xl font-semibold text-zinc-500 select-none">{initials}</span>
+              <span className="text-xl font-semibold text-zinc-500 dark:text-zinc-300 select-none">{initials}</span>
             )}
           </div>
 
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-xl font-semibold text-black tracking-tight">{displayName}</h1>
+              <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">{displayName}</h1>
               <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded capitalize ${ROLE_BADGE[member.role] ?? 'bg-zinc-100 text-zinc-600'}`}>
                 {member.role}
               </span>
@@ -132,7 +132,7 @@ export default async function TeamMemberProfilePage({ params }: Props) {
 
             <div className="mt-2 flex items-center gap-1.5 text-sm text-zinc-500">
               <Mail size={13} strokeWidth={1.5} className="shrink-0" />
-              <a href={`mailto:${member.email}`} className="hover:text-black transition-colors">
+              <a href={`mailto:${member.email}`} className="hover:text-black dark:hover:text-white transition-colors">
                 {member.email}
               </a>
             </div>
@@ -145,11 +145,11 @@ export default async function TeamMemberProfilePage({ params }: Props) {
           {/* Stats */}
           <div className="shrink-0 flex items-center gap-6 text-center">
             <div>
-              <p className="text-2xl font-semibold text-black">{activeTasks?.length ?? 0}</p>
+              <p className="text-2xl font-semibold text-black dark:text-white">{activeTasks?.length ?? 0}</p>
               <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">Active</p>
             </div>
             <div>
-              <p className="text-2xl font-semibold text-black">{doneTasks?.length ?? 0}</p>
+              <p className="text-2xl font-semibold text-black dark:text-white">{doneTasks?.length ?? 0}</p>
               <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">Done</p>
             </div>
           </div>
@@ -161,16 +161,16 @@ export default async function TeamMemberProfilePage({ params }: Props) {
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp size={14} strokeWidth={1.5} className="text-zinc-400" />
-            <h2 className="text-sm font-semibold text-black">Performance</h2>
+            <h2 className="text-sm font-semibold text-black dark:text-white">Performance</h2>
           </div>
-          <div className="bg-white border border-zinc-100 rounded-xl p-6">
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-6">
             <div className="flex items-center justify-between gap-6 flex-wrap">
               {/* Success score */}
               <div>
                 <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-1">Success Rate</p>
                 {successScore !== null ? (
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-3xl font-semibold text-black">{successScore}%</span>
+                    <span className="text-3xl font-semibold text-black dark:text-white">{successScore}%</span>
                     <span className="text-sm text-zinc-400">completion</span>
                   </div>
                 ) : (
@@ -180,11 +180,11 @@ export default async function TeamMemberProfilePage({ params }: Props) {
               {/* Task counts */}
               <div className="flex items-center gap-6 text-center">
                 <div>
-                  <p className="text-2xl font-semibold text-black">{perfDone}</p>
+                  <p className="text-2xl font-semibold text-black dark:text-white">{perfDone}</p>
                   <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">Completed</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-semibold text-black">{perfTotal}</p>
+                  <p className="text-2xl font-semibold text-black dark:text-white">{perfTotal}</p>
                   <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">Total</p>
                 </div>
               </div>
@@ -192,9 +192,9 @@ export default async function TeamMemberProfilePage({ params }: Props) {
             {/* Progress bar */}
             {successScore !== null && (
               <div className="mt-5">
-                <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-black rounded-full transition-all duration-700"
+                    className="h-full bg-black dark:bg-white rounded-full transition-all duration-700"
                     style={{ width: `${successScore}%` }}
                   />
                 </div>
@@ -208,19 +208,19 @@ export default async function TeamMemberProfilePage({ params }: Props) {
       <section className="mb-8">
         <div className="flex items-center gap-2 mb-3">
           <ClipboardList size={14} strokeWidth={1.5} className="text-zinc-400" />
-          <h2 className="text-sm font-semibold text-black">Active Work</h2>
+          <h2 className="text-sm font-semibold text-black dark:text-white">Active Work</h2>
           <span className="text-xs text-zinc-400">({activeTasks?.length ?? 0})</span>
         </div>
 
         {!activeTasks?.length ? (
-          <div className="bg-white border border-zinc-100 rounded-xl px-6 py-10 text-center">
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl px-6 py-10 text-center">
             <p className="text-sm text-zinc-400">No active tasks assigned.</p>
           </div>
         ) : (
-          <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-100 bg-zinc-50">
+                <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                   <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Task</th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden sm:table-cell">Workspace</th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest w-28">Status</th>
@@ -229,11 +229,11 @@ export default async function TeamMemberProfilePage({ params }: Props) {
               </thead>
               <tbody>
                 {activeTasks.map((task) => (
-                  <tr key={task.id} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/50 transition-colors">
+                  <tr key={task.id} className="border-b border-zinc-50 dark:border-zinc-800 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
                     <td className="px-6 py-3.5">
                       <Link
                         href={`/dashboard/${task.workspace_id}`}
-                        className="font-medium text-black hover:underline underline-offset-2 line-clamp-1"
+                        className="font-medium text-black dark:text-white hover:underline underline-offset-2 line-clamp-1"
                       >
                         {task.title}
                       </Link>
@@ -261,19 +261,19 @@ export default async function TeamMemberProfilePage({ params }: Props) {
       <section className="mb-8">
         <div className="flex items-center gap-2 mb-3">
           <CheckCircle2 size={14} strokeWidth={1.5} className="text-emerald-500" />
-          <h2 className="text-sm font-semibold text-black">Completed</h2>
+          <h2 className="text-sm font-semibold text-black dark:text-white">Completed</h2>
           <span className="text-xs text-zinc-400">({doneTasks?.length ?? 0})</span>
         </div>
 
         {!doneTasks?.length ? (
-          <div className="bg-white border border-zinc-100 rounded-xl px-6 py-10 text-center">
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl px-6 py-10 text-center">
             <p className="text-sm text-zinc-400">No completed tasks yet.</p>
           </div>
         ) : (
-          <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-100 bg-zinc-50">
+                <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                   <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Task</th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden sm:table-cell">Workspace</th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest w-28 hidden md:table-cell">Completed</th>
@@ -281,11 +281,11 @@ export default async function TeamMemberProfilePage({ params }: Props) {
               </thead>
               <tbody>
                 {doneTasks.map((task) => (
-                  <tr key={task.id} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/50 transition-colors opacity-75">
+                  <tr key={task.id} className="border-b border-zinc-50 dark:border-zinc-800 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors opacity-75">
                     <td className="px-6 py-3.5">
                       <Link
                         href={`/dashboard/${task.workspace_id}`}
-                        className="text-zinc-600 hover:text-black hover:underline underline-offset-2 line-clamp-1"
+                        className="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:underline underline-offset-2 line-clamp-1"
                       >
                         {task.title}
                       </Link>

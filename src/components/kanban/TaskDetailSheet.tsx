@@ -16,6 +16,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Badge } from '@/components/ui/badge'
 import { CommentFeed } from './CommentFeed'
 import { AttachmentPanel } from './AttachmentPanel'
+import { TaskActivityFeed } from './TaskActivityFeed'
 import {
   updateTaskStatus,
   updateTaskPriority,
@@ -142,7 +143,7 @@ function EditableTitle({
           }}
           rows={2}
           disabled={isPending}
-          className="w-full bg-transparent text-lg font-semibold text-zinc-900 resize-none leading-snug pb-0.5 border-0 border-b border-zinc-200 focus-visible:outline-none focus-visible:border-zinc-400 transition-colors duration-150 disabled:opacity-60"
+          className="w-full bg-transparent text-lg font-semibold text-zinc-900 dark:text-zinc-100 resize-none leading-snug pb-0.5 border-0 border-b border-zinc-200 dark:border-zinc-700 focus-visible:outline-none focus-visible:border-zinc-400 dark:focus-visible:border-zinc-500 transition-colors duration-150 disabled:opacity-60"
         />
         {isPending && <Loader2 size={12} strokeWidth={1.5} className="absolute right-0 top-1 animate-spin text-zinc-400" />}
       </div>
@@ -209,7 +210,7 @@ function EditableDescription({
           rows={5}
           placeholder="Add a description…"
           disabled={isPending}
-          className="w-full bg-white text-sm text-zinc-900 placeholder:text-zinc-400 resize-none leading-relaxed px-3 py-2.5 rounded-lg border border-zinc-200 hover:border-zinc-300 focus-visible:outline-none focus-visible:border-zinc-300 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)] transition-colors duration-150 disabled:opacity-60"
+          className="w-full bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 resize-none leading-relaxed px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 focus-visible:outline-none focus-visible:border-zinc-300 dark:focus-visible:border-zinc-500 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)] transition-colors duration-150 disabled:opacity-60"
         />
         {isPending && <Loader2 size={12} strokeWidth={1.5} className="absolute right-2.5 bottom-2.5 animate-spin text-zinc-400" />}
       </div>
@@ -258,13 +259,13 @@ function DatePickerButton({
           type="button"
           className={cn(
             'flex items-center gap-2 h-9 w-full px-3 text-sm rounded-lg border transition-colors duration-150',
-            'border-zinc-200 bg-white hover:border-zinc-300',
-            'focus-visible:outline-none focus-visible:border-zinc-300 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]',
+            'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-600',
+            'focus-visible:outline-none focus-visible:border-zinc-300 dark:focus-visible:border-zinc-500 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]',
             !value && 'text-zinc-400',
           )}
         >
           <CalendarIcon size={13} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
-          <span className={value ? 'text-zinc-900' : 'text-zinc-400'}>
+          <span className={value ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400'}>
             {value ? formatDisplayDate(value) : `Set ${label}`}
           </span>
         </button>
@@ -280,7 +281,7 @@ function DatePickerButton({
           initialFocus
         />
         {value && (
-          <div className="border-t border-zinc-100 px-3 py-2">
+          <div className="border-t border-zinc-100 dark:border-zinc-800 px-3 py-2">
             <button
               type="button"
               onClick={() => { onChange(null); setOpen(false) }}
@@ -462,7 +463,7 @@ export function TaskDetailSheet({
             mode === 'fullscreen' && 'task-panel-fullscreen',
             mode === 'sidebar'    && 'task-panel-sidebar',
             // Base layout
-            'fixed z-50 bg-white flex flex-col overflow-hidden',
+            'fixed z-50 bg-white dark:bg-[#1A1A1A] flex flex-col overflow-hidden',
             'shadow-2xl shadow-black/15',
             // Mobile fallback positioning (overridden by CSS !important at max-width:767px)
             'left-0 right-0 bottom-0 top-14',
@@ -472,7 +473,7 @@ export function TaskDetailSheet({
           {task ? (
             <>
               {/* ── Header ──────────────────────────────────────────────────── */}
-              <div className="flex items-start gap-4 px-6 py-5 border-b border-zinc-100 shrink-0 bg-white">
+              <div className="flex items-start gap-4 px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0 bg-white dark:bg-[#1A1A1A]">
                 <div className="flex-1 min-w-0">
                   <EditableTitle
                     taskId={task.id}
@@ -488,7 +489,7 @@ export function TaskDetailSheet({
                 {/* Controls: layout toggle (desktop) + close */}
                 <div className="flex items-center gap-2 shrink-0 mt-0.5">
                   {/* Layout toggle — desktop only */}
-                  <div className="hidden md:flex items-center bg-zinc-100 rounded-lg p-0.5 gap-0.5">
+                  <div className="hidden md:flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5 gap-0.5">
                     {(
                       [
                         { id: 'modal',      icon: LayoutGrid, title: 'Modal' },
@@ -503,8 +504,8 @@ export function TaskDetailSheet({
                         className={cn(
                           'p-1.5 rounded-md transition-all duration-150',
                           mode === id
-                            ? 'bg-white shadow-sm text-black'
-                            : 'text-zinc-400 hover:text-zinc-600'
+                            ? 'bg-white dark:bg-zinc-700 shadow-sm text-black dark:text-white'
+                            : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
                         )}
                       >
                         <Icon size={13} strokeWidth={1.5} />
@@ -513,7 +514,7 @@ export function TaskDetailSheet({
                   </div>
 
                   {/* Close */}
-                  <DialogPrimitive.Close className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black hover:bg-zinc-100 transition-all duration-150">
+                  <DialogPrimitive.Close className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-150">
                     <X size={15} strokeWidth={1.5} />
                     <span className="sr-only">Close</span>
                   </DialogPrimitive.Close>
@@ -531,7 +532,7 @@ export function TaskDetailSheet({
                 {/* ── Left / Main pane ──────────────────────────────────────── */}
                 <div className={cn(
                   'px-6 py-5 space-y-6',
-                  mode !== 'sidebar' && 'flex-1 overflow-visible md:overflow-y-auto md:border-r md:border-zinc-100',
+                  mode !== 'sidebar' && 'flex-1 overflow-visible md:overflow-y-auto md:border-r md:border-zinc-100 dark:md:border-zinc-800',
                   mode === 'sidebar' && 'w-full',
                 )}>
 
@@ -584,11 +585,13 @@ export function TaskDetailSheet({
                     <div className="space-y-1.5">
                       <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest flex items-center gap-1">
                         <CalendarIcon size={10} strokeWidth={1.5} />Start Date
+                        <span className="ml-auto text-[9px] text-zinc-300 normal-case tracking-normal">locked</span>
                       </p>
+                      {/* Start date is read-only for existing tasks — only editable at creation */}
                       <DatePickerButton
                         label="start date"
                         value={task.start_date}
-                        canEdit={canEdit}
+                        canEdit={false}
                         onChange={handleStartDateChange}
                       />
                     </div>
@@ -620,7 +623,7 @@ export function TaskDetailSheet({
                             <div className="flex items-center gap-2 min-w-0">
                               <Avatar className="h-5 w-5 shrink-0">
                                 {selectedMember.avatar_url && <AvatarImage src={selectedMember.avatar_url} />}
-                                <AvatarFallback className="text-[8px] bg-zinc-100 text-zinc-600">
+                                <AvatarFallback className="text-[8px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                                   {getInitials(selectedMember.full_name || selectedMember.email)}
                                 </AvatarFallback>
                               </Avatar>
@@ -641,7 +644,7 @@ export function TaskDetailSheet({
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-5 w-5 shrink-0">
                                   {m.avatar_url && <AvatarImage src={m.avatar_url} />}
-                                  <AvatarFallback className="text-[8px] bg-zinc-100 text-zinc-600">
+                                  <AvatarFallback className="text-[8px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                                     {getInitials(m.full_name || m.email)}
                                   </AvatarFallback>
                                 </Avatar>
@@ -655,7 +658,7 @@ export function TaskDetailSheet({
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6 shrink-0">
                           {assignee.avatar_url && <AvatarImage src={assignee.avatar_url} />}
-                          <AvatarFallback className="text-[9px] bg-zinc-100 text-zinc-600">
+                          <AvatarFallback className="text-[9px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
                             {getInitials(assignee.full_name || assignee.email)}
                           </AvatarFallback>
                         </Avatar>
@@ -713,7 +716,7 @@ export function TaskDetailSheet({
 
                   {/* Admin: Delete */}
                   {isAdmin && (
-                    <div className="pt-4 border-t border-zinc-100">
+                    <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
                       <button
                         onClick={handleDelete}
                         disabled={isDeleting}
@@ -731,20 +734,29 @@ export function TaskDetailSheet({
 
                 {/* ── Right / Activity pane ─────────────────────────────────── */}
                 <div className={cn(
-                  'px-6 pb-6 bg-[#F9FAFB] border-t border-zinc-100',
+                  'px-6 pb-6 bg-[#F9FAFB] dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800',
                   mode !== 'sidebar' && 'md:w-[360px] md:shrink-0 md:overflow-y-auto md:border-t-0',
                   mode === 'sidebar' && 'w-full',
                 )}>
-                  <div className="sticky top-0 bg-[#F9FAFB] pt-5 pb-3 mb-1 border-b border-zinc-100 z-10">
+                  {/* ── Audit Trail ───────────────────────────────────────── */}
+                  <div className="sticky top-0 bg-[#F9FAFB] dark:bg-zinc-900 pt-5 pb-3 mb-3 border-b border-zinc-100 dark:border-zinc-800 z-10">
                     <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">
-                      Activity
+                      History
                     </p>
                   </div>
-                  <CommentFeed
-                    taskId={task.id}
-                    currentUserProfile={currentUserProfile}
-                    members={workspaceMembers}
-                  />
+                  <TaskActivityFeed taskId={task.id} />
+
+                  {/* ── Comments ──────────────────────────────────────────── */}
+                  <div className="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                    <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest mb-3">
+                      Comments
+                    </p>
+                    <CommentFeed
+                      taskId={task.id}
+                      currentUserProfile={currentUserProfile}
+                      members={workspaceMembers}
+                    />
+                  </div>
                 </div>
 
               </div>

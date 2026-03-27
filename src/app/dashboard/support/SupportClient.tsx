@@ -50,10 +50,10 @@ export function SupportClient({ quickContacts, workspaceId }: SupportClientProps
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="mb-10 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 bg-zinc-100 rounded-2xl mb-4">
-          <MessageCircle size={22} strokeWidth={1.5} className="text-zinc-700" />
+        <div className="inline-flex items-center justify-center w-12 h-12 bg-zinc-100 dark:bg-zinc-800 rounded-2xl mb-4">
+          <MessageCircle size={22} strokeWidth={1.5} className="text-zinc-700 dark:text-zinc-300" />
         </div>
-        <h1 className="text-2xl font-semibold text-black tracking-tight">How can we help?</h1>
+        <h1 className="text-2xl font-semibold text-black dark:text-white tracking-tight">How can we help?</h1>
         <p className="mt-2 text-sm text-zinc-500 max-w-sm mx-auto">
           Send us a message and we'll get back to you. You'll receive a notification when we reply.
         </p>
@@ -63,8 +63,8 @@ export function SupportClient({ quickContacts, workspaceId }: SupportClientProps
 
         {/* ── Contact form ──────────────────────────────────────────────── */}
         <div className="md:col-span-2">
-          <div className="bg-white border border-zinc-100 rounded-xl p-6">
-            <h2 className="text-sm font-semibold text-black mb-5">Send a message</h2>
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-6">
+            <h2 className="text-sm font-semibold text-black dark:text-white mb-5">Send a message</h2>
 
             {sent ? (
               <div className="py-8 flex flex-col items-center text-center gap-3">
@@ -121,21 +121,21 @@ export function SupportClient({ quickContacts, workspaceId }: SupportClientProps
         {/* ── Quick contacts + info ──────────────────────────────────────── */}
         <div className="space-y-4">
           {/* Quick contacts */}
-          <div className="bg-white border border-zinc-100 rounded-xl p-5">
-            <h2 className="text-xs font-semibold text-zinc-900 uppercase tracking-widest mb-4">Quick Contacts</h2>
+          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-5">
+            <h2 className="text-xs font-semibold text-zinc-900 dark:text-white uppercase tracking-widest mb-4">Quick Contacts</h2>
             <div className="space-y-4">
               {quickContacts.length > 0 ? (
                 quickContacts.map((contact) => (
                   <div key={contact.email} className="flex items-start gap-3">
-                    <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-semibold text-zinc-600">
+                    <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center text-xs font-semibold text-zinc-600 dark:text-zinc-300">
                       {contact.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-black truncate whitespace-nowrap">{contact.name}</p>
+                      <p className="text-sm font-medium text-black dark:text-white truncate whitespace-nowrap">{contact.name}</p>
                       <p className="text-xs text-zinc-500 whitespace-nowrap">{contact.role}</p>
                       <a
                         href={`mailto:${contact.email}`}
-                        className="text-xs text-zinc-400 hover:text-black transition-colors truncate whitespace-nowrap block"
+                        className="text-xs text-zinc-400 hover:text-black dark:hover:text-white transition-colors truncate whitespace-nowrap block"
                       >
                         {contact.email}
                       </a>
@@ -148,7 +148,7 @@ export function SupportClient({ quickContacts, workspaceId }: SupportClientProps
                     <Mail size={14} strokeWidth={1.5} className="text-zinc-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-black">Clikaa Studio</p>
+                    <p className="text-sm font-medium text-black dark:text-white">Clikaa Studio</p>
                     <p className="text-xs text-zinc-500">Lead Designer</p>
                     <a href="mailto:hello@clikaa.com" className="text-xs text-zinc-400 hover:text-black transition-colors">
                       hello@clikaa.com
@@ -160,23 +160,23 @@ export function SupportClient({ quickContacts, workspaceId }: SupportClientProps
           </div>
 
           {/* Response time info */}
-          <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-5">
+          <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <Clock size={14} strokeWidth={1.5} className="text-zinc-500" />
-              <h2 className="text-xs font-semibold text-zinc-900 uppercase tracking-widest">Response Times</h2>
+              <h2 className="text-xs font-semibold text-zinc-900 dark:text-white uppercase tracking-widest">Response Times</h2>
             </div>
-            <div className="space-y-2.5 text-xs text-zinc-600">
+            <div className="space-y-2.5 text-xs text-zinc-600 dark:text-zinc-400">
               <div className="flex items-center justify-between">
                 <span>General enquiries</span>
-                <span className="font-medium text-black">24–48 hrs</span>
+                <span className="font-medium text-black dark:text-white">24–48 hrs</span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Urgent project issues</span>
-                <span className="font-medium text-black">Same day</span>
+                <span className="font-medium text-black dark:text-white">Same day</span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Billing questions</span>
-                <span className="font-medium text-black">1–2 days</span>
+                <span className="font-medium text-black dark:text-white">1–2 days</span>
               </div>
             </div>
           </div>

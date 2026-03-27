@@ -237,9 +237,9 @@ export function KanbanBoard({
     <>
       <div className="flex flex-col h-full">
         {/* ── Board header ─────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-4 md:px-6 py-4 bg-white border-b border-zinc-100 shrink-0">
+        <div className="flex items-center justify-between px-4 md:px-6 py-4 bg-white dark:bg-[#1A1A1A] border-b border-zinc-100 dark:border-zinc-800 shrink-0">
           <div>
-            <h1 className="text-base font-semibold text-black tracking-tight">
+            <h1 className="text-base font-semibold text-black dark:text-white tracking-tight">
               {workspaceName}
             </h1>
             <p className="text-xs text-zinc-400 mt-0.5">

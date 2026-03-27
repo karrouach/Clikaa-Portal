@@ -156,7 +156,7 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
       {/* ── Page heading ─────────────────────────────────────────────────── */}
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-black tracking-tight">Contracts</h1>
+          <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">Contracts</h1>
           <p className="mt-1 text-sm text-zinc-500">Manage client agreements and templates.</p>
         </div>
         {activeTab === 'contracts' && (
@@ -174,7 +174,7 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
       </div>
 
       {/* ── Tabs ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-0.5 mb-6 border-b border-zinc-100">
+      <div className="flex items-center gap-0.5 mb-6 border-b border-zinc-100 dark:border-zinc-800">
         {tabs.map(({ key, label, count }) => (
           <button
             key={key}
@@ -182,12 +182,12 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
             className={cn(
               'relative px-4 pb-3 pt-1 text-sm font-medium transition-colors duration-150',
               activeTab === key
-                ? 'text-black after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-black'
-                : 'text-zinc-400 hover:text-zinc-600'
+                ? 'text-black dark:text-white after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-black dark:after:bg-white'
+                : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
             )}
           >
             {label}
-            <span className={cn('ml-1.5 text-[10px] tabular-nums px-1.5 py-0.5 rounded-full', activeTab === key ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-500')}>
+            <span className={cn('ml-1.5 text-[10px] tabular-nums px-1.5 py-0.5 rounded-full', activeTab === key ? 'bg-zinc-900 dark:bg-white text-white dark:text-black' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400')}>
               {count}
             </span>
           </button>
@@ -196,17 +196,17 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
 
       {/* ── Contracts tab ────────────────────────────────────────────────── */}
       {activeTab === 'contracts' && (
-        <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
           {contracts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
               <FileText size={28} strokeWidth={1} className="text-zinc-300 mb-1" />
-              <p className="text-sm font-medium text-zinc-900">No contracts yet</p>
+              <p className="text-sm font-medium text-zinc-900 dark:text-white">No contracts yet</p>
               <p className="text-sm text-zinc-400">Create your first contract using the button above.</p>
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-100 bg-zinc-50">
+                <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                   <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Title</th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Workspace</th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Status</th>
@@ -216,11 +216,11 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
               </thead>
               <tbody>
                 {contracts.map((c) => (
-                  <tr key={c.id} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/50 transition-colors">
+                  <tr key={c.id} className="border-b border-zinc-50 dark:border-zinc-800 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
                     <td className="px-6 py-3.5">
                       <button
                         onClick={() => setViewContract(c)}
-                        className="font-medium text-black hover:underline underline-offset-2 text-left"
+                        className="font-medium text-black dark:text-white hover:underline underline-offset-2 text-left"
                       >
                         {c.title}
                       </button>
@@ -242,7 +242,7 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
                           <button
                             onClick={() => handleSend(c)}
                             disabled={isPending}
-                            className="flex items-center gap-1 h-7 px-2.5 text-xs text-zinc-600 hover:text-black hover:bg-zinc-100 rounded-lg transition-colors disabled:opacity-40"
+                            className="flex items-center gap-1 h-7 px-2.5 text-xs text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-40"
                             title="Send for signature"
                           >
                             <Send size={12} strokeWidth={1.5} />
@@ -252,7 +252,7 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
                         <button
                           onClick={() => handleDelete(c.id)}
                           disabled={isPending}
-                          className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors disabled:opacity-40"
+                          className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors disabled:opacity-40"
                           title="Delete"
                         >
                           <Trash2 size={13} strokeWidth={1.5} />
@@ -269,17 +269,17 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
 
       {/* ── Templates tab ────────────────────────────────────────────────── */}
       {activeTab === 'templates' && (
-        <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
           {templates.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
               <BookTemplate size={28} strokeWidth={1} className="text-zinc-300 mb-1" />
-              <p className="text-sm font-medium text-zinc-900">No templates yet</p>
+              <p className="text-sm font-medium text-zinc-900 dark:text-white">No templates yet</p>
               <p className="text-sm text-zinc-400">Create reusable contract templates to speed up your workflow.</p>
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-100 bg-zinc-50">
+                <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                   <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Template Name</th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Preview</th>
                   <th className="px-4 py-3 w-10" />
@@ -287,8 +287,8 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
               </thead>
               <tbody>
                 {templates.map((t) => (
-                  <tr key={t.id} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/50 transition-colors">
-                    <td className="px-6 py-3.5 font-medium text-black">{t.template_name}</td>
+                  <tr key={t.id} className="border-b border-zinc-50 dark:border-zinc-800 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
+                    <td className="px-6 py-3.5 font-medium text-black dark:text-white">{t.template_name}</td>
                     <td className="px-4 py-3.5 text-zinc-400 text-xs hidden md:table-cell max-w-sm truncate">
                       {t.body_text.replace(/[#*\n]/g, ' ').trim().slice(0, 100)}…
                     </td>
