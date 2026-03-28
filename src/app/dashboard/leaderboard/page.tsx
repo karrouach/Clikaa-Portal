@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Trophy, Star } from 'lucide-react'
 import { LeaderboardFilters } from './LeaderboardFilters'
@@ -201,9 +202,10 @@ export default async function LeaderboardPage({ searchParams }: Props) {
             const rankStyle = RANK_STYLES[rank] ?? 'bg-zinc-100 text-zinc-600'
 
             return (
-              <div
+              <Link
                 key={member.id}
-                className="px-5 py-4 grid grid-cols-[2rem_1fr_8rem_5rem] gap-4 items-center hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors"
+                href={`/dashboard/team/${member.id}`}
+                className="px-5 py-4 grid grid-cols-[2rem_1fr_8rem_5rem] gap-4 items-center hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
               >
                 {/* Rank badge */}
                 <div className={cn('w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0', rankStyle)}>
@@ -242,7 +244,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
                 <p className="text-sm font-semibold text-black dark:text-white tabular-nums text-right">
                   {member.completedTasks}
                 </p>
-              </div>
+              </Link>
             )
           })}
         </div>

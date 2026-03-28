@@ -190,8 +190,8 @@ export function CommandMenu({ isAdmin, workspaces }: CommandMenuProps) {
         aria-label="Search (⌘K)"
         className="
           flex items-center gap-2 h-7 px-3
-          text-xs text-zinc-400 border border-zinc-200 rounded-lg
-          hover:border-zinc-300 hover:text-zinc-600
+          text-xs text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-700 rounded-lg
+          hover:border-zinc-300 dark:hover:border-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-300
           transition-colors duration-150
         "
       >
@@ -215,7 +215,7 @@ export function CommandMenu({ isAdmin, workspaces }: CommandMenuProps) {
             className="
               fixed left-1/2 top-[18vh] z-50 -translate-x-1/2
               w-full max-w-lg
-              bg-white shadow-2xl shadow-black/10 rounded-xl overflow-hidden
+              bg-white dark:bg-[#1A1A1A] shadow-2xl shadow-black/10 dark:shadow-black/60 rounded-xl overflow-hidden
               data-[state=open]:animate-dialog-show
               data-[state=closed]:animate-dialog-hide
             "
@@ -226,7 +226,7 @@ export function CommandMenu({ isAdmin, workspaces }: CommandMenuProps) {
             </DialogPrimitive.Description>
 
             {/* Search bar */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-100">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-100 dark:border-zinc-800">
               <Search size={15} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
               <input
                 ref={inputRef}
@@ -234,15 +234,15 @@ export function CommandMenu({ isAdmin, workspaces }: CommandMenuProps) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={isAdmin ? 'Search tasks, workspaces, team…' : 'Search tasks…'}
-                className="flex-1 text-sm text-zinc-900 placeholder:text-zinc-400 bg-transparent outline-none"
+                className="flex-1 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 bg-transparent outline-none"
               />
               {loading && <Loader2 size={13} strokeWidth={1.5} className="animate-spin text-zinc-300 shrink-0" />}
-              <kbd className="hidden sm:block text-[10px] text-zinc-300 font-mono border border-zinc-100 rounded px-1.5 py-0.5">esc</kbd>
+              <kbd className="hidden sm:block text-[10px] text-zinc-300 dark:text-zinc-600 font-mono border border-zinc-100 dark:border-zinc-700 rounded px-1.5 py-0.5">esc</kbd>
             </div>
 
             {/* Admin filter chips */}
             {isAdmin && (
-              <div className="flex items-center gap-1.5 px-4 py-2 border-b border-zinc-100">
+              <div className="flex items-center gap-1.5 px-4 py-2 border-b border-zinc-100 dark:border-zinc-800">
                 {FILTERS.map(({ key, label }) => (
                   <button
                     key={key}
@@ -250,8 +250,8 @@ export function CommandMenu({ isAdmin, workspaces }: CommandMenuProps) {
                     className={cn(
                       'px-3 h-6 text-[11px] font-medium rounded-full transition-colors duration-100',
                       filter === key
-                        ? 'bg-black text-white'
-                        : 'text-zinc-500 hover:text-black hover:bg-zinc-100'
+                        ? 'bg-black dark:bg-white text-white dark:text-black'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
                     )}
                   >
                     {label}
@@ -276,14 +276,14 @@ export function CommandMenu({ isAdmin, workspaces }: CommandMenuProps) {
                     onClick={() => handleSelect(result)}
                     className={cn(
                       'w-full flex items-start gap-3 px-4 py-2.5 text-left transition-colors duration-75',
-                      i === activeIndex ? 'bg-zinc-50' : 'hover:bg-zinc-50'
+                      i === activeIndex ? 'bg-zinc-50 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800'
                     )}
                   >
                     {result.type === 'task' && (
                       <>
-                        <ClipboardList size={14} strokeWidth={1.5} className="text-zinc-300 shrink-0 mt-0.5" />
+                        <ClipboardList size={14} strokeWidth={1.5} className="text-zinc-300 dark:text-zinc-600 shrink-0 mt-0.5" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm text-zinc-900 truncate">{result.title}</p>
+                          <p className="text-sm text-zinc-900 dark:text-white truncate">{result.title}</p>
                           {result.workspaceName && (
                             <p className="text-[11px] text-zinc-400 mt-0.5">{result.workspaceName}</p>
                           )}
@@ -296,14 +296,14 @@ export function CommandMenu({ isAdmin, workspaces }: CommandMenuProps) {
 
                     {result.type === 'workspace' && (
                       <>
-                        <Building2 size={14} strokeWidth={1.5} className="text-zinc-300 shrink-0 mt-0.5" />
+                        <Building2 size={14} strokeWidth={1.5} className="text-zinc-300 dark:text-zinc-600 shrink-0 mt-0.5" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm text-zinc-900 truncate">{result.name}</p>
+                          <p className="text-sm text-zinc-900 dark:text-white truncate">{result.name}</p>
                           {result.description && (
                             <p className="text-[11px] text-zinc-400 mt-0.5 truncate">{result.description}</p>
                           )}
                         </div>
-                        <span className="ml-auto shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500">
+                        <span className="ml-auto shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
                           workspace
                         </span>
                       </>
@@ -314,12 +314,12 @@ export function CommandMenu({ isAdmin, workspaces }: CommandMenuProps) {
                         {result.avatar_url ? (
                           <img src={result.avatar_url} alt="" className="shrink-0 w-5 h-5 rounded-full object-cover mt-0.5" />
                         ) : (
-                          <div className="shrink-0 w-5 h-5 rounded-full bg-zinc-100 flex items-center justify-center mt-0.5">
-                            <span className="text-[8px] font-semibold text-zinc-500">{getInitials(result.name)}</span>
+                          <div className="shrink-0 w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center mt-0.5">
+                            <span className="text-[8px] font-semibold text-zinc-500 dark:text-zinc-300">{getInitials(result.name)}</span>
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm text-zinc-900 truncate">{result.name}</p>
+                          <p className="text-sm text-zinc-900 dark:text-white truncate">{result.name}</p>
                           <p className="text-[11px] text-zinc-400 mt-0.5 truncate">{result.email}</p>
                         </div>
                         <span className={cn('ml-auto shrink-0 text-[10px] px-1.5 py-0.5 rounded capitalize', ROLE_CHIP[result.role] ?? 'bg-zinc-100 text-zinc-500')}>
@@ -333,7 +333,7 @@ export function CommandMenu({ isAdmin, workspaces }: CommandMenuProps) {
             </div>
 
             {/* Footer hints */}
-            <div className="px-4 py-2 border-t border-zinc-50 flex items-center gap-4">
+            <div className="px-4 py-2 border-t border-zinc-50 dark:border-zinc-800 flex items-center gap-4">
               {[
                 { key: '↑↓',  label: 'navigate' },
                 { key: '↵',   label: 'open' },

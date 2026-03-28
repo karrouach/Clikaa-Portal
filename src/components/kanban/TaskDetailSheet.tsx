@@ -246,7 +246,7 @@ function DatePickerButton({
 
   if (!canEdit) {
     return (
-      <p className="text-sm text-zinc-900">
+      <p className="flex items-center gap-2 h-9 w-full px-3 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">
         {value ? formatDisplayDate(value) : <span className="text-zinc-400 italic">Not set</span>}
       </p>
     )
@@ -585,7 +585,6 @@ export function TaskDetailSheet({
                     <div className="space-y-1.5">
                       <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest flex items-center gap-1">
                         <CalendarIcon size={10} strokeWidth={1.5} />Start Date
-                        <span className="ml-auto text-[9px] text-zinc-300 normal-case tracking-normal">locked</span>
                       </p>
                       {/* Start date is read-only for existing tasks — only editable at creation */}
                       <DatePickerButton

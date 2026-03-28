@@ -67,10 +67,32 @@ export async function createInvoice(input: CreateInvoiceInput) {
   return { data }
 }
 
+export async function fetchInvoiceActivities(invoiceDbId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated', data: null }
+
+  const { data, error } = await supabase
+    .from('invoice_activities')
+    .select('event, created_at')
+    .eq('invoice_id', invoiceDbId)
+    .order('created_at', { ascending: true })
+
+  if (error) return { error: error.message, data: null }
+  return { data, error: null }
+}
+
 export async function updateInvoiceStatus(id: string, status: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
+
+  // Fetch old status for logging
+  const { data: existing } = await supabase
+    .from('invoices')
+    .select('status')
+    .eq('id', id)
+    .single()
 
   const updateData: Record<string, unknown> = { status }
   if (status === 'pending' || status === 'paid') {
@@ -85,6 +107,16 @@ export async function updateInvoiceStatus(id: string, status: string) {
     .single()
 
   if (error) return { error: error.message }
+
+  // Log the status change activity (non-fatal)
+  const oldStatus = existing?.status ?? null
+  const eventLabel = status === 'paid'
+    ? 'Marked as paid'
+    : `Status changed to ${status.charAt(0).toUpperCase() + status.slice(1)}`
+
+  void supabase
+    .from('invoice_activities')
+    .insert({ invoice_id: id, user_id: user.id, event: eventLabel, old_status: oldStatus, new_status: status })
 
   // Fire in-app notifications to workspace clients when invoice is sent
   if (status === 'pending' && invoice?.workspace_id) {

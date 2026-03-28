@@ -134,7 +134,7 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
   const members = (memberships ?? []).map(m => ({
     membershipId: m.id,
     userId:       m.user_id,
-    role:         m.role as 'admin' | 'client',
+    role:         m.role as 'admin' | 'designer' | 'client',
     profile:      m.profiles as unknown as MemberProfile | null,
   }))
 
@@ -142,7 +142,7 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-8 max-w-3xl mx-auto space-y-6">
+      <div className="px-6 py-8 max-w-5xl mx-auto space-y-6">
 
         {/* ── Heading ──────────────────────────────────────────────────── */}
         <div>
@@ -232,7 +232,7 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
                   {members.length} member{members.length !== 1 ? 's' : ''}
                 </span>
               </h2>
-              <InviteButton workspaceId={workspaceId} />
+              {isAdmin && <InviteButton workspaceId={workspaceId} />}
             </div>
 
             <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
@@ -265,16 +265,16 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
                         {p?.title ? (
                           <p className="text-xs text-zinc-400 truncate">{p.title}</p>
                         ) : (
-                          <p className="text-xs text-zinc-400">
-                            {m.role === 'admin' ? 'Admin' : 'Client'}
-                          </p>
+                          <p className="text-xs text-zinc-400 capitalize">{m.role}</p>
                         )}
                       </div>
 
-                      <span className={`shrink-0 inline-flex items-center px-2 py-0.5 text-[10px] font-medium ${
-                        m.role === 'admin' ? 'bg-zinc-900 dark:bg-zinc-700 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
+                      <span className={`shrink-0 inline-flex items-center px-2 py-0.5 text-[10px] font-medium capitalize ${
+                        m.role === 'admin' ? 'bg-zinc-900 dark:bg-zinc-700 text-white'
+                        : m.role === 'designer' ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400'
+                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
                       }`}>
-                        {m.role === 'admin' ? 'Admin' : 'Client'}
+                        {m.role}
                       </span>
                     </div>
                   )

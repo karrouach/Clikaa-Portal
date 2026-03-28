@@ -124,7 +124,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
       <button
         onClick={handleToggle}
         aria-label="Notifications"
-        className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-black hover:bg-zinc-100 transition-colors rounded-lg relative"
+        className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors rounded-lg relative"
       >
         <Bell size={16} strokeWidth={1.5} />
         {unreadCount > 0 && (
@@ -134,10 +134,10 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute right-0 top-10 w-80 bg-white border border-zinc-200 rounded-xl shadow-lg z-50 overflow-hidden">
+        <div className="absolute right-0 top-10 w-80 bg-white dark:bg-[#1A1A1A] border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg dark:shadow-black/40 z-50 overflow-hidden">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-zinc-100 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-black">
+          <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-black dark:text-white">
               Notifications
               {unreadCount > 0 && (
                 <span className="ml-2 inline-flex items-center justify-center w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full">
@@ -160,7 +160,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
               <p className="text-sm text-zinc-400">No notifications yet.</p>
             </div>
           ) : (
-            <div className="max-h-80 overflow-y-auto divide-y divide-zinc-50">
+            <div className="max-h-80 overflow-y-auto divide-y divide-zinc-50 dark:divide-zinc-800">
               {notifications.map((n) => {
                 const isUnread = !n.read_status
 
@@ -168,7 +168,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                   <div
                     className={cn(
                       'flex items-start gap-3 px-4 py-3 group/item transition-colors',
-                      isUnread ? 'bg-zinc-50' : 'hover:bg-zinc-50/50'
+                      isUnread ? 'bg-zinc-50 dark:bg-zinc-800/60' : 'hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40'
                     )}
                   >
                     {/* Unread dot */}
@@ -183,7 +183,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                     <div className="flex-1 min-w-0">
                       <p className={cn(
                         'text-sm leading-snug',
-                        isUnread ? 'text-zinc-900 font-medium' : 'text-zinc-500 font-normal'
+                        isUnread ? 'text-zinc-900 dark:text-white font-medium' : 'text-zinc-500 dark:text-zinc-400 font-normal'
                       )}>
                         {n.message}
                       </p>

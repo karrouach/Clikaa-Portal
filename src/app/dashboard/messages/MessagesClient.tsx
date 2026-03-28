@@ -293,7 +293,7 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
   }
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] md:h-[calc(100vh-6rem)] overflow-hidden rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-[#1A1A1A]">
+    <div className="flex h-full overflow-hidden rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-[#1A1A1A]">
 
       {/* ── Conversation list ──────────────────────────────────────────────── */}
       <div className={cn(

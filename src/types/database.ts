@@ -195,6 +195,51 @@ export type Database = {
           },
         ]
       }
+      invoice_activities: {
+        Row: {
+          id: string
+          invoice_id: string
+          user_id: string
+          event: string
+          old_status: string | null
+          new_status: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          invoice_id: string
+          user_id: string
+          event: string
+          old_status?: string | null
+          new_status?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          invoice_id?: string
+          user_id?: string
+          event?: string
+          old_status?: string | null
+          new_status?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'invoice_activities_invoice_id_fkey'
+            columns: ['invoice_id']
+            isOneToOne: false
+            referencedRelation: 'invoices'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'invoice_activities_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       task_activities: {
         Row: {
           id: string

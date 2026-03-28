@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X, Download, Send, CheckCircle2, Pencil, Trash2 } from 'lucide-react'
@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { Invoice, InvoiceStatus } from './InvoicesClient'
 import { STATUS_STYLES, STATUS_LABELS } from './InvoicesClient'
-import { updateInvoiceStatus, deleteInvoice as deleteInvoiceAction } from './invoice-actions'
+import { updateInvoiceStatus, deleteInvoice as deleteInvoiceAction, fetchInvoiceActivities } from './invoice-actions'
 
 // ─── All statuses available to set ────────────────────────────────────────────
 const ALL_STATUSES: InvoiceStatus[] = ['draft', 'pending', 'paid', 'overdue', 'failed', 'cancelled']
@@ -89,18 +89,38 @@ export function InvoiceViewPanel({
 }: InvoiceViewPanelProps) {
   const router = useRouter()
   const [activity, setActivity] = useState<ActivityItem[]>([])
+  const [dbActivity, setDbActivity] = useState<ActivityItem[]>([])
   const [statusMenuOpen, setStatusMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
 
-  // Sync activity when invoice changes
-  const rawActivity = invoice ? (MOCK_ACTIVITY[invoice.id] ?? [
-    { event: 'Invoice created', date: formatNow() },
-  ]) : []
+  // Fetch real activities from DB when invoice.dbId is available
+  useEffect(() => {
+    if (!invoice?.dbId) {
+      setDbActivity([])
+      return
+    }
+    fetchInvoiceActivities(invoice.dbId).then(({ data }) => {
+      if (data) {
+        setDbActivity(data.map(d => ({
+          event: d.event,
+          date: new Date(d.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        })))
+      }
+    })
+  }, [invoice?.dbId])
 
-  // Merge local additions into base activity
+  // Fall back to mock data only when no real DB activities exist
+  const rawActivity = invoice
+    ? (dbActivity.length > 0 ? [] : (MOCK_ACTIVITY[invoice.id] ?? [{ event: 'Invoice created', date: formatNow() }]))
+    : []
+
+  // Merge: DB activities first, then mock fallback, then local additions
   const mergedActivity = invoice
-    ? [...rawActivity, ...activity.filter(a => !rawActivity.some(r => r.event === a.event && r.date === a.date))]
+    ? [...dbActivity, ...rawActivity, ...activity.filter(a =>
+        !dbActivity.some(r => r.event === a.event && r.date === a.date) &&
+        !rawActivity.some(r => r.event === a.event && r.date === a.date)
+      )]
     : []
 
   // Use rawData line items if available, else mock
@@ -323,7 +343,13 @@ export function InvoiceViewPanel({
     if (invoice?.dbId) {
       const result = await updateInvoiceStatus(invoice.dbId, status)
       if (result.error) toast.error(result.error)
-      else router.refresh()
+      else {
+        router.refresh()
+        const eventLabel = status === 'paid'
+          ? 'Marked as paid'
+          : `Status changed to ${STATUS_LABELS[status]}`
+        setDbActivity(prev => [...prev, { event: eventLabel, date: formatNow() }])
+      }
     }
   }
 

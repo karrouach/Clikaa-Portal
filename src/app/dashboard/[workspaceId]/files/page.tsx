@@ -75,7 +75,7 @@ export default async function WorkspaceFilesPage({ params }: Props) {
 
         {/* ── Heading ──────────────────────────────────────────────────── */}
         <div className="mb-6">
-          <h1 className="text-xl font-semibold text-black tracking-tight">Asset Vault</h1>
+          <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">Asset Vault</h1>
           <p className="mt-1 text-sm text-zinc-500">
             Brand files, guidelines, and source assets for this project.
           </p>

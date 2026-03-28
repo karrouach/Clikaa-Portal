@@ -20,7 +20,7 @@ export default async function SettingsPage() {
     .single()
 
   return (
-    <div className="animate-fade-in max-w-md">
+    <div className="animate-fade-in max-w-3xl mx-auto">
       {/* Heading */}
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-black dark:text-white tracking-tight">Settings</h1>
@@ -28,7 +28,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* Profile card */}
-      <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 p-8">
+      <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-8">
         <h2 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-8">
           Profile
         </h2>

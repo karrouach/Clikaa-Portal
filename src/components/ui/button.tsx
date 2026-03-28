@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // Solid black — primary CTA
-        default: 'bg-black text-white hover:bg-zinc-800 active:bg-zinc-900',
+        default: 'bg-black text-white hover:bg-zinc-800 active:bg-zinc-900 dark:bg-white dark:text-black dark:hover:bg-gray-200',
         // Destructive red
         destructive: 'bg-red-600 text-white hover:bg-red-700',
         // Outlined

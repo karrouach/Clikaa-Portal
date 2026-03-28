@@ -52,12 +52,14 @@ export default async function MessagesPage() {
     }))
 
     return (
-      <div className="animate-fade-in">
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold text-black tracking-tight">Messages</h1>
+      <div className="animate-fade-in flex flex-col h-full">
+        <div className="mb-4 shrink-0">
+          <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">Messages</h1>
           <p className="mt-1 text-sm text-zinc-500">Client and designer conversations.</p>
         </div>
-        <MessagesClient initialConversations={enriched} currentUserId={user.id} />
+        <div className="flex-1 overflow-hidden min-h-0">
+          <MessagesClient initialConversations={enriched} currentUserId={user.id} />
+        </div>
       </div>
     )
   }
@@ -103,16 +105,18 @@ export default async function MessagesPage() {
   const adminName = adminProfile?.full_name || adminProfile?.email?.split('@')[0] || 'Clikaa'
 
   return (
-    <div className="animate-fade-in">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-black tracking-tight">Messages</h1>
+    <div className="animate-fade-in flex flex-col h-full">
+      <div className="mb-4 shrink-0">
+        <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">Messages</h1>
         <p className="mt-1 text-sm text-zinc-500">Your conversations with the team.</p>
       </div>
-      <ClientMessagesClient
-        initialConversations={myConvs}
-        currentUserId={user.id}
-        adminName={adminName}
-      />
+      <div className="flex-1 overflow-hidden min-h-0">
+        <ClientMessagesClient
+          initialConversations={myConvs}
+          currentUserId={user.id}
+          adminName={adminName}
+        />
+      </div>
     </div>
   )
 }
