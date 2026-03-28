@@ -405,23 +405,23 @@ export default async function DashboardPage() {
             <NewWorkspaceButton />
             <Link
               href="/dashboard/invoices"
-              className="inline-flex items-center gap-1.5 h-8 px-3.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+              className="inline-flex items-center gap-1.5 h-9 px-4 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
             >
-              <Receipt size={13} strokeWidth={1.5} />
+              <Receipt size={14} strokeWidth={1.5} />
               Create Invoice
             </Link>
             <Link
               href="/dashboard/directory"
-              className="inline-flex items-center gap-1.5 h-8 px-3.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+              className="inline-flex items-center gap-1.5 h-9 px-4 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
             >
-              <UserPlus size={13} strokeWidth={1.5} />
+              <UserPlus size={14} strokeWidth={1.5} />
               Add Client
             </Link>
             <Link
               href="/dashboard/contracts"
-              className="inline-flex items-center gap-1.5 h-8 px-3.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+              className="inline-flex items-center gap-1.5 h-9 px-4 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
             >
-              <FolderUp size={13} strokeWidth={1.5} />
+              <FolderUp size={14} strokeWidth={1.5} />
               New Contract
             </Link>
           </div>
