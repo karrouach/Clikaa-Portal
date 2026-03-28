@@ -363,6 +363,12 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0, badgeCoun
                   isCollapsed={isCollapsed}
                 />
                 <NavLink
+                  href="/dashboard/leaderboard"
+                  icon={Trophy}
+                  label="Leaderboard"
+                  isCollapsed={isCollapsed}
+                />
+                <NavLink
                   href="/dashboard/invoices"
                   icon={Receipt}
                   label="Invoices"
@@ -378,12 +384,6 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0, badgeCoun
                   href="/dashboard/designer-invoices"
                   icon={Wallet}
                   label="Payments"
-                  isCollapsed={isCollapsed}
-                />
-                <NavLink
-                  href="/dashboard/leaderboard"
-                  icon={Trophy}
-                  label="Leaderboard"
                   isCollapsed={isCollapsed}
                 />
               </div>

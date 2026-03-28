@@ -15,7 +15,7 @@ type WorkspaceResult = { type: 'workspace'; id: string; name: string; descriptio
 type MemberResult  = { type: 'member';    id: string; name: string; email: string; role: string; avatar_url: string | null }
 type SearchResult  = TaskResult | WorkspaceResult | MemberResult
 
-type FilterType = 'all' | 'workspaces' | 'tasks' | 'team' | 'designers'
+type FilterType = 'all' | 'workspaces' | 'tasks' | 'team'
 
 // ─── Status chip colours ──────────────────────────────────────────────────────
 
@@ -137,8 +137,6 @@ export function CommandMenu({ isAdmin, workspaces }: CommandMenuProps) {
     filtered = filteredWorkspaces.slice(0, 8)
   } else if (filter === 'team') {
     filtered = filteredMembers.slice(0, 8)
-  } else if (filter === 'designers') {
-    filtered = filteredMembers.filter((m) => (m as MemberResult).role === 'designer').slice(0, 8)
   } else {
     // 'all': mix results
     filtered = [
@@ -182,7 +180,6 @@ export function CommandMenu({ isAdmin, workspaces }: CommandMenuProps) {
     { key: 'tasks',      label: 'Tasks' },
     { key: 'workspaces', label: 'Workspaces' },
     { key: 'team',       label: 'Team' },
-    { key: 'designers',  label: 'Designers' },
   ]
 
   return (

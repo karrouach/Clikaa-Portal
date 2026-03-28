@@ -106,7 +106,7 @@ export default async function TeamMemberProfilePage({ params }: Props) {
         className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-black dark:hover:text-white transition-colors mb-6"
       >
         <ArrowLeft size={14} strokeWidth={1.5} />
-        Back to Team
+        Back to directory
       </Link>
 
       {/* ── Profile card ─────────────────────────────────────────────────── */}

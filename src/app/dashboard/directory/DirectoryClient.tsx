@@ -153,7 +153,7 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
 
   const tabs = [
     { key: 'admins'    as const, label: 'Admins',    count: admins.length },
-    { key: 'designers' as const, label: 'Designers', count: designers.length },
+    { key: 'designers' as const, label: 'Internal Team', count: designers.length },
     { key: 'clients'   as const, label: 'Clients',   count: clients.length },
   ]
 

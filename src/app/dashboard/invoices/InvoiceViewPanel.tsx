@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X, Download, Send, CheckCircle2, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -86,6 +87,7 @@ export function InvoiceViewPanel({
   onEdit,
   isClient = false,
 }: InvoiceViewPanelProps) {
+  const router = useRouter()
   const [activity, setActivity] = useState<ActivityItem[]>([])
   const [statusMenuOpen, setStatusMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
@@ -321,6 +323,7 @@ export function InvoiceViewPanel({
     if (invoice?.dbId) {
       const result = await updateInvoiceStatus(invoice.dbId, status)
       if (result.error) toast.error(result.error)
+      else router.refresh()
     }
   }
 
@@ -370,7 +373,7 @@ export function InvoiceViewPanel({
                   <div className="min-w-0">
                     <div className="flex items-center gap-2.5 flex-wrap mb-1">
                       <span className="font-mono text-sm font-semibold text-black dark:text-white tracking-wide">
-                        {invoice.id}
+                        {invoice.invoice_number ?? invoice.id}
                       </span>
 
                       {/* Status badge — interactive for admins, static for clients */}
@@ -460,7 +463,7 @@ export function InvoiceViewPanel({
                     </button>
                     {invoice.status !== 'paid' && (
                       <button
-                        onClick={() => onMarkPaid(invoice.id)}
+                        onClick={() => handleStatusChange(invoice.id, 'paid')}
                         className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors duration-150"
                       >
                         <CheckCircle2 size={13} strokeWidth={1.5} />
