@@ -21,7 +21,7 @@ const buttonVariants = cva(
         link: 'text-black underline-offset-2 hover:underline p-0 h-auto',
       },
       size: {
-        default: 'h-10 px-4',
+        default: 'h-9 px-4',
         sm: 'h-8 px-3 text-xs',
         lg: 'h-12 px-6',
         icon: 'h-9 w-9',
@@ -30,12 +30,13 @@ const buttonVariants = cva(
         none: 'rounded-none',
         sm: 'rounded-sm',
         md: 'rounded-[var(--radius)]',
+        lg: 'rounded-lg',
       },
     },
     defaultVariants: {
       variant: 'default',
       size: 'default',
-      rounded: 'md',
+      rounded: 'lg',
     },
   }
 )

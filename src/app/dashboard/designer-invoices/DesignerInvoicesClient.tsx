@@ -227,13 +227,13 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
           </p>
         </div>
         {isAdmin ? (
-          <Button size="sm" rounded="sm" onClick={() => { setCreateOpen(true); resetCreate() }} className="gap-1.5 text-xs shrink-0">
-            <Plus size={13} strokeWidth={1.5} />
+          <Button onClick={() => { setCreateOpen(true); resetCreate() }} className="gap-1.5 shrink-0">
+            <Plus size={14} strokeWidth={1.5} />
             Create Invoice
           </Button>
         ) : (
-          <Button size="sm" rounded="sm" onClick={() => { setSubmitOpen(true); resetSubmit() }} className="gap-1.5 text-xs shrink-0">
-            <Plus size={13} strokeWidth={1.5} />
+          <Button onClick={() => { setSubmitOpen(true); resetSubmit() }} className="gap-1.5 shrink-0">
+            <Plus size={14} strokeWidth={1.5} />
             Submit Invoice
           </Button>
         )}

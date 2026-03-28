@@ -96,13 +96,13 @@ export default async function DashboardPage() {
   let revenueLastMonth      = 0
   let activeProjectsCount   = 0
   let activityItems: {
-    id: string; authorName: string; taskTitle: string; workspaceName: string; body: string; createdAt: string
+    id: string; authorName: string; taskTitle: string; workspaceName: string; workspaceId: string; body: string; createdAt: string
   }[] = []
   let latestConversations: {
     id: string; subject: string; clientName: string; updatedAt: string
   }[] = []
   let upcomingDeadlines: {
-    id: string; title: string; workspaceName: string; dueDate: string
+    id: string; title: string; workspaceName: string; workspaceId: string; dueDate: string
   }[] = []
   let clientOverview: {
     userId: string
@@ -175,6 +175,7 @@ export default async function DashboardPage() {
         authorName:    author?.full_name || author?.email || 'Someone',
         taskTitle:     task?.title ?? 'a task',
         workspaceName: ws?.name ?? '',
+        workspaceId:   task?.workspace_id ?? '',
         body:          c.body.length > 80 ? c.body.slice(0, 80) + '…' : c.body,
         createdAt:     c.created_at,
       }
@@ -198,6 +199,7 @@ export default async function DashboardPage() {
     upcomingDeadlines = (deadlineTasks ?? []).map((t) => ({
       id: t.id, title: t.title,
       workspaceName: (dlWs ?? []).find((w) => w.id === t.workspace_id)?.name ?? '',
+      workspaceId: t.workspace_id,
       dueDate: t.due_date!,
     }))
 
@@ -510,7 +512,11 @@ export default async function DashboardPage() {
                 ) : (
                   <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
                     {activityItems.map((item) => (
-                      <div key={item.id} className="px-5 py-3.5 flex items-start gap-3 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
+                      <Link
+                        key={item.id}
+                        href={item.workspaceId ? `/dashboard/${item.workspaceId}` : '/dashboard'}
+                        className="px-5 py-3.5 flex items-start gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                      >
                         <div className="shrink-0 w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 mt-0.5">
                           {item.authorName.charAt(0).toUpperCase()}
                         </div>
@@ -529,7 +535,7 @@ export default async function DashboardPage() {
                         <div className="shrink-0 w-6 h-6 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mt-0.5">
                           <MessageSquare size={11} strokeWidth={1.5} className="text-zinc-500 dark:text-zinc-400" />
                         </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 )}
@@ -582,20 +588,24 @@ export default async function DashboardPage() {
                       const label = daysUntilLabel(task.dueDate)
                       const isToday = label === 'Today'
                       return (
-                        <div key={task.id} className="flex items-start gap-3 px-4 py-3">
-                          <div className={`shrink-0 mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center ${isToday ? 'bg-red-50' : 'bg-zinc-100'}`}>
-                            <CalendarClock size={12} strokeWidth={1.5} className={isToday ? 'text-red-500' : 'text-zinc-500'} />
+                        <Link
+                          key={task.id}
+                          href={`/dashboard/${task.workspaceId}`}
+                          className="flex items-start gap-3 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                        >
+                          <div className={`shrink-0 mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center ${isToday ? 'bg-red-50' : 'bg-zinc-100 dark:bg-zinc-800'}`}>
+                            <CalendarClock size={12} strokeWidth={1.5} className={isToday ? 'text-red-500' : 'text-zinc-500 dark:text-zinc-400'} />
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-medium text-black dark:text-white truncate">{task.title}</p>
                             {task.workspaceName && <p className="text-[10px] text-zinc-400">{task.workspaceName}</p>}
                           </div>
                           <span className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                            isToday ? 'bg-red-50 text-red-600' : label === 'Tomorrow' ? 'bg-amber-50 text-amber-600' : 'bg-zinc-100 text-zinc-500'
+                            isToday ? 'bg-red-50 text-red-600' : label === 'Tomorrow' ? 'bg-amber-50 text-amber-600' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'
                           }`}>
                             {label}
                           </span>
-                        </div>
+                        </Link>
                       )
                     })}
                   </div>

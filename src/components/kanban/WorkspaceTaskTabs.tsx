@@ -6,6 +6,7 @@ import { cn, getInitials } from '@/lib/utils'
 import { createBrowserClient } from '@supabase/ssr'
 import { KanbanBoard, KANBAN_COLUMNS } from './KanbanBoard'
 import { TaskDetailSheet } from './TaskDetailSheet'
+import { CreateTaskDialog } from './CreateTaskDialog'
 import type { Task, TaskStatus } from '@/types/database'
 import type { CurrentUserProfile } from './TaskDetailSheet'
 import type { MemberOption } from './CreateTaskDialog'
@@ -457,22 +458,33 @@ export function WorkspaceTaskTabs({
   return (
     <div className="flex flex-col h-full">
       {/* ── View tab bar ──────────────────────────────────────────────────── */}
-      <div className="shrink-0 px-4 md:px-6 bg-white dark:bg-[#0A0A0A] border-b border-zinc-100 dark:border-zinc-800 flex items-end">
-        {TABS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setActiveTab(id)}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-2.5 text-sm transition-colors duration-150 border-b-2 -mb-px whitespace-nowrap',
-              activeTab === id
-                ? 'text-black dark:text-white font-medium border-black dark:border-white'
-                : 'text-zinc-400 border-transparent hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-600'
-            )}
-          >
-            <Icon size={13} strokeWidth={1.5} />
-            {label}
-          </button>
-        ))}
+      <div className="shrink-0 px-4 md:px-6 bg-white dark:bg-[#0A0A0A] border-b border-zinc-100 dark:border-zinc-800 flex items-center">
+        <div className="flex items-end flex-1">
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-2.5 text-sm transition-colors duration-150 border-b-2 -mb-px whitespace-nowrap',
+                activeTab === id
+                  ? 'text-black dark:text-white font-medium border-black dark:border-white'
+                  : 'text-zinc-400 border-transparent hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-600'
+              )}
+            >
+              <Icon size={13} strokeWidth={1.5} />
+              {label}
+            </button>
+          ))}
+        </div>
+        {currentUserProfile.role !== 'designer' && currentUserProfile.role !== 'client' && (
+          <div className="hidden md:block ml-3 pb-1">
+            <CreateTaskDialog
+              workspaceId={workspaceId}
+              onTaskCreated={(task) => setTasks((prev) => prev.some((t) => t.id === task.id) ? prev : [...prev, task])}
+              members={workspaceMembers}
+            />
+          </div>
+        )}
       </div>
 
       {/* ── Content ───────────────────────────────────────────────────────── */}

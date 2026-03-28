@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { Invoice, InvoiceStatus } from './InvoicesClient'
 import { STATUS_STYLES, STATUS_LABELS } from './InvoicesClient'
-import { updateInvoiceStatus, deleteInvoice as deleteInvoiceAction, fetchInvoiceActivities } from './invoice-actions'
+import { updateInvoiceStatus, deleteInvoice as deleteInvoiceAction, fetchInvoiceActivities, addInvoiceActivity } from './invoice-actions'
 
 // ─── All statuses available to set ────────────────────────────────────────────
 const ALL_STATUSES: InvoiceStatus[] = ['draft', 'pending', 'paid', 'overdue', 'failed', 'cancelled']
@@ -354,11 +354,22 @@ export function InvoiceViewPanel({
   }
 
   async function handleSendReminder() {
+    if (!invoice) return
+    const eventText = 'Payment reminder sent'
+    if (invoice.dbId) {
+      const result = await addInvoiceActivity(invoice.dbId, eventText)
+      if (result.error) {
+        toast.error('Failed to send reminder')
+        return
+      }
+      setDbActivity(prev => [...prev, { event: eventText, date: formatNow() }])
+      router.refresh()
+    } else {
+      setActivity(prev => [...prev, { event: eventText, date: formatNow() }])
+    }
     toast.success('Reminder sent', {
-      description: `Payment reminder sent for ${invoice?.id}`,
+      description: `Payment reminder sent for ${invoice.id}`,
     })
-    const newEvent: ActivityItem = { event: 'Payment reminder sent', date: formatNow() }
-    setActivity(prev => [...prev, newEvent])
   }
 
   async function handleDelete() {

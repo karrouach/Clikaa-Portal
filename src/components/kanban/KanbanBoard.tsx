@@ -237,26 +237,13 @@ export function KanbanBoard({
     <>
       <div className="flex flex-col h-full">
         {/* ── Board header ─────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-4 md:px-6 py-4 bg-white dark:bg-[#1A1A1A] border-b border-zinc-100 dark:border-zinc-800 shrink-0">
-          <div>
-            <h1 className="text-base font-semibold text-black dark:text-white tracking-tight">
-              {workspaceName}
-            </h1>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              {tasks.length} task{tasks.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-
-          {/* Desktop "New Task" button — hidden on mobile and for designers */}
-          {currentUserProfile.role !== 'designer' && (
-            <div className="hidden md:block">
-              <CreateTaskDialog
-                workspaceId={workspaceId}
-                onTaskCreated={handleTaskCreated}
-                members={workspaceMembers}
-              />
-            </div>
-          )}
+        <div className="px-4 md:px-6 py-3 bg-white dark:bg-[#1A1A1A] border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+          <h1 className="text-base font-semibold text-black dark:text-white tracking-tight">
+            {workspaceName}
+          </h1>
+          <p className="text-xs text-zinc-400 mt-0.5">
+            {tasks.length} task{tasks.length !== 1 ? 's' : ''}
+          </p>
         </div>
 
         {/* ── Columns ──────────────────────────────────────────────────── */}

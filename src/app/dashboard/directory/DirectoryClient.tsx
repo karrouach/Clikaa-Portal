@@ -168,24 +168,20 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
 
         {(activeTab === 'admins' || activeTab === 'designers') && (
           <Button
-            size="sm"
-            rounded="sm"
             onClick={() => { setInviteOpen(true); resetInvite() }}
-            className="gap-1.5 text-xs shrink-0"
+            className="gap-1.5 shrink-0"
           >
-            <UserPlus size={13} strokeWidth={1.5} />
+            <UserPlus size={14} strokeWidth={1.5} />
             Add Member
           </Button>
         )}
 
         {activeTab === 'clients' && (
           <Button
-            size="sm"
-            rounded="sm"
             onClick={() => { setClientInviteOpen(true); resetClientInvite() }}
-            className="gap-1.5 text-xs shrink-0"
+            className="gap-1.5 shrink-0"
           >
-            <UserPlus size={13} strokeWidth={1.5} />
+            <UserPlus size={14} strokeWidth={1.5} />
             Add Client
           </Button>
         )}

@@ -67,6 +67,20 @@ export async function createInvoice(input: CreateInvoiceInput) {
   return { data }
 }
 
+export async function addInvoiceActivity(invoiceId: string, event: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('invoice_activities')
+    .insert({ invoice_id: invoiceId, user_id: user.id, event })
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/invoices')
+  return { success: true }
+}
+
 export async function fetchInvoiceActivities(invoiceDbId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

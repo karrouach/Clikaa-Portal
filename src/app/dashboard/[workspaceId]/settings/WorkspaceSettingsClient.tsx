@@ -244,7 +244,7 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
                       )}
                       {isLogoPending ? 'Uploading…' : (logoPreview ? 'Change Logo' : 'Upload Logo')}
                     </button>
-                    <p className="mt-1 text-[10px] text-zinc-400">
+                    <p className="mt-1 text-sm text-zinc-400">
                       Square images recommended. Auto-cropped to uniform size in sidebar.
                     </p>
                     {logoError && (

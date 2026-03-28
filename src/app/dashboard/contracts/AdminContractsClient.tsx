@@ -160,14 +160,14 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
           <p className="mt-1 text-sm text-zinc-500">Manage client agreements and templates.</p>
         </div>
         {activeTab === 'contracts' && (
-          <Button size="sm" rounded="sm" onClick={() => { setCreateOpen(true); resetCreate() }} className="gap-1.5 text-xs shrink-0">
-            <Plus size={13} strokeWidth={1.5} />
+          <Button onClick={() => { setCreateOpen(true); resetCreate() }} className="gap-1.5 shrink-0">
+            <Plus size={14} strokeWidth={1.5} />
             Create Contract
           </Button>
         )}
         {activeTab === 'templates' && (
-          <Button size="sm" rounded="sm" onClick={() => { setTplOpen(true); resetTpl() }} className="gap-1.5 text-xs shrink-0">
-            <Plus size={13} strokeWidth={1.5} />
+          <Button onClick={() => { setTplOpen(true); resetTpl() }} className="gap-1.5 shrink-0">
+            <Plus size={14} strokeWidth={1.5} />
             New Template
           </Button>
         )}

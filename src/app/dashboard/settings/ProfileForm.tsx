@@ -271,8 +271,8 @@ export function ProfileForm({
         type="submit"
         disabled={isBusy}
         className="
-          h-10 px-6 flex items-center gap-2
-          bg-black dark:bg-white text-white dark:text-black text-sm font-medium tracking-wide
+          h-9 px-4 rounded-lg flex items-center gap-2
+          bg-black dark:bg-white text-white dark:text-black text-sm font-medium
           hover:bg-zinc-800 dark:hover:bg-gray-200 active:bg-zinc-900
           transition-colors duration-150
           disabled:opacity-60 disabled:cursor-not-allowed
