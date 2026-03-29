@@ -109,6 +109,7 @@ export default async function DashboardPage() {
     fullName: string
     avatarUrl: string | null
     workspaceName: string
+    workspaceId: string
     openTasks: number
     completedTasks: number
     lastActivity: string
@@ -257,6 +258,7 @@ export default async function DashboardPage() {
           fullName:       p?.full_name || p?.email || 'Unknown',
           avatarUrl:      p?.avatar_url ?? null,
           workspaceName:  ws?.name ?? '—',
+          workspaceId:    m.workspace_id,
           openTasks,
           completedTasks,
           lastActivity,
@@ -653,7 +655,11 @@ export default async function DashboardPage() {
                                 <p className="font-medium text-black dark:text-white text-sm truncate">{row.fullName}</p>
                               </div>
                             </td>
-                            <td className="px-6 py-3.5 text-zinc-500 dark:text-zinc-400 text-sm hidden sm:table-cell whitespace-nowrap">{row.workspaceName}</td>
+                            <td className="px-6 py-3.5 text-sm hidden sm:table-cell whitespace-nowrap">
+                              <Link href={`/dashboard/${row.workspaceId}`} className="text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:underline transition-colors">
+                                {row.workspaceName}
+                              </Link>
+                            </td>
                             <td className="px-6 py-3.5 text-zinc-400 text-xs hidden lg:table-cell whitespace-nowrap">
                               {row.lastActivity ? timeAgo(row.lastActivity) : '—'}
                             </td>

@@ -37,6 +37,7 @@ interface Props {
   initialConversations: ConvItem[]
   currentUserId: string
   adminName: string
+  adminAvatarUrl?: string | null
 }
 
 function timeAgo(iso: string): string {
@@ -50,7 +51,7 @@ function timeAgo(iso: string): string {
   return `${days}d ago`
 }
 
-export function ClientMessagesClient({ initialConversations, currentUserId, adminName }: Props) {
+export function ClientMessagesClient({ initialConversations, currentUserId, adminName, adminAvatarUrl }: Props) {
   const [conversations, setConversations] = useState<ConvItem[]>(initialConversations)
   const [selectedId, setSelectedId]       = useState<string | null>(initialConversations[0]?.id ?? null)
   const [messages, setMessages]           = useState<MsgItem[]>([])
@@ -359,9 +360,13 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
                 >
                   <div className="flex items-start gap-3">
                     {/* Clikaa support avatar */}
-                    <div className="shrink-0 w-8 h-8 rounded-full bg-black flex items-center justify-center text-white text-[9px] font-semibold">
-                      {getInitials(adminName)}
-                    </div>
+                    {adminAvatarUrl ? (
+                      <img src={adminAvatarUrl} alt="" className="shrink-0 w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <div className="shrink-0 w-8 h-8 rounded-full bg-black flex items-center justify-center text-white text-[9px] font-semibold">
+                        {getInitials(adminName)}
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <p className={cn('text-sm truncate', conv.unread_count > 0 ? 'font-semibold text-black dark:text-white' : 'font-medium text-zinc-700 dark:text-zinc-200')}>
@@ -421,12 +426,16 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
 
                 return (
                   <div key={msg.id} className={cn('flex gap-3', isMe && 'flex-row-reverse')}>
-                    <div className={cn(
-                      'shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold',
-                      isMe ? 'bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300' : 'bg-black text-white'
-                    )}>
-                      {initials}
-                    </div>
+                    {msg.sender?.avatar_url ? (
+                      <img src={msg.sender.avatar_url} alt="" className="shrink-0 w-7 h-7 rounded-full object-cover" />
+                    ) : (
+                      <div className={cn(
+                        'shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold',
+                        isMe ? 'bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300' : 'bg-black text-white'
+                      )}>
+                        {initials}
+                      </div>
+                    )}
                     <div className={cn('max-w-[70%]', isMe && 'items-end flex flex-col')}>
                       <div className={cn(
                         'rounded-xl px-3.5 py-2.5 text-sm leading-relaxed',

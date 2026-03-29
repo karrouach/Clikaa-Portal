@@ -305,6 +305,32 @@ export async function sendMessageReply(
   }
 }
 
+// ── toggleArchiveConversation ──────────────────────────────────────────────────
+// Flips the `archived` flag on a conversation. Admin-only.
+export async function toggleArchiveConversation(
+  conversationId: string,
+  archive: boolean,
+): Promise<{ error?: string }> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Not authenticated' }
+
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('conversations')
+      .update({ archived: archive })
+      .eq('id', conversationId)
+
+    if (error) return { error: error.message }
+    revalidatePath('/dashboard/messages')
+    return {}
+  } catch (err) {
+    console.error('[message] toggleArchiveConversation error:', err)
+    return { error: 'Failed to update conversation.' }
+  }
+}
+
 // ── markConversationRead ───────────────────────────────────────────────────────
 export async function markConversationRead(conversationId: string): Promise<void> {
   try {

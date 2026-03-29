@@ -27,7 +27,7 @@ export default async function MessagesPage() {
   if (profile?.role === 'admin') {
     const { data: conversations } = await admin
       .from('conversations')
-      .select('id, subject, created_at, updated_at, client_id')
+      .select('id, subject, created_at, updated_at, client_id, archived')
       .order('updated_at', { ascending: false })
 
     const convs = conversations ?? []
@@ -96,12 +96,13 @@ export default async function MessagesPage() {
 
   const { data: adminProfile } = await admin
     .from('profiles')
-    .select('full_name, email')
+    .select('full_name, email, avatar_url')
     .eq('role', 'admin')
     .limit(1)
     .single()
 
   const adminName = adminProfile?.full_name || adminProfile?.email?.split('@')[0] || 'Clikaa'
+  const adminAvatarUrl = adminProfile?.avatar_url ?? null
 
   return (
     <div className="animate-fade-in flex flex-col h-full">
@@ -111,6 +112,7 @@ export default async function MessagesPage() {
             initialConversations={myConvs}
             currentUserId={user.id}
             adminName={adminName}
+            adminAvatarUrl={adminAvatarUrl}
           />
         </Suspense>
       </div>

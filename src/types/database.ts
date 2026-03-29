@@ -551,6 +551,7 @@ export type Database = {
           workspace_id: string | null
           client_id: string
           subject: string
+          archived: boolean
           created_at: string
           updated_at: string
         }
@@ -559,6 +560,7 @@ export type Database = {
           workspace_id?: string | null
           client_id: string
           subject?: string
+          archived?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -567,6 +569,7 @@ export type Database = {
           workspace_id?: string | null
           client_id?: string
           subject?: string
+          archived?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -750,6 +753,41 @@ export type Database = {
             columns: ['designer_id']
             isOneToOne: false
             referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          id: string
+          workspace_id: string
+          title: string
+          meeting_date: string
+          meeting_link: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          title: string
+          meeting_date: string
+          meeting_link?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          title?: string
+          meeting_date?: string
+          meeting_link?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'meetings_workspace_id_fkey'
+            columns: ['workspace_id']
+            isOneToOne: false
+            referencedRelation: 'workspaces'
             referencedColumns: ['id']
           },
         ]

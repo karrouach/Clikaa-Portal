@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useTransition, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { MessageSquare, Send, Loader2, User, Search, X, Plus, Paperclip } from 'lucide-react'
+import { MessageSquare, Send, Loader2, User, Search, X, Plus, Paperclip, Archive, Inbox } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import { createBrowserClient } from '@supabase/ssr'
 import { createClient } from '@/lib/supabase/client'
@@ -11,6 +11,7 @@ import {
   markConversationRead,
   searchUsersForMessaging,
   adminStartConversation,
+  toggleArchiveConversation,
 } from './message-actions'
 import { toast } from 'sonner'
 
@@ -28,6 +29,7 @@ interface ConvItem {
   updated_at: string
   client: ConvClient | null
   unread_count: number
+  archived: boolean
 }
 
 interface MsgItem {
@@ -88,12 +90,29 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
   const [newTarget, setNewTarget] = useState<SearchUser | null>(null)
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Inbox search & filter
+  const [inboxSearch, setInboxSearch]   = useState('')
+  const [inboxFilter, setInboxFilter]   = useState<'all' | 'unread' | 'archived'>('all')
+
   // File upload
   const [attachFile, setAttachFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const attachRef = useRef<HTMLInputElement>(null)
 
   const selectedConv = conversations.find((c) => c.id === selectedId) ?? null
+
+  // Inbox search + filter
+  const displayedConversations = conversations.filter((c) => {
+    const name    = (c.client?.full_name || c.client?.email || '').toLowerCase()
+    const subject = (c.subject || '').toLowerCase()
+    const q       = inboxSearch.toLowerCase()
+    const matchesSearch = !q || name.includes(q) || subject.includes(q)
+    const matchesFilter =
+      inboxFilter === 'unread'   ? c.unread_count > 0 && !c.archived :
+      inboxFilter === 'archived' ? c.archived :
+      !c.archived  // 'all' hides archived threads (they live in 'archived' tab)
+    return matchesSearch && matchesFilter
+  })
 
   // Filter search results by role pill (client-side, RBAC already handled server-side)
   const filteredResults = searchResults.filter((u) =>
@@ -189,6 +208,7 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
             subject: raw.subject,
             created_at: raw.created_at,
             updated_at: raw.updated_at,
+            archived: false,
             client: clientData ?? null,
             unread_count: 1,
           }
@@ -296,6 +316,29 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
       setNewBody('')
       setSelectedId(result.id)
     })
+  }
+
+  // ── Archive / unarchive ──────────────────────────────────────────────────
+  async function handleToggleArchive(e: React.MouseEvent, convId: string, currentlyArchived: boolean) {
+    e.preventDefault()
+    e.stopPropagation()
+    const archive = !currentlyArchived
+    // Optimistic update
+    setConversations((prev) =>
+      prev.map((c) => c.id === convId ? { ...c, archived: archive } : c)
+    )
+    // If we just archived the active conversation, deselect it
+    if (archive && selectedId === convId) setSelectedId(null)
+    const result = await toggleArchiveConversation(convId, archive)
+    if (result.error) {
+      toast.error(result.error)
+      // Revert on failure
+      setConversations((prev) =>
+        prev.map((c) => c.id === convId ? { ...c, archived: currentlyArchived } : c)
+      )
+    } else {
+      toast.success(archive ? 'Conversation archived' : 'Moved back to inbox')
+    }
   }
 
   return (
@@ -422,51 +465,116 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
             )}
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto divide-y divide-zinc-50 dark:divide-zinc-800">
-            {conversations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-2 text-center px-4">
-                <MessageSquare size={28} strokeWidth={1} className="text-zinc-200" />
-                <p className="text-sm text-zinc-400">No messages yet</p>
-                <p className="text-xs text-zinc-300">Client messages will appear here</p>
+          <>
+            {/* ── Sticky search + filter header ──────────────────────────── */}
+            <div className="shrink-0 px-3 pt-2 pb-3 space-y-2.5 border-b border-zinc-100 dark:border-zinc-800">
+              {/* Search bar */}
+              <div className="relative">
+                <Search size={13} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={inboxSearch}
+                  onChange={(e) => setInboxSearch(e.target.value)}
+                  placeholder="Search messages..."
+                  className="w-full h-8 pl-8 pr-3 text-xs bg-gray-100 dark:bg-zinc-900 border border-transparent dark:border-zinc-700 rounded-xl text-zinc-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-zinc-300 dark:focus:ring-zinc-500 transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+                />
               </div>
-            ) : (
-              conversations.map((conv) => {
-                const clientName = conv.client?.full_name || conv.client?.email || 'Unknown'
-                const initials = getInitials(clientName)
-                const isSelected = conv.id === selectedId
-                return (
-                  <button
-                    key={conv.id}
-                    onClick={() => setSelectedId(conv.id)}
-                    className={cn(
-                      'w-full text-left px-4 py-3.5 transition-colors hover:bg-zinc-50/80 dark:hover:bg-zinc-800/80',
-                      isSelected ? 'bg-zinc-50 dark:bg-zinc-800 border-l-2 border-black dark:border-white' : 'border-l-2 border-transparent'
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="relative shrink-0">
-                        <div className="w-9 h-9 rounded-full bg-zinc-900 dark:bg-zinc-700 flex items-center justify-center text-white text-[10px] font-semibold">
-                          {initials}
+
+              {/* Filter segmented control */}
+              <div className="flex bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-0.5 gap-0.5">
+                {(['all', 'unread', 'archived'] as const).map((f) => {
+                  const labels = { all: 'All', unread: 'Unread', archived: 'Archived' }
+                  const isActive = inboxFilter === f
+                  return (
+                    <button
+                      key={f}
+                      onClick={() => setInboxFilter(f)}
+                      className={cn(
+                        'flex-1 h-6 text-[11px] font-medium rounded-lg transition-all',
+                        isActive
+                          ? 'bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm'
+                          : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'
+                      )}
+                    >
+                      {labels[f]}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* ── Scrollable conversation list ───────────────────────────── */}
+            <div className="flex-1 overflow-y-auto">
+              {conversations.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-2 text-center px-4">
+                  <MessageSquare size={28} strokeWidth={1} className="text-zinc-200" />
+                  <p className="text-sm text-zinc-400">No messages yet</p>
+                  <p className="text-xs text-zinc-300">Client messages will appear here</p>
+                </div>
+              ) : displayedConversations.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-1.5 text-center px-4">
+                  <p className="text-sm text-zinc-400">No results</p>
+                  <p className="text-xs text-zinc-300">Try a different search or filter</p>
+                </div>
+              ) : (
+                displayedConversations.map((conv) => {
+                  const clientName = conv.client?.full_name || conv.client?.email || 'Unknown'
+                  const initials   = getInitials(clientName)
+                  const isSelected = conv.id === selectedId
+                  const hasUnread  = conv.unread_count > 0
+                  return (
+                    <button
+                      key={conv.id}
+                      onClick={() => setSelectedId(conv.id)}
+                      className={cn(
+                        'group w-full text-left px-4 py-3 border-b border-gray-100 dark:border-zinc-800 last:border-0 transition-colors',
+                        isSelected
+                          ? 'bg-gray-100 dark:bg-zinc-800'
+                          : 'hover:bg-gray-50 dark:hover:bg-zinc-900/50'
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Avatar */}
+                        {conv.client?.avatar_url ? (
+                          <img src={conv.client.avatar_url} alt="" className="shrink-0 w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                          <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-900 dark:bg-zinc-700 flex items-center justify-center text-white text-[10px] font-semibold">
+                            {initials}
+                          </div>
+                        )}
+
+                        {/* Text rows */}
+                        <div className="min-w-0 flex-1">
+                          {/* Top row: name + timestamp */}
+                          <div className="flex items-center justify-between gap-2">
+                            <p className={cn(
+                              'text-sm truncate',
+                              hasUnread ? 'font-bold text-black dark:text-white' : 'font-medium text-zinc-700 dark:text-zinc-300'
+                            )}>
+                              {clientName}
+                            </p>
+                            <span className="text-[10px] text-zinc-400 shrink-0 tabular-nums">{timeAgo(conv.updated_at)}</span>
+                          </div>
+                          {/* Bottom row: subject preview */}
+                          <p className={cn(
+                            'text-xs truncate mt-0.5',
+                            hasUnread ? 'text-zinc-600 dark:text-zinc-300' : 'text-zinc-400'
+                          )}>
+                            {conv.subject || 'No subject'}
+                          </p>
                         </div>
-                        {conv.unread_count > 0 && (
-                          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-black dark:bg-white dark:text-black rounded-full text-white text-[9px] font-bold flex items-center justify-center px-0.5">
-                            {conv.unread_count > 9 ? '9+' : conv.unread_count}
-                          </span>
+
+                        {/* Unread dot */}
+                        {hasUnread && (
+                          <span className="shrink-0 w-2 h-2 rounded-full bg-black dark:bg-white" />
                         )}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className={cn('text-sm truncate', conv.unread_count > 0 ? 'font-semibold text-black dark:text-white' : 'font-medium text-zinc-800 dark:text-zinc-200')}>{clientName}</p>
-                          <span className="text-[10px] text-zinc-400 shrink-0">{timeAgo(conv.updated_at)}</span>
-                        </div>
-                        <p className={cn('text-xs truncate mt-0.5', conv.unread_count > 0 ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400')}>{conv.subject || 'No subject'}</p>
-                      </div>
-                    </div>
-                  </button>
-                )
-              })
-            )}
-          </div>
+                    </button>
+                  )
+                })
+              )}
+            </div>
+          </>
         )}
       </div>
 
@@ -483,13 +591,27 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
             >
               ←
             </button>
-            <div className="w-9 h-9 rounded-full bg-zinc-900 dark:bg-zinc-700 shrink-0 hidden md:flex items-center justify-center text-white text-[10px] font-semibold">
-              {getInitials(selectedConv.client?.full_name || selectedConv.client?.email || '?')}
-            </div>
+            {selectedConv.client?.avatar_url ? (
+              <img src={selectedConv.client.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0 hidden md:block" />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-zinc-900 dark:bg-zinc-700 shrink-0 hidden md:flex items-center justify-center text-white text-[10px] font-semibold">
+                {getInitials(selectedConv.client?.full_name || selectedConv.client?.email || '?')}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-black dark:text-white truncate">{selectedConv.client?.full_name || selectedConv.client?.email || 'Unknown'}</p>
               <p className="text-xs text-zinc-400 truncate">{selectedConv.subject || 'No subject'}</p>
             </div>
+            <button
+              onClick={(e) => handleToggleArchive(e, selectedConv.id, selectedConv.archived)}
+              title={selectedConv.archived ? 'Move to inbox' : 'Archive'}
+              className="shrink-0 p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-black dark:text-gray-400 dark:hover:bg-zinc-800 dark:hover:text-white transition-colors"
+            >
+              {selectedConv.archived
+                ? <Inbox size={15} strokeWidth={1.5} />
+                : <Archive size={15} strokeWidth={1.5} />
+              }
+            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
@@ -508,12 +630,16 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
                 const initials = getInitials(senderName)
                 return (
                   <div key={msg.id} className={cn('flex gap-3', isCurrentUser && 'flex-row-reverse')}>
-                    <div className={cn(
-                      'shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold',
-                      isCurrentUser ? 'bg-black text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
-                    )}>
-                      {initials || <User size={12} />}
-                    </div>
+                    {msg.sender?.avatar_url ? (
+                      <img src={msg.sender.avatar_url} alt="" className="shrink-0 w-7 h-7 rounded-full object-cover" />
+                    ) : (
+                      <div className={cn(
+                        'shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold',
+                        isCurrentUser ? 'bg-black text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                      )}>
+                        {initials || <User size={12} />}
+                      </div>
+                    )}
                     <div className={cn('max-w-[70%]', isCurrentUser && 'items-end flex flex-col')}>
                       <div className={cn(
                         'rounded-xl px-3.5 py-2.5 text-sm leading-relaxed',
