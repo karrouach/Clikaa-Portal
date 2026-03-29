@@ -17,12 +17,13 @@ export default async function DesignerInvoicesPage() {
     .eq('id', user.id)
     .single()
 
-  const isAdmin    = profile?.role === 'admin'
-  const isDesigner = profile?.role === 'designer'
+  const INTERNAL_ROLES = ['designer', 'developer', 'marketer', 'project_manager']
+  const isAdmin        = profile?.role === 'admin'
+  const isInternalTeam = INTERNAL_ROLES.includes(profile?.role ?? '')
 
-  if (!isAdmin && !isDesigner) redirect('/dashboard')
+  if (!isAdmin && !isInternalTeam) redirect('/dashboard')
 
-  if (isDesigner) {
+  if (isInternalTeam) {
     // Designer: see their own invoices
     const { data: invoices } = await supabase
       .from('designer_invoices')

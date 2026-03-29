@@ -23,7 +23,7 @@ export type Database = {
           email: string
           full_name: string
           avatar_url: string | null
-          role: 'admin' | 'client' | 'designer'
+          role: 'admin' | 'client' | 'designer' | 'developer' | 'marketer' | 'project_manager'
           title: string | null
           monthly_retainer?: number | null
           created_at: string
@@ -33,7 +33,7 @@ export type Database = {
           email: string
           full_name?: string
           avatar_url?: string | null
-          role?: 'admin' | 'client' | 'designer'
+          role?: 'admin' | 'client' | 'designer' | 'developer' | 'marketer' | 'project_manager'
           title?: string | null
           monthly_retainer?: number | null
           created_at?: string
@@ -43,7 +43,7 @@ export type Database = {
           email?: string
           full_name?: string
           avatar_url?: string | null
-          role?: 'admin' | 'client' | 'designer'
+          role?: 'admin' | 'client' | 'designer' | 'developer' | 'marketer' | 'project_manager'
           title?: string | null
           monthly_retainer?: number | null
           created_at?: string
@@ -91,21 +91,21 @@ export type Database = {
           id: string
           workspace_id: string
           user_id: string
-          role: 'admin' | 'client' | 'designer'
+          role: 'admin' | 'client' | 'designer' | 'developer' | 'marketer' | 'project_manager'
           created_at: string
         }
         Insert: {
           id?: string
           workspace_id: string
           user_id: string
-          role?: 'admin' | 'client' | 'designer'
+          role?: 'admin' | 'client' | 'designer' | 'developer' | 'marketer' | 'project_manager'
           created_at?: string
         }
         Update: {
           id?: string
           workspace_id?: string
           user_id?: string
-          role?: 'admin' | 'client' | 'designer'
+          role?: 'admin' | 'client' | 'designer' | 'developer' | 'marketer' | 'project_manager'
           created_at?: string
         }
         Relationships: [

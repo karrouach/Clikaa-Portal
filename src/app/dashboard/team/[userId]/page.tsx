@@ -8,9 +8,10 @@ import { getInitials } from '@/lib/utils'
 
 interface Props {
   params: Promise<{ userId: string }>
+  searchParams: Promise<{ from?: string }>
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ userId: string }> }): Promise<Metadata> {
   const { userId } = await params
   const admin = createAdminClient()
   const { data } = await admin.from('profiles').select('full_name, email').eq('id', userId).single()
@@ -31,13 +32,26 @@ const STATUS_CHIP: Record<string, string> = {
 }
 
 const ROLE_BADGE: Record<string, string> = {
-  admin:    'bg-zinc-900 text-white',
-  designer: 'bg-violet-100 text-violet-700',
-  client:   'bg-zinc-100 text-zinc-600',
+  admin:           'bg-zinc-900 text-white',
+  designer:        'bg-violet-100 text-violet-700',
+  developer:       'bg-blue-100 text-blue-700',
+  marketer:        'bg-amber-100 text-amber-700',
+  project_manager: 'bg-emerald-100 text-emerald-700',
+  client:          'bg-zinc-100 text-zinc-600',
 }
 
-export default async function TeamMemberProfilePage({ params }: Props) {
+const ROLE_LABEL: Record<string, string> = {
+  admin:           'Admin',
+  designer:        'Designer',
+  developer:       'Developer',
+  marketer:        'Marketer',
+  project_manager: 'Project Manager',
+  client:          'Client',
+}
+
+export default async function TeamMemberProfilePage({ params, searchParams }: Props) {
   const { userId } = await params
+  const { from } = await searchParams
   const supabase = await createClient()
 
   // ── Auth + Admin guard ───────────────────────────────────────────────────
@@ -100,14 +114,30 @@ export default async function TeamMemberProfilePage({ params }: Props) {
   return (
     <div className="animate-fade-in max-w-4xl mx-auto">
 
-      {/* Back link */}
-      <Link
-        href="/dashboard/directory"
-        className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-black dark:hover:text-white transition-colors mb-6"
-      >
-        <ArrowLeft size={14} strokeWidth={1.5} />
-        Back to directory
-      </Link>
+      {/* Back link — context-aware */}
+      {(() => {
+        if (from === 'leaderboard') {
+          return (
+            <Link
+              href="/dashboard/leaderboard"
+              className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-black dark:hover:text-white transition-colors mb-6"
+            >
+              <ArrowLeft size={14} strokeWidth={1.5} />
+              Back to leaderboard
+            </Link>
+          )
+        }
+        const backTab = member.role === 'admin' ? 'admins' : member.role === 'client' ? 'clients' : 'internal'
+        return (
+          <Link
+            href={`/dashboard/directory?tab=${backTab}`}
+            className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-black dark:hover:text-white transition-colors mb-6"
+          >
+            <ArrowLeft size={14} strokeWidth={1.5} />
+            Back to directory
+          </Link>
+        )
+      })()}
 
       {/* ── Profile card ─────────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-6 mb-8">
@@ -125,8 +155,8 @@ export default async function TeamMemberProfilePage({ params }: Props) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">{displayName}</h1>
-              <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded capitalize ${ROLE_BADGE[member.role] ?? 'bg-zinc-100 text-zinc-600'}`}>
-                {member.role}
+              <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded ${ROLE_BADGE[member.role] ?? 'bg-zinc-100 text-zinc-600'}`}>
+                {ROLE_LABEL[member.role] ?? member.role}
               </span>
             </div>
 

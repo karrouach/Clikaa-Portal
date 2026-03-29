@@ -107,6 +107,9 @@ export default async function DashboardLayout({
     }))
 
   // ── Role-based sidebar badge counts ───────────────────────────────────────
+  const INTERNAL_ROLES = ['designer', 'developer', 'marketer', 'project_manager'] as const
+  const isInternalTeam = INTERNAL_ROLES.includes(profile.role as typeof INTERNAL_ROLES[number])
+
   const badgeCounts = { invoices: 0, contracts: 0, myTasks: 0, payments: 0 }
   const wsIds = workspaces.map((w) => w.id)
 
@@ -129,7 +132,7 @@ export default async function DashboardLayout({
       ])
       badgeCounts.invoices  = invCount  ?? 0
       badgeCounts.contracts = conCount  ?? 0
-    } else if (profile.role === 'designer') {
+    } else if (isInternalTeam) {
       const [{ count: taskCount }, { count: payCount }] = await Promise.all([
         adminBadge
           .from('tasks')

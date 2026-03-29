@@ -52,6 +52,8 @@ export async function updateWorkspaceName(
 //   • Existing user → inserts workspace_members row directly (no email sent).
 //   • New user      → sends Supabase invite email, then adds to workspace.
 // ──────────────────────────────────────────────────────────────────────────
+type WorkspaceRole = 'admin' | 'client' | 'designer' | 'developer' | 'marketer' | 'project_manager'
+
 export async function inviteWorkspaceMember({
   workspaceId,
   email,
@@ -61,7 +63,7 @@ export async function inviteWorkspaceMember({
   workspaceId: string
   email: string
   fullName: string
-  role: 'admin' | 'client' | 'designer'
+  role: WorkspaceRole | 'internal_team'
 }): Promise<WorkspaceSettingsResult> {
   const trimEmail = email.trim().toLowerCase()
   const trimName = fullName.trim()
@@ -76,11 +78,16 @@ export async function inviteWorkspaceMember({
   // A. Check if the email already has a portal account.
   const { data: existing } = await admin
     .from('profiles')
-    .select('id')
+    .select('id, role')
     .eq('email', trimEmail)
     .maybeSingle()
 
   let targetUserId: string
+  // Resolve 'internal_team' to the user's actual profile role (or 'designer' for new users).
+  let resolvedRole: WorkspaceRole =
+    role === 'internal_team'
+      ? (existing?.role as WorkspaceRole | undefined) ?? 'designer'
+      : role
 
   if (existing) {
     // User already exists — add straight to the workspace.
@@ -105,7 +112,7 @@ export async function inviteWorkspaceMember({
   const { error: memberError } = await admin
     .from('workspace_members')
     .upsert(
-      { workspace_id: workspaceId, user_id: targetUserId, role },
+      { workspace_id: workspaceId, user_id: targetUserId, role: resolvedRole },
       { onConflict: 'workspace_id,user_id' }
     )
 

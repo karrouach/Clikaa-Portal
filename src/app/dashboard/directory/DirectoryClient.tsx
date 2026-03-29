@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { UserPlus, Trash2, Loader2, AlertCircle, Check } from 'lucide-react'
 import {
@@ -28,7 +29,7 @@ import { getInitials } from '@/lib/utils'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type InviteRole = 'admin' | 'designer'
+type InviteRole = 'admin' | 'designer' | 'developer' | 'marketer' | 'project_manager'
 
 export type TeamMember = {
   id: string
@@ -59,15 +60,37 @@ interface Props {
   workspaces: { id: string; name: string }[]
 }
 
-// ─── Role badge styles ────────────────────────────────────────────────────────
+// ─── Role meta ────────────────────────────────────────────────────────────────
 
 const ROLE_BADGE: Record<string, string> = {
-  admin:    'bg-zinc-900 text-white',
-  designer: 'bg-violet-100 text-violet-700',
-  client:   'bg-zinc-100 text-zinc-600',
+  admin:           'bg-zinc-900 text-white dark:bg-white dark:text-black',
+  designer:        'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
+  developer:       'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  marketer:        'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  project_manager: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  client:          'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
 }
 
-// ─── Shared avatar helper ─────────────────────────────────────────────────────
+const ROLE_LABEL: Record<string, string> = {
+  admin:           'Admin',
+  designer:        'Designer',
+  developer:       'Developer',
+  marketer:        'Marketer',
+  project_manager: 'Project Manager',
+  client:          'Client',
+}
+
+const INTERNAL_ROLES = ['designer', 'developer', 'marketer', 'project_manager'] as const
+
+const INTERNAL_FILTERS = [
+  { key: 'all',             label: 'All' },
+  { key: 'designer',        label: 'Designers' },
+  { key: 'developer',       label: 'Developers' },
+  { key: 'marketer',        label: 'Marketers' },
+  { key: 'project_manager', label: 'Managers' },
+]
+
+// ─── Avatar helper ────────────────────────────────────────────────────────────
 
 function MemberAvatar({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
   return avatarUrl ? (
@@ -82,21 +105,42 @@ function MemberAvatar({ name, avatarUrl }: { name: string; avatarUrl: string | n
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function DirectoryClient({ teamMembers: initialTeam, clients, currentUserId, workspaces }: Props) {
-  const [activeTab, setActiveTab] = useState<'admins' | 'designers' | 'clients'>('admins')
-  const [team, setTeam]           = useState(initialTeam)
-  const [error, setError]         = useState<string | null>(null)
-  const [removingId, setRemovingId] = useState<string | null>(null)
-  const [isPending, startTransition] = useTransition()
+  // ── Tab state via URL ──────────────────────────────────────────────────────
+  const searchParams = useSearchParams()
+  const router       = useRouter()
+
+  const rawTab   = searchParams.get('tab')
+  const activeTab: 'admins' | 'internal' | 'clients' =
+    rawTab === 'internal' ? 'internal'
+    : rawTab === 'clients' ? 'clients'
+    : 'admins'
+
+  function setTab(tab: 'admins' | 'internal' | 'clients') {
+    router.replace(`/dashboard/directory?tab=${tab}`, { scroll: false })
+  }
+
+  // ── General state ──────────────────────────────────────────────────────────
+  const [team,        setTeam]        = useState(initialTeam)
+  const [internalFilter, setInternalFilter] = useState<string>('all')
+  const [error,       setError]       = useState<string | null>(null)
+  const [removingId,  setRemovingId]  = useState<string | null>(null)
+  const [isPending,   startTransition] = useTransition()
 
   // ── Invite team member dialog ──────────────────────────────────────────────
-  const [inviteOpen, setInviteOpen]     = useState(false)
-  const [inviteName, setInviteName]     = useState('')
-  const [inviteEmail, setInviteEmail]   = useState('')
-  const [inviteRole, setInviteRole]     = useState<InviteRole>('designer')
+  const [inviteOpen,    setInviteOpen]    = useState(false)
+  const [inviteName,    setInviteName]    = useState('')
+  const [inviteEmail,   setInviteEmail]   = useState('')
+  const [inviteRole,    setInviteRole]    = useState<InviteRole>('designer')
   const [inviteSuccess, setInviteSuccess] = useState(false)
 
   function resetInvite() {
-    setInviteName(''); setInviteEmail(''); setInviteRole('designer'); setInviteSuccess(false); setError(null)
+    setInviteName(''); setInviteEmail(''); setInviteSuccess(false); setError(null)
+  }
+
+  function openInviteModal() {
+    resetInvite()
+    setInviteRole(activeTab === 'admins' ? 'admin' : 'designer')
+    setInviteOpen(true)
   }
 
   function handleInvite() {
@@ -110,11 +154,11 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
   }
 
   // ── Invite client dialog ───────────────────────────────────────────────────
-  const [clientInviteOpen, setClientInviteOpen]   = useState(false)
-  const [clientName, setClientName]               = useState('')
-  const [clientEmail, setClientEmail]             = useState('')
-  const [clientWorkspace, setClientWorkspace]     = useState(workspaces[0]?.id ?? '')
-  const [clientSuccess, setClientSuccess]         = useState(false)
+  const [clientInviteOpen,   setClientInviteOpen]   = useState(false)
+  const [clientName,         setClientName]         = useState('')
+  const [clientEmail,        setClientEmail]        = useState('')
+  const [clientWorkspace,    setClientWorkspace]    = useState(workspaces[0]?.id ?? '')
+  const [clientSuccess,      setClientSuccess]      = useState(false)
 
   function resetClientInvite() {
     setClientName(''); setClientEmail(''); setClientWorkspace(workspaces[0]?.id ?? ''); setClientSuccess(false); setError(null)
@@ -148,46 +192,141 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
     })
   }
 
-  const admins    = team.filter((m) => m.role === 'admin')
-  const designers = team.filter((m) => m.role === 'designer')
+  // ── Derived data ───────────────────────────────────────────────────────────
+  const admins      = team.filter((m) => m.role === 'admin')
+  const internalAll = team.filter((m) => (INTERNAL_ROLES as readonly string[]).includes(m.role))
+  const internalRows = internalFilter === 'all'
+    ? internalAll
+    : internalAll.filter((m) => m.role === internalFilter)
 
   const tabs = [
-    { key: 'admins'    as const, label: 'Admins',    count: admins.length },
-    { key: 'designers' as const, label: 'Internal Team', count: designers.length },
-    { key: 'clients'   as const, label: 'Clients',   count: clients.length },
+    { key: 'admins'   as const, label: 'Admins',        count: admins.length },
+    { key: 'internal' as const, label: 'Internal Team', count: internalAll.length },
+    { key: 'clients'  as const, label: 'Clients',       count: clients.length },
   ]
+
+  // ── Modal config (contextual) ──────────────────────────────────────────────
+  const isAdminsTab  = activeTab === 'admins'
+  const modalTitle   = isAdminsTab ? 'Add Admin' : 'Add Team Member'
+  const modalDesc    = isAdminsTab
+    ? 'Invite a new admin to manage the portal. They will receive an access link via email.'
+    : "Invite an internal team member. They'll receive a portal access link via email."
+
+  // ─── Shared table renderer ─────────────────────────────────────────────────
+  function renderTeamTable(rows: TeamMember[], emptyLabel: string) {
+    return (
+      <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+        {rows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <p className="text-sm font-medium text-zinc-900 dark:text-white mb-1">{emptyLabel}</p>
+            <p className="text-sm text-zinc-400">Invite a team member to get started.</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+                <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Member</th>
+                <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Role</th>
+                <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Joined</th>
+                <th className="px-4 py-3 w-10" />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((member) => {
+                const isYou      = member.id === currentUserId
+                const isRemoving = removingId === member.id
+                const displayName = member.full_name || member.email
+                return (
+                  <tr
+                    key={member.id}
+                    className={cn(
+                      'border-b border-zinc-50 dark:border-zinc-800 last:border-0 transition-colors',
+                      isRemoving ? 'opacity-40' : 'hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50'
+                    )}
+                  >
+                    <td className="px-6 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <MemberAvatar name={displayName} avatarUrl={member.avatar_url} />
+                        <div>
+                          <Link
+                            href={`/dashboard/team/${member.id}`}
+                            className="font-medium text-black dark:text-white hover:underline underline-offset-2"
+                          >
+                            {displayName}
+                            {isYou && <span className="ml-1.5 text-[10px] text-zinc-400 font-normal">(you)</span>}
+                          </Link>
+                          {member.title ? (
+                            <p className="text-xs text-zinc-500">{member.title}</p>
+                          ) : (
+                            <p className="text-xs text-zinc-400">{member.email}</p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className={cn('inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded', ROLE_BADGE[member.role] ?? 'bg-zinc-100 text-zinc-600')}>
+                        {ROLE_LABEL[member.role] ?? member.role}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-zinc-400 text-xs hidden md:table-cell">
+                      {new Date(member.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      {!isYou && (
+                        <button
+                          onClick={() => handleRemove(member.id)}
+                          disabled={isPending}
+                          className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors disabled:pointer-events-none"
+                          title="Remove member"
+                        >
+                          {isRemoving
+                            ? <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
+                            : <Trash2 size={14} strokeWidth={1.5} />
+                          }
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="animate-fade-in">
-      {/* ── Page heading ───────────────────────────────────────────────── */}
-      <div className="mb-6 flex items-start justify-between">
+      {/* ── Page heading ──────────────────────────────────────────────────── */}
+      <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">Directory</h1>
           <p className="mt-1 text-sm text-zinc-500">Internal team members and external clients.</p>
         </div>
 
-        {(activeTab === 'admins' || activeTab === 'designers') && (
-          <Button
-            onClick={() => { setInviteOpen(true); resetInvite() }}
-            className="gap-1.5 shrink-0"
+        {/* Contextual CTA */}
+        {(activeTab === 'admins' || activeTab === 'internal') && (
+          <button
+            onClick={openInviteModal}
+            className="flex items-center gap-1.5 h-8 px-3 bg-black dark:bg-white text-white dark:text-black text-xs font-medium rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap shrink-0"
           >
-            <UserPlus size={14} strokeWidth={1.5} />
-            Add Member
-          </Button>
+            <UserPlus size={13} strokeWidth={1.5} />
+            {activeTab === 'admins' ? 'Add Admin' : 'Add Member'}
+          </button>
         )}
-
         {activeTab === 'clients' && (
-          <Button
+          <button
             onClick={() => { setClientInviteOpen(true); resetClientInvite() }}
-            className="gap-1.5 shrink-0"
+            className="flex items-center gap-1.5 h-8 px-3 bg-black dark:bg-white text-white dark:text-black text-xs font-medium rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap shrink-0"
           >
-            <UserPlus size={14} strokeWidth={1.5} />
+            <UserPlus size={13} strokeWidth={1.5} />
             Add Client
-          </Button>
+          </button>
         )}
       </div>
 
-      {/* ── Error banner ───────────────────────────────────────────────── */}
+      {/* ── Error banner ──────────────────────────────────────────────────── */}
       {error && (
         <div className="mb-4 flex items-start gap-2.5 p-3 bg-red-50 border border-red-100 text-red-700 text-sm rounded-lg">
           <AlertCircle size={15} strokeWidth={1.5} className="mt-0.5 shrink-0" />
@@ -195,12 +334,12 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
         </div>
       )}
 
-      {/* ── Tabs ───────────────────────────────────────────────────────── */}
+      {/* ── Tabs ──────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-0.5 mb-6 border-b border-zinc-100 dark:border-zinc-800">
         {tabs.map(({ key, label, count }) => (
           <button
             key={key}
-            onClick={() => setActiveTab(key)}
+            onClick={() => setTab(key)}
             className={cn(
               'relative px-4 pb-3 pt-1 text-sm font-medium transition-colors duration-150',
               activeTab === key
@@ -219,93 +358,40 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
         ))}
       </div>
 
-      {/* ── Admins / Designers Tabs ────────────────────────────────────── */}
-      {(activeTab === 'admins' || activeTab === 'designers') && (() => {
-        const rows = activeTab === 'admins' ? admins : designers
-        const emptyLabel = activeTab === 'admins' ? 'No admins yet' : 'No designers yet'
-        return (
-          <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
-            {rows.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <p className="text-sm font-medium text-zinc-900 dark:text-white mb-1">{emptyLabel}</p>
-                <p className="text-sm text-zinc-400">Invite a team member to get started.</p>
-              </div>
-            ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
-                    <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Member</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Role</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Joined</th>
-                    <th className="px-4 py-3 w-10" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((member) => {
-                    const isYou = member.id === currentUserId
-                    const isRemoving = removingId === member.id
-                    const displayName = member.full_name || member.email
-                    return (
-                      <tr
-                        key={member.id}
-                        className={cn(
-                          'border-b border-zinc-50 dark:border-zinc-800 last:border-0 transition-colors',
-                          isRemoving ? 'opacity-40' : 'hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50'
-                        )}
-                      >
-                        <td className="px-6 py-3.5">
-                          <div className="flex items-center gap-3">
-                            <MemberAvatar name={displayName} avatarUrl={member.avatar_url} />
-                            <div>
-                              <Link
-                                href={`/dashboard/team/${member.id}`}
-                                className="font-medium text-black dark:text-white hover:underline underline-offset-2"
-                              >
-                                {displayName}
-                                {isYou && <span className="ml-1.5 text-[10px] text-zinc-400 font-normal">(you)</span>}
-                              </Link>
-                              {member.title ? (
-                                <p className="text-xs text-zinc-500">{member.title}</p>
-                              ) : (
-                                <p className="text-xs text-zinc-400">{member.email}</p>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span className={cn('inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded capitalize', ROLE_BADGE[member.role] ?? 'bg-zinc-100 text-zinc-600')}>
-                            {member.role}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3.5 text-zinc-400 text-xs hidden md:table-cell">
-                          {new Date(member.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </td>
-                        <td className="px-4 py-3.5 text-right">
-                          {!isYou && (
-                            <button
-                              onClick={() => handleRemove(member.id)}
-                              disabled={isPending}
-                              className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors disabled:pointer-events-none"
-                              title="Remove member"
-                            >
-                              {isRemoving
-                                ? <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
-                                : <Trash2 size={14} strokeWidth={1.5} />
-                              }
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )
-      })()}
+      {/* ── Admins tab ────────────────────────────────────────────────────── */}
+      {activeTab === 'admins' && renderTeamTable(admins, 'No admins yet')}
 
-      {/* ── Clients Tab ────────────────────────────────────────────────── */}
+      {/* ── Internal Team tab ─────────────────────────────────────────────── */}
+      {activeTab === 'internal' && (
+        <>
+          {/* Role filter pills */}
+          <div className="flex items-center gap-1.5 mb-4 flex-wrap">
+            {INTERNAL_FILTERS.map(({ key, label }) => {
+              const count = key === 'all'
+                ? internalAll.length
+                : internalAll.filter((m) => m.role === key).length
+              return (
+                <button
+                  key={key}
+                  onClick={() => setInternalFilter(key)}
+                  className={cn(
+                    'flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full border transition-colors',
+                    internalFilter === key
+                      ? 'bg-zinc-900 dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white'
+                      : 'bg-white dark:bg-transparent text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                  )}
+                >
+                  {label}
+                  <span className="tabular-nums opacity-70">{count}</span>
+                </button>
+              )
+            })}
+          </div>
+          {renderTeamTable(internalRows, `No ${internalFilter === 'all' ? 'team members' : ROLE_LABEL[internalFilter]?.toLowerCase() + 's'} yet`)}
+        </>
+      )}
+
+      {/* ── Clients tab ───────────────────────────────────────────────────── */}
       {activeTab === 'clients' && (
         <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
           {clients.length === 0 ? (
@@ -343,7 +429,7 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
                       </td>
                       <td className="px-4 py-3.5">
                         <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                          client
+                          Client
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-zinc-400 text-xs whitespace-nowrap">
@@ -366,14 +452,12 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
         </div>
       )}
 
-      {/* ── Invite team member dialog ───────────────────────────────────── */}
+      {/* ── Invite team / admin dialog ─────────────────────────────────────── */}
       <Dialog open={inviteOpen} onOpenChange={(open) => { if (!isPending) { setInviteOpen(open); if (!open) resetInvite() } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Team Member</DialogTitle>
-            <DialogDescription>
-              Invite an internal team member. They'll receive a portal access link via email.
-            </DialogDescription>
+            <DialogTitle>{modalTitle}</DialogTitle>
+            <DialogDescription>{modalDesc}</DialogDescription>
           </DialogHeader>
 
           {inviteSuccess ? (
@@ -400,33 +484,55 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
                 <Label className="text-xs uppercase tracking-wide text-zinc-600">Email address</Label>
                 <Input type="email" placeholder="jane@clikaa.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !isPending && handleInvite()} disabled={isPending} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wide text-zinc-600">Role</Label>
-                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as InviteRole)}>
-                  <SelectTrigger className="rounded-lg">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="designer">Designer — Internal team member</SelectItem>
-                    <SelectItem value="admin">Admin — Full portal access</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+
+              {/* Role dropdown — only shown for Internal Team, locked to Admin on Admins tab */}
+              {!isAdminsTab ? (
+                <div className="space-y-1.5">
+                  <Label className="text-xs uppercase tracking-wide text-zinc-600">Role</Label>
+                  <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as InviteRole)}>
+                    <SelectTrigger className="rounded-lg">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="designer">Designer</SelectItem>
+                      <SelectItem value="developer">Developer</SelectItem>
+                      <SelectItem value="marketer">Marketer</SelectItem>
+                      <SelectItem value="project_manager">Project Manager</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label className="text-xs uppercase tracking-wide text-zinc-600">Role</Label>
+                  <div className="flex items-center h-9 px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-sm text-zinc-400">
+                    Admin — Full portal access
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {!inviteSuccess && (
             <DialogFooter>
-              <Button variant="outline" rounded="sm" onClick={() => setInviteOpen(false)} disabled={isPending}>Cancel</Button>
-              <Button rounded="sm" onClick={handleInvite} disabled={isPending || !inviteEmail.trim() || !inviteName.trim()}>
-                {isPending ? <><Loader2 size={13} strokeWidth={1.5} className="animate-spin" />Sending…</> : 'Send Invite'}
+              <Button variant="outline" rounded="sm" onClick={() => setInviteOpen(false)} disabled={isPending}>
+                Cancel
               </Button>
+              <button
+                onClick={handleInvite}
+                disabled={isPending || !inviteEmail.trim() || !inviteName.trim()}
+                className="flex items-center gap-1.5 h-9 px-4 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isPending
+                  ? <><Loader2 size={13} strokeWidth={1.5} className="animate-spin" />Sending…</>
+                  : 'Send Invite'
+                }
+              </button>
             </DialogFooter>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* ── Add client dialog ───────────────────────────────────────────── */}
+      {/* ── Add client dialog ──────────────────────────────────────────────── */}
       <Dialog open={clientInviteOpen} onOpenChange={(open) => { if (!isPending) { setClientInviteOpen(open); if (!open) resetClientInvite() } }}>
         <DialogContent>
           <DialogHeader>
@@ -478,10 +584,19 @@ export function DirectoryClient({ teamMembers: initialTeam, clients, currentUser
 
           {!clientSuccess && (
             <DialogFooter>
-              <Button variant="outline" rounded="sm" onClick={() => setClientInviteOpen(false)} disabled={isPending}>Cancel</Button>
-              <Button rounded="sm" onClick={handleClientInvite} disabled={isPending || !clientEmail.trim() || !clientWorkspace}>
-                {isPending ? <><Loader2 size={13} strokeWidth={1.5} className="animate-spin" />Sending…</> : 'Send Invite'}
+              <Button variant="outline" rounded="sm" onClick={() => setClientInviteOpen(false)} disabled={isPending}>
+                Cancel
               </Button>
+              <button
+                onClick={handleClientInvite}
+                disabled={isPending || !clientEmail.trim() || !clientWorkspace}
+                className="flex items-center gap-1.5 h-9 px-4 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isPending
+                  ? <><Loader2 size={13} strokeWidth={1.5} className="animate-spin" />Sending…</>
+                  : 'Send Invite'
+                }
+              </button>
             </DialogFooter>
           )}
         </DialogContent>

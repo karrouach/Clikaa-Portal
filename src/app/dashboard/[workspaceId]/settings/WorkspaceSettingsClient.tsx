@@ -31,7 +31,8 @@ import {
 } from './workspace-settings-actions'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Role = 'admin' | 'client' | 'designer'
+type Role = 'admin' | 'client' | 'designer' | 'developer' | 'marketer' | 'project_manager'
+type InviteRole = Role | 'internal_team'
 
 interface MemberProfile {
   id: string
@@ -63,15 +64,21 @@ interface Props {
 
 // ─── Role styles ──────────────────────────────────────────────────────────────
 const ROLE_BADGE: Record<Role, string> = {
-  admin:    'bg-zinc-900 text-white',
-  designer: 'bg-violet-100 text-violet-700',
-  client:   'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300',
+  admin:           'bg-zinc-900 text-white',
+  designer:        'bg-violet-100 text-violet-700',
+  developer:       'bg-blue-100 text-blue-700',
+  marketer:        'bg-amber-100 text-amber-700',
+  project_manager: 'bg-emerald-100 text-emerald-700',
+  client:          'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300',
 }
 
 const ROLE_LABEL: Record<Role, string> = {
-  admin:    'Admin',
-  designer: 'Designer',
-  client:   'Client',
+  admin:           'Admin',
+  designer:        'Designer',
+  developer:       'Developer',
+  marketer:        'Marketer',
+  project_manager: 'Project Manager',
+  client:          'Client',
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -140,7 +147,7 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
   const [inviteOpen, setInviteOpen]         = useState(false)
   const [inviteEmail, setInviteEmail]       = useState('')
   const [inviteName, setInviteName]         = useState('')
-  const [inviteRole, setInviteRole]         = useState<Role>('client')
+  const [inviteRole, setInviteRole]         = useState<InviteRole>('client')
   const [inviteError, setInviteError]       = useState<string | null>(null)
   const [inviteSuccess, setInviteSuccess]   = useState(false)
   const [isInvitePending, startInviteTransition] = useTransition()
@@ -473,9 +480,9 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
             </div>
             <div className="p-4 border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-[#1A1A1A] rounded-xl">
               <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium mb-2 bg-violet-100 text-violet-700 rounded">
-                Designer
+                Internal Team
               </span>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Designer access — can submit invoices and manage assigned tasks.</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">Team member access — can submit invoices and manage assigned tasks.</p>
             </div>
             <div className="p-4 border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-[#1A1A1A] rounded-xl">
               <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium mb-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded">
@@ -616,13 +623,13 @@ export function WorkspaceSettingsClient({ workspace, members, currentUserId, isA
               <Label className="text-xs uppercase tracking-wide text-zinc-600">
                 Role
               </Label>
-              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as Role)} disabled={isInvitePending || inviteSuccess}>
+              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as InviteRole)} disabled={isInvitePending || inviteSuccess}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="client">Client — Board access</SelectItem>
-                  <SelectItem value="designer">Designer — Team member</SelectItem>
+                  <SelectItem value="internal_team">Internal Team — Team member</SelectItem>
                   <SelectItem value="admin">Admin — Full access</SelectItem>
                 </SelectContent>
               </Select>

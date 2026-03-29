@@ -71,8 +71,9 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
-  const isAdmin    = profile?.role === 'admin'
-  const isDesigner = profile?.role === 'designer'
+  const INTERNAL_ROLES = ['designer', 'developer', 'marketer', 'project_manager']
+  const isAdmin        = profile?.role === 'admin'
+  const isInternalTeam = INTERNAL_ROLES.includes(profile?.role ?? '')
   const displayName = profile?.full_name || profile?.email?.split('@')[0] || 'there'
 
   // ── Workspaces (all roles) ─────────────────────────────────────────────────
@@ -281,7 +282,7 @@ export default async function DashboardPage() {
   let totalBalance = 0
   let adminName    = 'Us'
 
-  if (!isAdmin && !isDesigner && workspaces.length > 0) {
+  if (!isAdmin && !isInternalTeam && workspaces.length > 0) {
     const workspaceIds = workspaces.map((ws) => ws.id)
     const today = new Date().toISOString().split('T')[0]
 
@@ -322,7 +323,7 @@ export default async function DashboardPage() {
   let designerWorkspaceNames: Record<string, string> = {}
   let designerClientFeedback: { id: string; body: string; authorName: string; taskTitle: string; createdAt: string }[] = []
 
-  if (isDesigner) {
+  if (isInternalTeam) {
     // Step 1 — fetch tasks (everything else depends on task IDs)
     const { data: dtasks } = await supabase
       .from('tasks')
@@ -685,7 +686,7 @@ export default async function DashboardPage() {
       )}
 
       {/* ════════════════════ CLIENT CONCIERGE VIEW ═════════════════════════ */}
-      {!isAdmin && !isDesigner && (
+      {!isAdmin && !isInternalTeam && (
         <>
           {workspaces.length === 0 ? (
             /* Empty state */
@@ -941,8 +942,8 @@ export default async function DashboardPage() {
           )}
         </>
       )}
-      {/* ════════════════════ DESIGNER VIEW ════════════════════════════════ */}
-      {isDesigner && (() => {
+      {/* ════════════════════ INTERNAL TEAM VIEW ═══════════════════════════ */}
+      {isInternalTeam && (() => {
         const today = new Date().toISOString().split('T')[0]
         const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]
 

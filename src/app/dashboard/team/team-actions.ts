@@ -36,7 +36,7 @@ export async function inviteTeamMember({
 }: {
   email: string
   fullName: string
-  role?: 'admin' | 'designer' | 'client'
+  role?: 'admin' | 'designer' | 'developer' | 'marketer' | 'project_manager' | 'client'
 }): Promise<TeamActionResult> {
   const trimEmail = email.trim().toLowerCase()
   const trimName = fullName.trim()

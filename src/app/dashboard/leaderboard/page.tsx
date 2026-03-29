@@ -25,7 +25,7 @@ const RANK_STYLES: Record<number, string> = {
 }
 
 interface Props {
-  searchParams: Promise<{ timeframe?: string; group?: string }>
+  searchParams: Promise<{ timeframe?: string }>
 }
 
 export default async function LeaderboardPage({ searchParams }: Props) {
@@ -46,21 +46,12 @@ export default async function LeaderboardPage({ searchParams }: Props) {
 
   const params    = await searchParams
   const timeframe = params.timeframe === 'month' ? 'month' : 'all'
-  const group     = params.group     === 'everyone' ? 'everyone' : 'designers'
 
-  // ── Fetch profiles based on group filter ──────────────────────────────────
-  let profilesQuery = supabase
+  // ── Fetch internal team profiles only ─────────────────────────────────────
+  const { data: members } = await supabase
     .from('profiles')
     .select('id, full_name, email, avatar_url, role')
-
-  if (group === 'designers') {
-    profilesQuery = profilesQuery.eq('role', 'designer')
-  } else {
-    // Everyone: all non-admin profiles (clients + designers)
-    profilesQuery = profilesQuery.in('role', ['designer', 'client'])
-  }
-
-  const { data: members } = await profilesQuery
+    .in('role', ['designer', 'developer', 'marketer', 'project_manager'])
 
   if (!members || members.length === 0) {
     return (
@@ -71,7 +62,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
             <p className="mt-1 text-sm text-zinc-500">Rankings based on completed tasks.</p>
           </div>
           <Suspense>
-            <LeaderboardFilters timeframe={timeframe} group={group} />
+            <LeaderboardFilters timeframe={timeframe} />
           </Suspense>
         </div>
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
@@ -133,7 +124,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
         <div>
           <h1 className="text-2xl font-semibold text-black dark:text-white tracking-tight">Leaderboard</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {group === 'designers' ? 'Designer rankings' : 'Team rankings'} · {periodLabel}
+            Team rankings · {periodLabel}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -142,19 +133,19 @@ export default async function LeaderboardPage({ searchParams }: Props) {
             <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">{ranked.length} members</span>
           </div>
           <Suspense>
-            <LeaderboardFilters timeframe={timeframe} group={group} />
+            <LeaderboardFilters timeframe={timeframe} />
           </Suspense>
         </div>
       </div>
 
       {/* Podium — top 3 */}
       {ranked.length >= 3 && (
-        <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="grid grid-cols-3 gap-3 mb-8 items-end">
           {[ranked[1], ranked[0], ranked[2]].map((designer, podiumIndex) => {
             const rank    = podiumIndex === 0 ? 2 : podiumIndex === 1 ? 1 : 3
             const heights = ['h-24', 'h-32', 'h-20']
             return (
-              <div key={designer.id} className="flex flex-col items-center gap-2">
+              <Link key={designer.id} href={`/dashboard/team/${designer.id}?from=leaderboard`} className="flex flex-col items-center gap-2 group">
                 <div className="flex flex-col items-center gap-1">
                   {rank === 1 && <span className="text-xl">🏆</span>}
                   {rank === 2 && <span className="text-xl">🥈</span>}
@@ -166,7 +157,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
                       getInitials(designer.name)
                     )}
                   </div>
-                  <p className="text-xs font-semibold text-black dark:text-white text-center truncate max-w-[80px]">{designer.name.split(' ')[0]}</p>
+                  <p className="text-xs font-semibold text-black dark:text-white text-center truncate max-w-[80px] group-hover:underline underline-offset-2">{designer.name.split(' ')[0]}</p>
                   <p className="text-[10px] text-zinc-500">{designer.completedTasks} tasks</p>
                 </div>
                 <div
@@ -178,7 +169,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
                 >
                   <span className={cn('text-sm font-bold', rank === 1 ? 'text-white dark:text-black' : 'text-zinc-600 dark:text-zinc-300')}>#{rank}</span>
                 </div>
-              </div>
+              </Link>
             )
           })}
         </div>
@@ -204,7 +195,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
             return (
               <Link
                 key={member.id}
-                href={`/dashboard/team/${member.id}`}
+                href={`/dashboard/team/${member.id}?from=leaderboard`}
                 className="px-5 py-4 grid grid-cols-[2rem_1fr_8rem_5rem] gap-4 items-center hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
               >
                 {/* Rank badge */}
@@ -223,9 +214,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-black dark:text-white truncate">{member.name}</p>
-                    {group === 'everyone' && (
-                      <p className="text-[10px] text-zinc-400 capitalize">{member.role}</p>
-                    )}
+                    <p className="text-[10px] text-zinc-400 capitalize">{member.role.replace('_', ' ')}</p>
                   </div>
                 </div>
 

@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
@@ -26,11 +27,11 @@ export default async function DirectoryPage() {
 
   const admin = createAdminClient()
 
-  // Internal team members: admin + designer roles
+  // Internal team members: admin + all expanded internal roles
   const { data: teamRows } = await admin
     .from('profiles')
     .select('id, full_name, email, avatar_url, role, title, created_at')
-    .in('role', ['admin', 'designer'])
+    .in('role', ['admin', 'designer', 'developer', 'marketer', 'project_manager'])
     .order('created_at', { ascending: true })
 
   const teamMembers: TeamMember[] = (teamRows ?? []).map((p) => ({
@@ -76,11 +77,13 @@ export default async function DirectoryPage() {
     .order('name', { ascending: true })
 
   return (
-    <DirectoryClient
-      teamMembers={teamMembers}
-      clients={clients}
-      currentUserId={user.id}
-      workspaces={allWorkspaces ?? []}
-    />
+    <Suspense fallback={null}>
+      <DirectoryClient
+        teamMembers={teamMembers}
+        clients={clients}
+        currentUserId={user.id}
+        workspaces={allWorkspaces ?? []}
+      />
+    </Suspense>
   )
 }

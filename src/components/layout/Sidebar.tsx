@@ -205,12 +205,14 @@ function WorkspaceItem({
 
 // ─── Sidebar ───────────────────────────────────────────────────────────────
 export function Sidebar({ profile, workspaces, unreadMessageCount = 0, badgeCounts }: SidebarProps) {
+  const INTERNAL_ROLES = ['designer', 'developer', 'marketer', 'project_manager']
+
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [msgBadge, setMsgBadge] = useState(unreadMessageCount)
   const pathname  = usePathname()
   const initials  = getInitials(profile.full_name || profile.email)
-  const isAdmin    = profile.role === 'admin'
-  const isDesigner = profile.role === 'designer'
+  const isAdmin        = profile.role === 'admin'
+  const isInternalTeam = INTERNAL_ROLES.includes(profile.role)
 
   // ── Clear badge when the user is on the messages page ─────────────────────
   useEffect(() => {
@@ -318,7 +320,7 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0, badgeCoun
                 {profile.full_name || 'No name set'}
               </p>
               <p className="text-xs text-zinc-500 truncate whitespace-nowrap capitalize">
-                {profile.role}
+                {profile.role.replace(/_/g, ' ')}
               </p>
             </motion.div>
           )}
@@ -403,9 +405,9 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0, badgeCoun
               </div>
             )}
           </>
-        ) : isDesigner ? (
+        ) : isInternalTeam ? (
           <>
-            {/* Dashboard — designer */}
+            {/* Dashboard — internal team */}
             <div className="px-3 space-y-0.5">
               <NavLink
                 href="/dashboard"
@@ -444,7 +446,7 @@ export function Sidebar({ profile, workspaces, unreadMessageCount = 0, badgeCoun
               />
             </div>
 
-            {/* Workspaces — designer */}
+            {/* Workspaces — internal team */}
             {workspaces.length > 0 && (
               <div>
                 <div className="mb-1">

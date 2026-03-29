@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { inviteWorkspaceMember } from '../settings/workspace-settings-actions'
 
-type Role = 'admin' | 'client' | 'designer'
+type Role = 'admin' | 'client' | 'designer' | 'developer' | 'marketer' | 'project_manager' | 'internal_team'
 
 export function InviteButton({ workspaceId }: { workspaceId: string }) {
   const [open, setOpen]               = useState(false)
@@ -128,7 +128,7 @@ export function InviteButton({ workspaceId }: { workspaceId: string }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="client">Client — Board access</SelectItem>
-                  <SelectItem value="designer">Designer — Team member</SelectItem>
+                  <SelectItem value="internal_team">Internal Team — Team member</SelectItem>
                   <SelectItem value="admin">Admin — Full access</SelectItem>
                 </SelectContent>
               </Select>
