@@ -45,7 +45,7 @@ import type { MemberOption } from './CreateTaskDialog'
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface CurrentUserProfile {
   id: string
-  role: 'admin' | 'client' | 'designer'
+  role: 'admin' | 'client' | 'designer' | 'developer' | 'marketer' | 'project_manager'
   full_name: string
   avatar_url: string | null
   email: string
