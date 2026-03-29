@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { Calendar, Clock } from 'lucide-react'
@@ -124,8 +125,9 @@ export default async function WorkspaceDetailsPage({ params }: Props) {
   // Recent activity — top 3 (already sorted by updated_at desc)
   const recentTasks = allTasks.slice(0, 3)
 
-  // Team members
-  const { data: memberships } = await supabase
+  // Team members — use admin client so clients can see all roles (designers, admins)
+  const adminClient = createAdminClient()
+  const { data: memberships } = await adminClient
     .from('workspace_members')
     .select('id, role, user_id, profiles(id, full_name, email, avatar_url, title)')
     .eq('workspace_id', workspaceId)

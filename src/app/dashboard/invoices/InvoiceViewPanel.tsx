@@ -15,10 +15,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { Invoice, InvoiceStatus } from './InvoicesClient'
 import { STATUS_STYLES, STATUS_LABELS } from './InvoicesClient'
-import { updateInvoiceStatus, deleteInvoice as deleteInvoiceAction, fetchInvoiceActivities, addInvoiceActivity } from './invoice-actions'
+import { updateInvoiceStatus, deleteInvoice as deleteInvoiceAction, fetchInvoiceActivities, addInvoiceActivity, clientMarkAsPaid } from './invoice-actions'
 
 // ─── All statuses available to set ────────────────────────────────────────────
-const ALL_STATUSES: InvoiceStatus[] = ['draft', 'pending', 'paid', 'overdue', 'failed', 'cancelled']
+const ALL_STATUSES: InvoiceStatus[] = ['draft', 'pending', 'processing', 'paid', 'overdue', 'failed', 'cancelled']
 
 // ─── Mock detail data ─────────────────────────────────────────────────────────
 interface LineItem { description: string; qty: number; rate: number }
@@ -93,6 +93,7 @@ export function InvoiceViewPanel({
   const [statusMenuOpen, setStatusMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
+  const [markPaidLoading, setMarkPaidLoading] = useState(false)
 
   // Fetch real activities from DB when invoice.dbId is available
   useEffect(() => {
@@ -348,7 +349,7 @@ export function InvoiceViewPanel({
         const eventLabel = status === 'paid'
           ? 'Marked as paid'
           : `Status changed to ${STATUS_LABELS[status]}`
-        setDbActivity(prev => [...prev, { event: eventLabel, date: formatNow() }])
+        setDbActivity(prev => [{ event: eventLabel, date: formatNow() }, ...prev])
       }
     }
   }
@@ -362,13 +363,30 @@ export function InvoiceViewPanel({
         toast.error('Failed to send reminder')
         return
       }
-      setDbActivity(prev => [...prev, { event: eventText, date: formatNow() }])
+      setDbActivity(prev => [{ event: eventText, date: formatNow() }, ...prev])
       router.refresh()
     } else {
       setActivity(prev => [...prev, { event: eventText, date: formatNow() }])
     }
     toast.success('Reminder sent', {
       description: `Payment reminder sent for ${invoice.id}`,
+    })
+  }
+
+  async function handleClientMarkAsPaid() {
+    if (!invoice?.dbId) return
+    setMarkPaidLoading(true)
+    const result = await clientMarkAsPaid(invoice.dbId)
+    setMarkPaidLoading(false)
+    if (result.error) {
+      toast.error(result.error)
+      return
+    }
+    onStatusChange(invoice.id, 'processing')
+    setDbActivity(prev => [{ event: 'Client marked as paid — awaiting confirmation', date: formatNow() }, ...prev])
+    router.refresh()
+    toast.success('Payment submitted', {
+      description: 'Your payment has been flagged for admin confirmation.',
     })
   }
 
@@ -487,6 +505,18 @@ export function InvoiceViewPanel({
                   <Download size={13} strokeWidth={1.5} />
                   <span>{pdfLoading ? 'Generating…' : 'Download PDF'}</span>
                 </button>
+
+                {/* Client-only: Mark as Paid */}
+                {isClient && invoice.status !== 'paid' && invoice.status !== 'processing' && (
+                  <button
+                    onClick={handleClientMarkAsPaid}
+                    disabled={markPaidLoading}
+                    className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors duration-150 disabled:opacity-50"
+                  >
+                    <CheckCircle2 size={13} strokeWidth={1.5} />
+                    <span>{markPaidLoading ? 'Submitting…' : 'Mark as Paid'}</span>
+                  </button>
+                )}
 
                 {/* Admin-only actions */}
                 {!isClient && (
@@ -626,7 +656,7 @@ export function InvoiceViewPanel({
                           {/* Timeline dot */}
                           <div className={cn(
                             'absolute -left-[11px] top-[5px] w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-[#1A1A1A]',
-                            i === mergedActivity.length - 1 ? 'bg-black' : 'bg-zinc-300',
+                            i === 0 ? 'bg-black dark:bg-white' : 'bg-zinc-300 dark:bg-zinc-600',
                           )} />
                           <p className="text-sm text-black dark:text-white leading-snug">{item.event}</p>
                           <p className="text-xs text-zinc-400 mt-0.5">{item.date}</p>

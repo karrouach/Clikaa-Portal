@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useTransition, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { MessageSquare, Send, Loader2, User, Search, X, Plus, Paperclip } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import { createBrowserClient } from '@supabase/ssr'
@@ -63,8 +64,13 @@ function timeAgo(iso: string): string {
 }
 
 export function MessagesClient({ initialConversations, currentUserId }: Props) {
+  const searchParams = useSearchParams()
   const [conversations, setConversations] = useState<ConvItem[]>(initialConversations)
-  const [selectedId, setSelectedId] = useState<string | null>(initialConversations[0]?.id ?? null)
+  const [selectedId, setSelectedId] = useState<string | null>(() => {
+    const fromUrl = searchParams.get('conversationId')
+    if (fromUrl && initialConversations.some((c) => c.id === fromUrl)) return fromUrl
+    return initialConversations[0]?.id ?? null
+  })
   const [messages, setMessages] = useState<MsgItem[]>([])
   const [loadingMsgs, setLoadingMsgs] = useState(false)
   const [reply, setReply] = useState('')

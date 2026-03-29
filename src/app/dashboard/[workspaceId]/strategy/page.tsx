@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect, notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { Target, Palette, Users } from 'lucide-react'
@@ -54,8 +55,9 @@ export default async function StrategyPage({ params }: Props) {
 
   if (!workspace) notFound()
 
-  // Workspace members + their profiles
-  const { data: memberships } = await supabase
+  // Workspace members — use admin client so clients can see all roles
+  const adminClient = createAdminClient()
+  const { data: memberships } = await adminClient
     .from('workspace_members')
     .select('role, profiles(id, full_name, email, avatar_url)')
     .eq('workspace_id', workspaceId)

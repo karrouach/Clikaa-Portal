@@ -96,7 +96,7 @@ export default async function DashboardPage() {
   let revenueLastMonth      = 0
   let activeProjectsCount   = 0
   let activityItems: {
-    id: string; authorName: string; taskTitle: string; workspaceName: string; workspaceId: string; body: string; createdAt: string
+    id: string; authorName: string; taskTitle: string; workspaceName: string; workspaceId: string; taskId: string; body: string; createdAt: string
   }[] = []
   let latestConversations: {
     id: string; subject: string; clientName: string; updatedAt: string
@@ -107,11 +107,10 @@ export default async function DashboardPage() {
   let clientOverview: {
     userId: string
     fullName: string
-    email: string
     avatarUrl: string | null
     workspaceName: string
-    status: 'Active' | 'Awaiting Feedback' | 'Paused'
     openTasks: number
+    completedTasks: number
     lastActivity: string
     revenue: number
   }[] = []
@@ -176,6 +175,7 @@ export default async function DashboardPage() {
         taskTitle:     task?.title ?? 'a task',
         workspaceName: ws?.name ?? '',
         workspaceId:   task?.workspace_id ?? '',
+        taskId:        c.task_id,
         body:          c.body.length > 80 ? c.body.slice(0, 80) + '…' : c.body,
         createdAt:     c.created_at,
       }
@@ -242,26 +242,23 @@ export default async function DashboardPage() {
       ])
 
       clientOverview = clientMembers.map((m) => {
-        const p         = (clientProfiles ?? []).find((pr) => pr.id === m.user_id)
-        const ws        = (allWorkspaces ?? []).find((w) => w.id === m.workspace_id)
-        const tasks     = (wsTasks ?? []).filter((t) => t.workspace_id === m.workspace_id)
-        const revenue   = (wsRevenue ?? []).filter((i) => i.workspace_id === m.workspace_id).reduce((s, i) => s + i.total, 0)
-        const openTasks = tasks.filter((t) => t.status !== 'done').length
-        const hasReview = tasks.some((t) => t.status === 'review')
-        const hasActive = tasks.some((t) => ['todo', 'in_progress'].includes(t.status))
-        const status: 'Active' | 'Awaiting Feedback' | 'Paused' = hasReview ? 'Awaiting Feedback' : hasActive ? 'Active' : 'Paused'
-        const lastActivity = tasks.length > 0
+        const p              = (clientProfiles ?? []).find((pr) => pr.id === m.user_id)
+        const ws             = (allWorkspaces ?? []).find((w) => w.id === m.workspace_id)
+        const tasks          = (wsTasks ?? []).filter((t) => t.workspace_id === m.workspace_id)
+        const revenue        = (wsRevenue ?? []).filter((i) => i.workspace_id === m.workspace_id).reduce((s, i) => s + i.total, 0)
+        const openTasks      = tasks.filter((t) => ['todo', 'pending', 'in_progress', 'review'].includes(t.status)).length
+        const completedTasks = tasks.filter((t) => t.status === 'done').length
+        const lastActivity   = tasks.length > 0
           ? tasks.sort((a, b) => b.updated_at > a.updated_at ? 1 : -1)[0].updated_at
           : ''
 
         return {
-          userId:        m.user_id,
-          fullName:      p?.full_name || p?.email || 'Unknown',
-          email:         p?.email ?? '',
-          avatarUrl:     p?.avatar_url ?? null,
-          workspaceName: ws?.name ?? '—',
-          status,
+          userId:         m.user_id,
+          fullName:       p?.full_name || p?.email || 'Unknown',
+          avatarUrl:      p?.avatar_url ?? null,
+          workspaceName:  ws?.name ?? '—',
           openTasks,
+          completedTasks,
           lastActivity,
           revenue,
         }
@@ -514,7 +511,7 @@ export default async function DashboardPage() {
                     {activityItems.map((item) => (
                       <Link
                         key={item.id}
-                        href={item.workspaceId ? `/dashboard/${item.workspaceId}` : '/dashboard'}
+                        href={item.workspaceId ? `/dashboard/${item.workspaceId}?taskId=${item.taskId}` : '/dashboard'}
                         className="px-5 py-3.5 flex items-start gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                       >
                         <div className="shrink-0 w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 mt-0.5">
@@ -558,7 +555,7 @@ export default async function DashboardPage() {
                 ) : (
                   <div className="divide-y divide-zinc-50 dark:divide-zinc-800">
                     {latestConversations.map((conv) => (
-                      <Link key={conv.id} href="/dashboard/messages" className="flex items-start gap-3 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
+                      <Link key={conv.id} href={`/dashboard/messages?conversationId=${conv.id}`} className="flex items-start gap-3 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
                         <div className="shrink-0 w-7 h-7 rounded-full bg-zinc-900 dark:bg-zinc-700 flex items-center justify-center text-white text-[10px] font-semibold mt-0.5">
                           {conv.clientName.charAt(0).toUpperCase()}
                         </div>
@@ -590,7 +587,7 @@ export default async function DashboardPage() {
                       return (
                         <Link
                           key={task.id}
-                          href={`/dashboard/${task.workspaceId}`}
+                          href={`/dashboard/${task.workspaceId}?taskId=${task.id}`}
                           className="flex items-start gap-3 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                         >
                           <div className={`shrink-0 mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center ${isToday ? 'bg-red-50' : 'bg-zinc-100 dark:bg-zinc-800'}`}>
@@ -615,7 +612,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Client Overview Table */}
-          <div className="mb-8">
+          <div className="pb-12">
             <div className="mb-4">
               <h2 className="text-lg font-semibold text-black dark:text-white tracking-tight">Client Overview</h2>
               <p className="mt-1 text-sm text-zinc-500">Status and activity across all client accounts.</p>
@@ -633,9 +630,9 @@ export default async function DashboardPage() {
                       <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                         <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Client</th>
                         <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap hidden sm:table-cell">Workspace</th>
-                        <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Status</th>
-                        <th className="px-6 py-3 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap hidden md:table-cell">Open Tasks</th>
                         <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap hidden lg:table-cell">Last Activity</th>
+                        <th className="px-6 py-3 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap hidden md:table-cell">Open Tasks</th>
+                        <th className="px-6 py-3 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap hidden md:table-cell">Completed</th>
                         <th className="px-6 py-3 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap hidden lg:table-cell">Revenue</th>
                       </tr>
                     </thead>
@@ -653,27 +650,18 @@ export default async function DashboardPage() {
                                     {initials}
                                   </div>
                                 )}
-                                <div className="min-w-0">
-                                  <p className="font-medium text-black dark:text-white text-sm truncate">{row.fullName}</p>
-                                  <p className="text-xs text-zinc-400 truncate">{row.email}</p>
-                                </div>
+                                <p className="font-medium text-black dark:text-white text-sm truncate">{row.fullName}</p>
                               </div>
                             </td>
                             <td className="px-6 py-3.5 text-zinc-500 dark:text-zinc-400 text-sm hidden sm:table-cell whitespace-nowrap">{row.workspaceName}</td>
-                            <td className="px-6 py-3.5">
-                              <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-medium border rounded-full whitespace-nowrap ${
-                                row.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                                  : row.status === 'Awaiting Feedback' ? 'bg-amber-50 text-amber-700 border-amber-100'
-                                  : 'bg-zinc-100 text-zinc-500 border-zinc-200'
-                              }`}>
-                                {row.status}
-                              </span>
+                            <td className="px-6 py-3.5 text-zinc-400 text-xs hidden lg:table-cell whitespace-nowrap">
+                              {row.lastActivity ? timeAgo(row.lastActivity) : '—'}
                             </td>
                             <td className="px-6 py-3.5 text-right tabular-nums text-sm text-zinc-700 dark:text-zinc-300 hidden md:table-cell">
                               {row.openTasks}
                             </td>
-                            <td className="px-6 py-3.5 text-zinc-400 text-xs hidden lg:table-cell whitespace-nowrap">
-                              {row.lastActivity ? timeAgo(row.lastActivity) : '—'}
+                            <td className="px-6 py-3.5 text-right tabular-nums text-sm text-zinc-700 dark:text-zinc-300 hidden md:table-cell">
+                              {row.completedTasks}
                             </td>
                             <td className="px-6 py-3.5 text-right font-medium text-black dark:text-white tabular-nums text-sm hidden lg:table-cell whitespace-nowrap">
                               {row.revenue > 0 ? formatCurrency(row.revenue) : '—'}

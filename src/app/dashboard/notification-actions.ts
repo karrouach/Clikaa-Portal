@@ -42,6 +42,44 @@ export async function clearAllNotifications(userId: string): Promise<void> {
   await supabase.from('notifications').delete().eq('user_id', userId)
 }
 
+// ── notifyWorkspaceAdmins ──────────────────────────────────────────────────
+// Fires a notification to every admin member of a workspace.
+export async function notifyWorkspaceAdmins(
+  workspaceId: string,
+  message: string,
+  link: string | null = null,
+): Promise<void> {
+  const admin = createAdminClient()
+
+  const { data: members } = await admin
+    .from('workspace_members')
+    .select('user_id')
+    .eq('workspace_id', workspaceId)
+    .eq('role', 'admin')
+
+  if (!members?.length) {
+    // Fall back to any admin profile if no admin is a workspace member
+    const { data: adminProfiles } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('role', 'admin')
+    if (!adminProfiles?.length) return
+    await admin.from('notifications').insert(
+      adminProfiles.map((p) => ({ user_id: p.id, message, link, read_status: false }))
+    )
+    return
+  }
+
+  const rows = members.map((m) => ({
+    user_id: m.user_id,
+    message,
+    link,
+    read_status: false,
+  }))
+
+  await admin.from('notifications').insert(rows)
+}
+
 // ── notifyWorkspaceClients ─────────────────────────────────────────────────
 // Fires a notification to every client member of a workspace.
 export async function notifyWorkspaceClients(

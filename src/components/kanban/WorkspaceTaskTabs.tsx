@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { LayoutGrid, List, Table2, GitBranch, Calendar, User } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import { createBrowserClient } from '@supabase/ssr'
@@ -389,10 +390,43 @@ export function WorkspaceTaskTabs({
   currentUserProfile,
   workspaceMembers = [],
 }: Props) {
-  const [activeTab,     setActiveTab]     = useState<ViewTab>('board')
-  const [tasks,         setTasks]         = useState<Task[]>(initialTasks)
-  const [selectedTask,  setSelectedTask]  = useState<Task | null>(null)
-  const [isSheetOpen,   setIsSheetOpen]   = useState(false)
+  const searchParams    = useSearchParams()
+  const router          = useRouter()
+  const deepLinkHandled = useRef(false)
+
+  const [activeTab,    setActiveTab]    = useState<ViewTab>('board')
+  const [tasks,        setTasks]        = useState<Task[]>(initialTasks)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [isSheetOpen,  setIsSheetOpen]  = useState(false)
+
+  // ── Deep-link: open task sheet when ?taskId= is present in the URL ─────────
+  // Runs whenever tasks or searchParams change so it works even if tasks load
+  // after initial render. The ref guard prevents re-opening on realtime updates.
+  useEffect(() => {
+    if (deepLinkHandled.current) return
+    const taskId = searchParams.get('taskId')
+    if (!taskId) return
+    const match = tasks.find((t) => t.id === taskId)
+    if (!match) return
+    deepLinkHandled.current = true
+    setSelectedTask(match)
+    setIsSheetOpen(true)
+  }, [searchParams, tasks])
+
+  // ── Centralised sheet-close: clears ?taskId= from the URL on dismiss ───────
+  function handleSheetOpenChange(open: boolean) {
+    setIsSheetOpen(open)
+    if (!open) {
+      setSelectedTask(null)
+      deepLinkHandled.current = false  // allow re-triggering if user navigates again
+      const params = new URLSearchParams(searchParams.toString())
+      if (params.has('taskId')) {
+        params.delete('taskId')
+        const qs = params.toString()
+        router.replace(qs ? `?${qs}` : window.location.pathname, { scroll: false })
+      }
+    }
+  }
 
   // ── Realtime subscription — syncs List/Table/Timeline with DB ─────────────
   useEffect(() => {
@@ -451,8 +485,7 @@ export function WorkspaceTaskTabs({
 
   function handleTaskDeleted(taskId: string) {
     setTasks((prev) => prev.filter((t) => t.id !== taskId))
-    setIsSheetOpen(false)
-    setSelectedTask(null)
+    handleSheetOpenChange(false)
   }
 
   return (
@@ -477,7 +510,7 @@ export function WorkspaceTaskTabs({
           ))}
         </div>
         {currentUserProfile.role !== 'designer' && currentUserProfile.role !== 'client' && (
-          <div className="hidden md:block ml-3 pb-1">
+          <div className="hidden md:block ml-3 py-2">
             <CreateTaskDialog
               workspaceId={workspaceId}
               onTaskCreated={(task) => setTasks((prev) => prev.some((t) => t.id === task.id) ? prev : [...prev, task])}
@@ -520,18 +553,16 @@ export function WorkspaceTaskTabs({
         )}
       </div>
 
-      {/* TaskDetailSheet for List / Table / Timeline (Board manages its own) */}
-      {activeTab !== 'board' && (
-        <TaskDetailSheet
-          task={selectedTask}
-          open={isSheetOpen}
-          onOpenChange={setIsSheetOpen}
-          currentUserProfile={currentUserProfile}
-          onTaskUpdated={handleTaskUpdated}
-          onTaskDeleted={handleTaskDeleted}
-          workspaceMembers={workspaceMembers}
-        />
-      )}
+      {/* TaskDetailSheet — rendered for all tabs including Board (deep-link driven) */}
+      <TaskDetailSheet
+        task={selectedTask}
+        open={isSheetOpen}
+        onOpenChange={handleSheetOpenChange}
+        currentUserProfile={currentUserProfile}
+        onTaskUpdated={handleTaskUpdated}
+        onTaskDeleted={handleTaskDeleted}
+        workspaceMembers={workspaceMembers}
+      />
     </div>
   )
 }

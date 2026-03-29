@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import type { Metadata } from 'next'
@@ -99,12 +100,14 @@ export default async function WorkspacePage({ params }: Props) {
   // The workspace layout (-mx-6 -my-8, flex-col, h-[calc(100vh-3.5rem)]) provides
   // the full-viewport-height container. KanbanBoard uses h-full to fill it.
   return (
-    <WorkspaceTaskTabs
-      workspaceId={workspaceId}
-      workspaceName={workspace.name}
-      initialTasks={tasks ?? []}
-      currentUserProfile={currentUserProfile}
-      workspaceMembers={workspaceMembers}
-    />
+    <Suspense fallback={null}>
+      <WorkspaceTaskTabs
+        workspaceId={workspaceId}
+        workspaceName={workspace.name}
+        initialTasks={tasks ?? []}
+        currentUserProfile={currentUserProfile}
+        workspaceMembers={workspaceMembers}
+      />
+    </Suspense>
   )
 }

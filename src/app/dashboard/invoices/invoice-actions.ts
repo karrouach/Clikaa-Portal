@@ -1,9 +1,10 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import type { LineItem } from '@/types/database'
-import { notifyWorkspaceClients } from '../notification-actions'
+import { notifyWorkspaceClients, notifyWorkspaceAdmins } from '../notification-actions'
 import { emailWorkspaceClients, portalUrl } from '@/lib/email'
 
 export interface CreateInvoiceInput {
@@ -90,7 +91,7 @@ export async function fetchInvoiceActivities(invoiceDbId: string) {
     .from('invoice_activities')
     .select('event, created_at')
     .eq('invoice_id', invoiceDbId)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: false })
 
   if (error) return { error: error.message, data: null }
   return { data, error: null }
@@ -157,6 +158,50 @@ export async function updateInvoiceStatus(id: string, status: string) {
         footerNote: 'You received this because you are a client on the Clikaa platform.',
       },
     }).catch((err) => console.error('[email] invoice status:', err))
+  }
+
+  revalidatePath('/dashboard/invoices')
+  return { success: true }
+}
+
+export async function clientMarkAsPaid(invoiceDbId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  // Fetch the invoice to get its number and workspace
+  const { data: invoice, error: fetchError } = await supabase
+    .from('invoices')
+    .select('invoice_number, workspace_id, status')
+    .eq('id', invoiceDbId)
+    .single()
+
+  if (fetchError || !invoice) return { error: fetchError?.message ?? 'Invoice not found' }
+  if (invoice.status === 'paid' || invoice.status === 'processing') {
+    return { error: 'Invoice already processed' }
+  }
+
+  const { error } = await supabase
+    .from('invoices')
+    .update({ status: 'processing' })
+    .eq('id', invoiceDbId)
+
+  if (error) return { error: error.message }
+
+  // Log the activity via admin client to bypass RLS (clients can't insert activity rows)
+  const adminClient = createAdminClient()
+  void adminClient
+    .from('invoice_activities')
+    .insert({ invoice_id: invoiceDbId, user_id: user.id, event: 'Client marked as paid — awaiting confirmation' })
+
+  // Notify workspace admins
+  const invoiceLabel = invoice.invoice_number ?? invoiceDbId
+  if (invoice.workspace_id) {
+    await notifyWorkspaceAdmins(
+      invoice.workspace_id,
+      `Client marked ${invoiceLabel} as paid. Please confirm payment.`,
+      '/dashboard/invoices',
+    )
   }
 
   revalidatePath('/dashboard/invoices')

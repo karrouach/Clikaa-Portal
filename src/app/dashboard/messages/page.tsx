@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -53,12 +54,10 @@ export default async function MessagesPage() {
 
     return (
       <div className="animate-fade-in flex flex-col h-full">
-        <div className="mb-4 shrink-0">
-          <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">Messages</h1>
-          <p className="mt-1 text-sm text-zinc-500">Client and designer conversations.</p>
-        </div>
         <div className="flex-1 overflow-hidden min-h-0">
-          <MessagesClient initialConversations={enriched} currentUserId={user.id} />
+          <Suspense fallback={null}>
+            <MessagesClient initialConversations={enriched} currentUserId={user.id} />
+          </Suspense>
         </div>
       </div>
     )
@@ -106,16 +105,14 @@ export default async function MessagesPage() {
 
   return (
     <div className="animate-fade-in flex flex-col h-full">
-      <div className="mb-4 shrink-0">
-        <h1 className="text-xl font-semibold text-black dark:text-white tracking-tight">Messages</h1>
-        <p className="mt-1 text-sm text-zinc-500">Your conversations with the team.</p>
-      </div>
       <div className="flex-1 overflow-hidden min-h-0">
-        <ClientMessagesClient
-          initialConversations={myConvs}
-          currentUserId={user.id}
-          adminName={adminName}
-        />
+        <Suspense fallback={null}>
+          <ClientMessagesClient
+            initialConversations={myConvs}
+            currentUserId={user.id}
+            adminName={adminName}
+          />
+        </Suspense>
       </div>
     </div>
   )

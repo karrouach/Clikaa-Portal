@@ -7,7 +7,7 @@ import { CreateInvoiceModal } from './CreateInvoiceModal'
 import { InvoiceViewPanel } from './InvoiceViewPanel'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'failed' | 'cancelled'
+export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'failed' | 'cancelled' | 'processing'
 
 export interface Invoice {
   id: string          // display ID (INV-001 style) or uuid from DB
@@ -25,21 +25,23 @@ export interface Invoice {
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 export const STATUS_STYLES: Record<InvoiceStatus, string> = {
-  draft:     'bg-zinc-100    text-zinc-600     border-zinc-200',
-  paid:      'bg-emerald-50  text-emerald-700  border-emerald-100',
-  pending:   'bg-amber-50    text-amber-700    border-amber-100',
-  overdue:   'bg-red-50      text-red-700      border-red-100',
-  failed:    'bg-red-100     text-red-800      border-red-200',
-  cancelled: 'bg-zinc-100    text-zinc-500     border-zinc-200',
+  draft:      'bg-zinc-100    text-zinc-600     border-zinc-200',
+  paid:       'bg-emerald-50  text-emerald-700  border-emerald-100',
+  pending:    'bg-amber-50    text-amber-700    border-amber-100',
+  overdue:    'bg-red-50      text-red-700      border-red-100',
+  failed:     'bg-red-100     text-red-800      border-red-200',
+  cancelled:  'bg-zinc-100    text-zinc-500     border-zinc-200',
+  processing: 'bg-blue-50     text-blue-700     border-blue-100',
 }
 
 export const STATUS_LABELS: Record<InvoiceStatus, string> = {
-  draft:     'Draft',
-  paid:      'Paid',
-  pending:   'Pending',
-  overdue:   'Overdue',
-  failed:    'Failed',
-  cancelled: 'Cancelled',
+  draft:      'Draft',
+  paid:       'Paid',
+  pending:    'Pending',
+  overdue:    'Overdue',
+  failed:     'Failed',
+  cancelled:  'Cancelled',
+  processing: 'Processing',
 }
 
 // ─── Mock data (fallback when no DB data) ─────────────────────────────────────

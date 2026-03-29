@@ -634,7 +634,7 @@ export type Database = {
           id: string
           workspace_id: string | null
           invoice_number: string
-          status: 'draft' | 'pending' | 'paid' | 'overdue' | 'failed' | 'cancelled'
+          status: 'draft' | 'pending' | 'paid' | 'overdue' | 'failed' | 'cancelled' | 'processing'
           client_name: string | null
           issue_date: string | null
           due_date: string | null
@@ -652,7 +652,7 @@ export type Database = {
           id?: string
           workspace_id?: string | null
           invoice_number: string
-          status?: 'draft' | 'pending' | 'paid' | 'overdue' | 'failed' | 'cancelled'
+          status?: 'draft' | 'pending' | 'paid' | 'overdue' | 'failed' | 'cancelled' | 'processing'
           client_name?: string | null
           issue_date?: string | null
           due_date?: string | null
@@ -670,7 +670,7 @@ export type Database = {
           id?: string
           workspace_id?: string | null
           invoice_number?: string
-          status?: 'draft' | 'pending' | 'paid' | 'overdue' | 'failed' | 'cancelled'
+          status?: 'draft' | 'pending' | 'paid' | 'overdue' | 'failed' | 'cancelled' | 'processing'
           client_name?: string | null
           issue_date?: string | null
           due_date?: string | null
