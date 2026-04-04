@@ -41,6 +41,11 @@ export async function createInvoice(input: CreateInvoiceInput) {
 
   if (error) return { error: error.message }
 
+  // Log "Invoice created" — first entry in the activity timeline
+  await supabase
+    .from('invoice_activities')
+    .insert({ invoice_id: data.id, user_id: user.id, event: 'Invoice created' })
+
   // Notify workspace clients when invoice is published directly as pending/sent
   if (input.status === 'pending' && input.workspace_id) {
     const amountLabel = '$' + Number(input.total).toLocaleString('en-US', { minimumFractionDigits: 2 })
@@ -102,13 +107,6 @@ export async function updateInvoiceStatus(id: string, status: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  // Fetch old status for logging
-  const { data: existing } = await supabase
-    .from('invoices')
-    .select('status')
-    .eq('id', id)
-    .single()
-
   const updateData: Record<string, unknown> = { status }
   if (status === 'pending' || status === 'paid') {
     updateData.sent_at = new Date().toISOString()
@@ -123,15 +121,14 @@ export async function updateInvoiceStatus(id: string, status: string) {
 
   if (error) return { error: error.message }
 
-  // Log the status change activity (non-fatal)
-  const oldStatus = existing?.status ?? null
+  // Log the status change activity
   const eventLabel = status === 'paid'
     ? 'Marked as paid'
     : `Status changed to ${status.charAt(0).toUpperCase() + status.slice(1)}`
 
-  void supabase
+  await supabase
     .from('invoice_activities')
-    .insert({ invoice_id: id, user_id: user.id, event: eventLabel, old_status: oldStatus, new_status: status })
+    .insert({ invoice_id: id, user_id: user.id, event: eventLabel })
 
   // Fire in-app notifications to workspace clients when invoice is sent
   if (status === 'pending' && invoice?.workspace_id) {

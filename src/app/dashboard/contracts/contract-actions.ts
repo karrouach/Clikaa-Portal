@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { notifyWorkspaceClients } from '../notification-actions'
-import { emailWorkspaceClients, portalUrl } from '@/lib/email'
+import { emailUserById, emailWorkspaceClients, portalUrl } from '@/lib/email'
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -50,32 +50,35 @@ export async function deleteTemplate(id: string) {
 // ── Contracts ─────────────────────────────────────────────────────────────────
 
 export async function createContract({
-  workspaceId,
   templateId,
   title,
   bodyText,
   sendNow,
+  recipientUserId,
+  recipientType,
 }: {
-  workspaceId: string
   templateId: string | null
   title: string
   bodyText: string
   sendNow: boolean
+  recipientUserId?: string
+  recipientType?: 'client' | 'internal_team'
 }) {
   const ctx = await requireAdmin()
   if (!ctx) return { error: 'Unauthorised' }
 
+  const admin = createAdminClient()
   const status = sendNow ? 'pending_signature' : 'draft'
 
   const { data, error } = await ctx.supabase
     .from('contracts')
     .insert({
-      workspace_id: workspaceId,
       template_id: templateId,
       title,
       body_text: bodyText,
       status,
       created_by: ctx.user.id,
+      recipient_user_id: recipientUserId ?? null,
     })
     .select('id')
     .single()
@@ -83,24 +86,30 @@ export async function createContract({
   if (error) return { error: error.message }
 
   if (sendNow) {
-    await notifyWorkspaceClients(
-      workspaceId,
-      `New Contract: "${title}" has been sent to you for signature.`,
-      '/dashboard/contracts',
-    )
+    if (recipientUserId) {
+      // ── Targeted notification: single user (client or internal team) ──────
+      await admin.from('notifications').insert({
+        user_id: recipientUserId,
+        message: `New Contract: "${title}" has been sent to you for signature.`,
+        link: '/dashboard/contracts',
+        read_status: false,
+      })
 
-    // ── Email: contract sent for signature ────────────────────────────────
-    await emailWorkspaceClients(workspaceId, {
-      subject: `Action Required: Sign "${title}"`,
-      templateName: 'contract',
-      dynamicData: {
-        preheader: `"${title}" is waiting for your signature.`,
-        heading: 'A contract needs your signature',
-        body: `<strong>"${title}"</strong> has been sent to you for review and signature. Please sign it at your earliest convenience.`,
-        cta: { label: 'Review & Sign', url: portalUrl('/dashboard/contracts') },
-        footerNote: 'You received this because you are a client on the Clikaa platform.',
-      },
-    }).catch((err) => console.error('[email] contract create:', err))
+      // Email only for client recipients
+      if (recipientType !== 'internal_team') {
+        await emailUserById(recipientUserId, {
+          subject: `Action Required: Sign "${title}"`,
+          templateName: 'contract',
+          dynamicData: {
+            preheader: `"${title}" is waiting for your signature.`,
+            heading: 'A contract needs your signature',
+            body: `<strong>"${title}"</strong> has been sent to you for review and signature. Please sign it at your earliest convenience.`,
+            cta: { label: 'Review & Sign', url: portalUrl('/dashboard/contracts') },
+            footerNote: 'You received this because you are a client on the Clikaa platform.',
+          },
+        }).catch((err) => console.error('[email] contract create targeted:', err))
+      }
+    }
   }
 
   revalidatePath('/dashboard/contracts')

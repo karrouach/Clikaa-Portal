@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Plus, Trash2, Loader2, Send, FileText, BookTemplate, AlertCircle, Check, ChevronDown } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import { Plus, Trash2, Loader2, Send, FileText, BookTemplate, AlertCircle, Check, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -23,12 +24,13 @@ import type { Contract, ContractTemplate } from '@/types/database'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Workspace { id: string; name: string }
+interface RecipientProfile { id: string; full_name: string; email: string; role?: string }
 
 interface Props {
   initialContracts: Contract[]
   initialTemplates: ContractTemplate[]
-  workspaces: Workspace[]
+  clientProfiles: RecipientProfile[]
+  internalProfiles: RecipientProfile[]
 }
 
 // ─── Status styles ────────────────────────────────────────────────────────────
@@ -46,25 +48,28 @@ const STATUS_LABELS: Record<Contract['status'], string> = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function AdminContractsClient({ initialContracts, initialTemplates, workspaces }: Props) {
+export function AdminContractsClient({ initialContracts, initialTemplates, clientProfiles, internalProfiles }: Props) {
   const [contracts, setContracts] = useState<Contract[]>(initialContracts)
   const [templates, setTemplates] = useState<ContractTemplate[]>(initialTemplates)
   const [activeTab, setActiveTab] = useState<'contracts' | 'templates'>('contracts')
 
   const [viewContract, setViewContract] = useState<Contract | null>(null)
+  const [previewTemplate, setPreviewTemplate] = useState<ContractTemplate | null>(null)
   const [isPending, startTransition] = useTransition()
 
   // ── Create contract dialog ─────────────────────────────────────────────────
   const [createOpen, setCreateOpen] = useState(false)
   const [contractTitle, setContractTitle] = useState('')
   const [contractBody, setContractBody] = useState('')
-  const [contractWorkspace, setContractWorkspace] = useState(workspaces[0]?.id ?? '')
   const [contractTemplate, setContractTemplate] = useState<string>('__none__')
+  const [recipientType, setRecipientType] = useState<'client' | 'internal_team'>('client')
+  const [recipientUserId, setRecipientUserId] = useState<string>('')
   const [createError, setCreateError] = useState<string | null>(null)
 
   function resetCreate() {
-    setContractTitle(''); setContractBody(''); setContractWorkspace(workspaces[0]?.id ?? '')
-    setContractTemplate('__none__'); setCreateError(null)
+    setContractTitle(''); setContractBody('')
+    setContractTemplate('__none__'); setRecipientType('client'); setRecipientUserId('')
+    setCreateError(null)
   }
 
   function handleTemplateSelect(templateId: string) {
@@ -77,15 +82,15 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
 
   function handleCreate(sendNow: boolean) {
     if (!contractTitle.trim()) { setCreateError('Title is required.'); return }
-    if (!contractWorkspace) { setCreateError('Select a workspace.'); return }
     setCreateError(null)
     startTransition(async () => {
       const result = await createContract({
-        workspaceId: contractWorkspace,
         templateId: contractTemplate === '__none__' ? null : contractTemplate,
         title: contractTitle.trim(),
         bodyText: contractBody,
         sendNow,
+        recipientUserId: recipientUserId || undefined,
+        recipientType,
       })
       if (result.error) { setCreateError(result.error); return }
       toast.success(sendNow ? 'Contract sent for signature' : 'Contract saved as draft')
@@ -149,7 +154,6 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
     { key: 'templates' as const, label: 'Templates', count: templates.length },
   ]
 
-  const workspaceMap = Object.fromEntries(workspaces.map(w => [w.id, w.name]))
 
   return (
     <div className="animate-fade-in">
@@ -208,7 +212,6 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
               <thead>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                   <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Title</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Workspace</th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Status</th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden lg:table-cell">Date</th>
                   <th className="px-4 py-3 w-28" />
@@ -224,9 +227,6 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
                       >
                         {c.title}
                       </button>
-                    </td>
-                    <td className="px-4 py-3.5 text-zinc-500 hidden md:table-cell">
-                      {c.workspace_id ? (workspaceMap[c.workspace_id] ?? '—') : '—'}
                     </td>
                     <td className="px-4 py-3.5">
                       <span className={cn('inline-flex items-center px-2 py-0.5 text-[10px] font-medium border rounded-full', STATUS_STYLES[c.status])}>
@@ -288,18 +288,34 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
               <tbody>
                 {templates.map((t) => (
                   <tr key={t.id} className="border-b border-zinc-50 dark:border-zinc-800 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
-                    <td className="px-6 py-3.5 font-medium text-black dark:text-white">{t.template_name}</td>
+                    <td className="px-6 py-3.5">
+                      <button
+                        onClick={() => setPreviewTemplate(t)}
+                        className="font-medium text-black dark:text-white hover:underline underline-offset-2 text-left"
+                      >
+                        {t.template_name}
+                      </button>
+                    </td>
                     <td className="px-4 py-3.5 text-zinc-400 text-xs hidden md:table-cell max-w-sm truncate">
                       {t.body_text.replace(/[#*\n]/g, ' ').trim().slice(0, 100)}…
                     </td>
                     <td className="px-4 py-3.5 text-right">
-                      <button
-                        onClick={() => handleDeleteTemplate(t.id)}
-                        disabled={isPending}
-                        className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors disabled:opacity-40"
-                      >
-                        <Trash2 size={13} strokeWidth={1.5} />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => setPreviewTemplate(t)}
+                          className="p-1.5 text-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors"
+                          title="Preview template"
+                        >
+                          <Eye size={13} strokeWidth={1.5} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTemplate(t.id)}
+                          disabled={isPending}
+                          className="p-1.5 text-zinc-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors disabled:opacity-40"
+                        >
+                          <Trash2 size={13} strokeWidth={1.5} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -324,7 +340,7 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
             )}
             {/* Template selector */}
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-zinc-600">Template (optional)</Label>
+              <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Template (optional)</Label>
               <Select value={contractTemplate} onValueChange={handleTemplateSelect}>
                 <SelectTrigger className="rounded-lg">
                   <SelectValue placeholder="Start from scratch" />
@@ -335,32 +351,64 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
                 </SelectContent>
               </Select>
             </div>
-            {/* Workspace */}
-            <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-zinc-600">Client Workspace</Label>
-              <Select value={contractWorkspace} onValueChange={setContractWorkspace}>
+            {/* Recipient type toggle + dropdown */}
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Recipient</Label>
+              {/* Segmented control */}
+              <div className="flex items-center gap-0.5 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+                {(['client', 'internal_team'] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => { setRecipientType(type); setRecipientUserId('') }}
+                    className={cn(
+                      'flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-150 focus:outline-none',
+                      recipientType === type
+                        ? 'bg-black dark:bg-white text-white dark:text-black shadow-sm'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                    )}
+                  >
+                    {type === 'client' ? 'Clients' : 'Internal Team'}
+                  </button>
+                ))}
+              </div>
+              {/* Dynamic user dropdown */}
+              <Select value={recipientUserId} onValueChange={setRecipientUserId} disabled={isPending}>
                 <SelectTrigger className="rounded-lg">
-                  <SelectValue placeholder="Select workspace" />
+                  <SelectValue placeholder={recipientType === 'client' ? 'Select a client…' : 'Select a team member…'} />
                 </SelectTrigger>
                 <SelectContent>
-                  {workspaces.map(w => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
+                  {(recipientType === 'client' ? clientProfiles : internalProfiles).map(p => (
+                    <SelectItem key={p.id} value={p.id}>
+                      <span>{p.full_name || p.email}</span>
+                      {p.role && recipientType === 'internal_team' && (
+                        <span className="ml-1 text-zinc-400 capitalize"> — {p.role.replace(/_/g, ' ')}</span>
+                      )}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             {/* Title */}
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-zinc-600">Contract Title</Label>
-              <Input placeholder="e.g. Master Services Agreement — Acme Corp" value={contractTitle} onChange={e => setContractTitle(e.target.value)} disabled={isPending} />
+              <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Contract Title</Label>
+              <Input
+                placeholder="e.g. Master Services Agreement — Acme Corp"
+                value={contractTitle}
+                onChange={e => setContractTitle(e.target.value)}
+                disabled={isPending}
+                className="dark:bg-zinc-900/50 dark:border-zinc-700"
+              />
             </div>
             {/* Body */}
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-zinc-600">Contract Terms (Markdown supported)</Label>
+              <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Contract Terms (Markdown supported)</Label>
               <Textarea
                 placeholder="# Agreement&#10;&#10;Enter contract terms here…"
                 value={contractBody}
                 onChange={e => setContractBody(e.target.value)}
                 disabled={isPending}
-                className="min-h-[240px] font-mono text-xs"
+                className="min-h-[240px] font-mono text-xs dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500"
               />
             </div>
           </div>
@@ -400,17 +448,23 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
                 </div>
               )}
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wide text-zinc-600">Template Name</Label>
-                <Input placeholder="e.g. Standard MSA" value={tplName} onChange={e => setTplName(e.target.value)} disabled={isPending} />
+                <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Template Name</Label>
+                <Input
+                  placeholder="e.g. Standard MSA"
+                  value={tplName}
+                  onChange={e => setTplName(e.target.value)}
+                  disabled={isPending}
+                  className="dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-white placeholder:dark:text-zinc-500"
+                />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wide text-zinc-600">Body Text (Markdown supported)</Label>
+                <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Body Text (Markdown supported)</Label>
                 <Textarea
                   placeholder="# Agreement&#10;&#10;Enter template body…"
                   value={tplBody}
                   onChange={e => setTplBody(e.target.value)}
                   disabled={isPending}
-                  className="min-h-[240px] font-mono text-xs"
+                  className="min-h-[240px] font-mono text-xs dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                 />
               </div>
             </div>
@@ -418,12 +472,32 @@ export function AdminContractsClient({ initialContracts, initialTemplates, works
           {!tplSuccess && (
             <DialogFooter>
               <Button variant="outline" rounded="sm" onClick={() => setTplOpen(false)} disabled={isPending}>Cancel</Button>
-              <Button rounded="sm" onClick={handleCreateTemplate} disabled={isPending || !tplName.trim()}>
+              <Button
+                rounded="sm"
+                onClick={handleCreateTemplate}
+                disabled={isPending || !tplName.trim()}
+                className="dark:bg-white dark:text-black hover:opacity-90"
+              >
                 {isPending ? <Loader2 size={13} className="animate-spin mr-1" /> : null}
                 Save Template
               </Button>
             </DialogFooter>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Template preview modal ───────────────────────────────────────── */}
+      <Dialog open={previewTemplate !== null} onOpenChange={(o) => { if (!o) setPreviewTemplate(null) }}>
+        <DialogContent className="max-w-2xl dark:bg-[#1A1A1A] dark:border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="dark:text-white">{previewTemplate?.template_name}</DialogTitle>
+            <DialogDescription className="dark:text-zinc-400">Template preview — read-only</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto pr-1">
+            <div className="prose prose-sm dark:prose-invert max-w-none text-zinc-800 dark:text-zinc-200 prose-headings:font-semibold prose-headings:text-black dark:prose-headings:text-white prose-p:text-zinc-600 dark:prose-p:text-zinc-300 prose-strong:text-black dark:prose-strong:text-white prose-li:text-zinc-600 dark:prose-li:text-zinc-300 prose-code:text-zinc-700 dark:prose-code:text-zinc-300">
+              {previewTemplate && <ReactMarkdown>{previewTemplate.body_text}</ReactMarkdown>}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

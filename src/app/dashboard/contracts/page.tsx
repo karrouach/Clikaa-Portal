@@ -30,41 +30,58 @@ export default async function ContractsPage() {
     const [
       { data: contracts },
       { data: templates },
-      { data: workspaces },
+      { data: clientProfiles },
+      { data: internalProfiles },
     ] = await Promise.all([
       admin.from('contracts').select('*').order('created_at', { ascending: false }),
       admin.from('contract_templates').select('*').order('template_name'),
-      admin.from('workspaces').select('id, name').order('name'),
+      admin.from('profiles').select('id, full_name, email').eq('role', 'client').order('full_name'),
+      admin.from('profiles').select('id, full_name, email, role')
+        .in('role', ['designer', 'developer', 'marketer', 'project_manager'])
+        .order('full_name'),
     ])
 
     return (
       <AdminContractsClient
         initialContracts={(contracts ?? []) as Contract[]}
         initialTemplates={(templates ?? []) as ContractTemplate[]}
-        workspaces={workspaces ?? []}
+        clientProfiles={clientProfiles ?? []}
+        internalProfiles={internalProfiles ?? []}
       />
     )
   }
 
   // ── Client + Designer view ─────────────────────────────────────────────────
-  // Both clients and designers see contracts scoped to their workspace memberships.
-  // Designers receive the exact same clickwrap signing experience as clients.
-  const { data: memberships } = await supabase
-    .from('workspace_members')
-    .select('workspace_id')
-    .eq('user_id', user.id)
+  // Show contracts addressed directly to this user (recipient_user_id) OR
+  // broadcast to any workspace they belong to — whichever source applies.
+  const [{ data: memberships }, { data: directContracts }] = await Promise.all([
+    supabase.from('workspace_members').select('workspace_id').eq('user_id', user.id),
+    admin.from('contracts')
+      .select('*')
+      .eq('recipient_user_id', user.id)
+      .neq('status', 'draft')
+      .order('created_at', { ascending: false }),
+  ])
 
   const workspaceIds = (memberships ?? []).map(m => m.workspace_id)
 
-  let contracts: Contract[] = []
+  let workspaceContracts: Contract[] = []
   if (workspaceIds.length > 0) {
-    const { data } = await supabase
+    const { data } = await admin
       .from('contracts')
       .select('*')
       .in('workspace_id', workspaceIds)
-      .neq('status', 'draft') // never expose drafts to clients/designers
+      .is('recipient_user_id', null) // only broadcast contracts (targeted ones are fetched above)
+      .neq('status', 'draft')
       .order('created_at', { ascending: false })
-    contracts = (data ?? []) as Contract[]
+    workspaceContracts = (data ?? []) as Contract[]
+  }
+
+  // Merge and deduplicate by id
+  const seen = new Set<string>()
+  const contracts: Contract[] = []
+  for (const c of [...(directContracts ?? []), ...workspaceContracts]) {
+    if (!seen.has(c.id)) { seen.add(c.id); contracts.push(c as Contract) }
   }
 
   return <ClientContractsClient initialContracts={contracts} />

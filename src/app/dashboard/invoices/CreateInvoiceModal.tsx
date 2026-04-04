@@ -116,7 +116,6 @@ export function CreateInvoiceModal({
   const [invoiceNumber,  setInvoiceNumber]  = useState(genInvoiceNumber)
   const [issueDate,      setIssueDate]      = useState<string>(toIso(new Date()))
   const [dueDate,        setDueDate]        = useState<string>('')
-  const [issueDateOpen,  setIssueDateOpen]  = useState(false)
   const [dueDateOpen,    setDueDateOpen]    = useState(false)
   const [items,          setItems]          = useState<LineItem[]>([newItem()])
   const [notes,          setNotes]          = useState('')
@@ -153,7 +152,6 @@ export function CreateInvoiceModal({
     setInvoiceNumber(genInvoiceNumber())
     setIssueDate(toIso(new Date()))
     setDueDate('')
-    setIssueDateOpen(false)
     setDueDateOpen(false)
     setItems([newItem()])
     setNotes('')
@@ -337,13 +335,12 @@ export function CreateInvoiceModal({
                     <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-widest">
                       Issue Date
                     </label>
-                    <DateButton
-                      value={issueDate}
-                      placeholder="Pick…"
-                      open={issueDateOpen}
-                      setOpen={setIssueDateOpen}
-                      onChange={setIssueDate}
-                    />
+                    <div className={cn(field, 'flex items-center gap-2 bg-zinc-50 dark:bg-zinc-900/50 cursor-not-allowed select-none')}>
+                      <CalendarIcon size={13} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
+                      <span className="text-zinc-500 dark:text-zinc-500">
+                        {issueDate ? formatDate(issueDate) : '—'}
+                      </span>
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-widest">

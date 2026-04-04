@@ -500,7 +500,7 @@ export function InvoiceViewPanel({
                 <button
                   onClick={handleDownloadPdf}
                   disabled={pdfLoading}
-                  className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors duration-150 disabled:opacity-50"
+                  className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-zinc-600 dark:text-zinc-300 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-colors duration-150 disabled:opacity-50"
                 >
                   <Download size={13} strokeWidth={1.5} />
                   <span>{pdfLoading ? 'Generating…' : 'Download PDF'}</span>
