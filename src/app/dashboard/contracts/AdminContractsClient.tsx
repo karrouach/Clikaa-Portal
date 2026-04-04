@@ -20,14 +20,14 @@ import {
   createContract, deleteContract, sendContractForSignature,
   createTemplate, deleteTemplate,
 } from './contract-actions'
-import type { Contract, ContractTemplate } from '@/types/database'
+import type { Contract, ContractWithRecipient, ContractTemplate } from '@/types/database'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface RecipientProfile { id: string; full_name: string; email: string; role?: string }
 
 interface Props {
-  initialContracts: Contract[]
+  initialContracts: ContractWithRecipient[]
   initialTemplates: ContractTemplate[]
   clientProfiles: RecipientProfile[]
   internalProfiles: RecipientProfile[]
@@ -49,11 +49,11 @@ const STATUS_LABELS: Record<Contract['status'], string> = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function AdminContractsClient({ initialContracts, initialTemplates, clientProfiles, internalProfiles }: Props) {
-  const [contracts, setContracts] = useState<Contract[]>(initialContracts)
+  const [contracts, setContracts] = useState<ContractWithRecipient[]>(initialContracts)
   const [templates, setTemplates] = useState<ContractTemplate[]>(initialTemplates)
   const [activeTab, setActiveTab] = useState<'contracts' | 'templates'>('contracts')
 
-  const [viewContract, setViewContract] = useState<Contract | null>(null)
+  const [viewContract, setViewContract] = useState<ContractWithRecipient | null>(null)
   const [previewTemplate, setPreviewTemplate] = useState<ContractTemplate | null>(null)
   const [viewFilter, setViewFilter] = useState<'clients' | 'internal_team'>('clients')
   const [isPending, startTransition] = useTransition()
@@ -103,7 +103,7 @@ export function AdminContractsClient({ initialContracts, initialTemplates, clien
     })
   }
 
-  function handleSend(contract: Contract) {
+  function handleSend(contract: ContractWithRecipient) {
     startTransition(async () => {
       const result = await sendContractForSignature(contract.id)
       if (result.error) { toast.error(result.error); return }
@@ -249,6 +249,7 @@ export function AdminContractsClient({ initialContracts, initialTemplates, clien
               <thead>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                   <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Title</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden sm:table-cell">Recipient</th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Status</th>
                   <th className="px-4 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden lg:table-cell">Date</th>
                   <th className="px-4 py-3 w-28" />
@@ -264,6 +265,9 @@ export function AdminContractsClient({ initialContracts, initialTemplates, clien
                       >
                         {c.title}
                       </button>
+                    </td>
+                    <td className="px-4 py-3.5 text-sm text-zinc-500 dark:text-zinc-400 hidden sm:table-cell">
+                      {c.recipient?.full_name ?? '—'}
                     </td>
                     <td className="px-4 py-3.5">
                       <span className={cn('inline-flex items-center px-2 py-0.5 text-[10px] font-medium border rounded-full', STATUS_STYLES[c.status])}>
@@ -393,14 +397,14 @@ export function AdminContractsClient({ initialContracts, initialTemplates, clien
             <div className="space-y-2">
               <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Recipient</Label>
               {/* Segmented control */}
-              <div className="flex items-center gap-0.5 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl">
+              <div className="flex items-center w-full bg-zinc-100 dark:bg-zinc-900 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
                 {(['client', 'internal_team'] as const).map((type) => (
                   <button
                     key={type}
                     type="button"
                     onClick={() => { setRecipientType(type); setRecipientUserId('') }}
                     className={cn(
-                      'flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-150 focus:outline-none',
+                      'flex-1 px-4 py-2.5 text-sm font-medium transition-all duration-150 focus:outline-none',
                       recipientType === type
                         ? 'bg-black dark:bg-white text-white dark:text-black shadow-sm'
                         : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'

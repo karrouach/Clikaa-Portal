@@ -57,6 +57,25 @@ export async function createDesignerInvoice(
   return {}
 }
 
+// ── updateMonthlyRetainer (admin) ──────────────────────────────────────────────
+export async function updateMonthlyRetainer(
+  userId: string,
+  rate: number | null,
+): Promise<{ error?: string }> {
+  const caller = await requireAdmin()
+  if (!caller) return { error: 'Not authorized' }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('profiles')
+    .update({ monthly_retainer: rate })
+    .eq('id', userId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/designer-invoices')
+  return {}
+}
+
 // ── submitDesignerInvoice (designer self-submit) ──────────────────────────────
 export async function submitDesignerInvoice(
   invoiceNumber: string,
@@ -72,7 +91,8 @@ export async function submitDesignerInvoice(
 
   const { data: profile } = await supabase
     .from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'designer') return { error: 'Not authorized' }
+  const INTERNAL_ROLES = ['designer', 'developer', 'marketer', 'project_manager']
+  if (!INTERNAL_ROLES.includes(profile?.role ?? '')) return { error: 'Not authorized' }
 
   const { error } = await supabase.from('designer_invoices').insert({
     designer_id:     user.id,

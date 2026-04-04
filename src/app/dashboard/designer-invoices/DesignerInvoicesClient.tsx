@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useTransition, useRef } from 'react'
-import { CheckCircle2, Clock, Receipt, Plus, Upload, Loader2, AlertCircle, X, ChevronRight } from 'lucide-react'
+import { useState, useTransition, useRef, useMemo } from 'react'
+import { CheckCircle2, Clock, Receipt, Plus, Upload, Loader2, AlertCircle, X, ChevronRight, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { markDesignerInvoicePaid, createDesignerInvoice, submitDesignerInvoice } from './designer-invoice-actions'
+import { markDesignerInvoicePaid, createDesignerInvoice, submitDesignerInvoice, updateMonthlyRetainer } from './designer-invoice-actions'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import {
@@ -64,17 +64,86 @@ function lastOfMonth() {
   return d.toISOString().slice(0, 10)
 }
 
-export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, designers, designerName, currentUserId }: Props) {
+export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, designers: initialDesigners, designerName, currentUserId }: Props) {
   const [invoices, setInvoices] = useState<InvoiceItem[]>(initialInvoices)
   const [isPending, startTransition] = useTransition()
 
+  // ── Retainer edit state ────────────────────────────────────────────────────
+  const [localDesigners, setLocalDesigners] = useState<DesignerInfo[]>(initialDesigners)
+  const [editingRetainer, setEditingRetainer] = useState<string | null>(null)
+  const [retainerValue, setRetainerValue] = useState<string>('')
+  const [savingRetainer, setSavingRetainer] = useState(false)
+
+  function startEditRetainer(d: DesignerInfo) {
+    setEditingRetainer(d.id)
+    setRetainerValue(d.monthly_retainer != null ? String(d.monthly_retainer) : '')
+  }
+
+  async function saveRetainer(designerId: string) {
+    const raw = parseFloat(retainerValue)
+    const rate = isNaN(raw) || retainerValue.trim() === '' ? null : raw
+    setSavingRetainer(true)
+    const result = await updateMonthlyRetainer(designerId, rate)
+    setSavingRetainer(false)
+    if (result.error) { toast.error(result.error); return }
+    setLocalDesigners(prev => prev.map(d => d.id === designerId ? { ...d, monthly_retainer: rate } : d))
+    setEditingRetainer(null)
+  }
+
   // ── Filter + detail slide-over ─────────────────────────────────────────────
   const [filterDesignerId, setFilterDesignerId] = useState<string>('all')
+  const [filterMonth, setFilterMonth] = useState<string>('all')
   const [detailInvoice, setDetailInvoice] = useState<InvoiceItem | null>(null)
 
-  const displayedInvoices = filterDesignerId === 'all'
-    ? invoices
-    : invoices.filter((i) => i.designer_id === filterDesignerId)
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>()
+    invoices.forEach(inv => {
+      if (inv.period_start) months.add(inv.period_start.slice(0, 7))
+    })
+    return [...months].sort().reverse()
+  }, [invoices])
+
+  function formatMonth(ym: string) {
+    const [year, month] = ym.split('-')
+    return new Date(parseInt(year), parseInt(month) - 1, 1)
+      .toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  }
+
+  const displayedInvoices = useMemo(() => {
+    return invoices.filter(i => {
+      const matchesMember = filterDesignerId === 'all' || i.designer_id === filterDesignerId
+      const matchesMonth  = filterMonth === 'all' || i.period_start.startsWith(filterMonth)
+      return matchesMember && matchesMonth
+    })
+  }, [invoices, filterDesignerId, filterMonth])
+
+  function handleExportCSV() {
+    const headers = ['Invoice ID', 'Team Member', 'Period', 'Amount', 'Status']
+    const rows = displayedInvoices.map(inv => {
+      const member = designers.find(d => d.id === inv.designer_id)?.name ?? '—'
+      return [
+        inv.invoice_number,
+        member,
+        formatPeriod(inv.period_start, inv.period_end),
+        String(inv.amount),
+        inv.status.charAt(0).toUpperCase() + inv.status.slice(1),
+      ]
+    })
+    const csv = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = 'team_payouts_export.csv'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const designers = localDesigners
 
   // ── Admin: Create Invoice modal ────────────────────────────────────────────
   const [createOpen, setCreateOpen] = useState(false)
@@ -255,22 +324,22 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
         </div>
         {isAdmin && designers.length > 0 && (
           <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl p-5">
-            <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-3">Designers</p>
+            <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mb-3">Team Members</p>
             <p className="text-2xl font-semibold text-black dark:text-white">{designers.length}</p>
             <p className="mt-1 text-xs text-zinc-400">with retainer agreements</p>
           </div>
         )}
       </div>
 
-      {/* Designer retainer rates (admin only) */}
+      {/* Internal Team Retainers (admin only) */}
       {isAdmin && designers.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-sm font-semibold text-black dark:text-white mb-3">Designer Retainers</h2>
+          <h2 className="text-sm font-semibold text-black dark:text-white mb-3">Internal Team Retainers</h2>
           <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
-                  <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Designer</th>
+                  <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Team Member</th>
                   <th className="px-5 py-3 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Monthly Rate</th>
                 </tr>
               </thead>
@@ -278,8 +347,34 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
                 {designers.map((d) => (
                   <tr key={d.id} className="border-b border-zinc-50 dark:border-zinc-800 last:border-0">
                     <td className="px-5 py-3 font-medium text-black dark:text-white">{d.name}</td>
-                    <td className="px-5 py-3 text-right text-zinc-700 tabular-nums">
-                      {d.monthly_retainer ? formatCurrency(d.monthly_retainer) : <span className="text-zinc-300">—</span>}
+                    <td className="px-5 py-3 text-right">
+                      {editingRetainer === d.id ? (
+                        <input
+                          autoFocus
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={retainerValue}
+                          onChange={e => setRetainerValue(e.target.value)}
+                          onBlur={() => saveRetainer(d.id)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') saveRetainer(d.id)
+                            if (e.key === 'Escape') setEditingRetainer(null)
+                          }}
+                          disabled={savingRetainer}
+                          className="w-28 h-7 px-2 text-sm text-right tabular-nums bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-600 rounded-lg focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-400 disabled:opacity-50 transition-colors"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => startEditRetainer(d)}
+                          className="tabular-nums text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white transition-colors"
+                          title="Click to edit"
+                        >
+                          {d.monthly_retainer != null
+                            ? formatCurrency(d.monthly_retainer)
+                            : <span className="text-zinc-300 dark:text-zinc-600 text-xs">Click to set</span>}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -291,21 +386,40 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
 
       {/* Invoice list */}
       <div>
-        <div className="flex items-center justify-between mb-3 gap-3">
+        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
           <h2 className="text-sm font-semibold text-black dark:text-white">All Invoices</h2>
-          {isAdmin && designers.length > 0 && (
-            <Select value={filterDesignerId} onValueChange={setFilterDesignerId}>
-              <SelectTrigger className="h-8 w-auto text-xs rounded-lg min-w-[160px]">
-                <SelectValue placeholder="Filter by designer" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Designers</SelectItem>
-                {designers.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {isAdmin && designers.length > 0 && (
+              <Select value={filterDesignerId} onValueChange={setFilterDesignerId}>
+                <SelectTrigger className="h-8 w-auto text-xs rounded-lg min-w-[150px]">
+                  <SelectValue placeholder="All Team Members" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Team Members</SelectItem>
+                  {designers.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <select
+              value={filterMonth}
+              onChange={e => setFilterMonth(e.target.value)}
+              className="h-8 px-2.5 text-xs bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:border-zinc-300 dark:hover:border-zinc-600 focus:outline-none transition-colors cursor-pointer"
+            >
+              <option value="all">All Time</option>
+              {availableMonths.map(ym => (
+                <option key={ym} value={ym}>{formatMonth(ym)}</option>
+              ))}
+            </select>
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
+            >
+              <Download size={12} strokeWidth={1.5} />
+              Export
+            </button>
+          </div>
         </div>
         {displayedInvoices.length === 0 ? (
           <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl flex flex-col items-center justify-center py-16 text-center">
@@ -323,7 +437,7 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
                   <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                     <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest">Invoice</th>
                     {isAdmin && (
-                      <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Designer</th>
+                      <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Team Member</th>
                     )}
                     <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden sm:table-cell">Period</th>
                     <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden md:table-cell">Description</th>
@@ -390,7 +504,7 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
               <div className="space-y-4 py-1">
                 {isAdmin && (
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-400 uppercase tracking-wide">Designer</span>
+                    <span className="text-xs text-zinc-400 uppercase tracking-wide">Team Member</span>
                     <span className="text-sm font-medium text-black dark:text-white">
                       {designers.find((d) => d.id === detailInvoice.designer_id)?.name ?? '—'}
                     </span>
@@ -428,7 +542,7 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
                 )}
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-zinc-400 uppercase tracking-wide">Submitted</span>
-                  <span className="text-sm text-black">
+                  <span className="text-sm text-black dark:text-white">
                     {new Date(detailInvoice.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
                 </div>
@@ -456,8 +570,8 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
       <Dialog open={createOpen} onOpenChange={(o) => { if (!isPending) { setCreateOpen(o); if (!o) resetCreate() } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Create Invoice for Designer</DialogTitle>
-            <DialogDescription>Log a payout for a specific designer and period.</DialogDescription>
+            <DialogTitle>Create Invoice for Team Member</DialogTitle>
+            <DialogDescription>Log a payout for a specific team member and period.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             {createError && (
@@ -466,10 +580,10 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
               </div>
             )}
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-zinc-600">Designer</Label>
+              <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Team Member</Label>
               <Select value={createDesignerId} onValueChange={setCreateDesignerId}>
-                <SelectTrigger className="rounded-lg">
-                  <SelectValue placeholder="Select designer" />
+                <SelectTrigger className="rounded-lg dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-white">
+                  <SelectValue placeholder="Select team member" />
                 </SelectTrigger>
                 <SelectContent>
                   {designers.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
@@ -477,7 +591,7 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-zinc-600">Amount (USD)</Label>
+              <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Amount (USD)</Label>
               <Input
                 type="number"
                 min="1"
@@ -486,25 +600,27 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
                 value={createAmount}
                 onChange={e => setCreateAmount(e.target.value)}
                 disabled={isPending}
+                className="dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-white placeholder:dark:text-zinc-500"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-zinc-600">Description (optional)</Label>
+              <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Description (optional)</Label>
               <Input
                 placeholder="e.g. March Retainer"
                 value={createDescription}
                 onChange={e => setCreateDescription(e.target.value)}
                 disabled={isPending}
+                className="dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-white placeholder:dark:text-zinc-500"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wide text-zinc-600">Period Start</Label>
-                <Input type="date" value={createPeriodStart} onChange={e => setCreatePeriodStart(e.target.value)} disabled={isPending} />
+                <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Period Start</Label>
+                <Input type="date" value={createPeriodStart} onChange={e => setCreatePeriodStart(e.target.value)} disabled={isPending} className="dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-white dark:[color-scheme:dark]" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wide text-zinc-600">Period End</Label>
-                <Input type="date" value={createPeriodEnd} onChange={e => setCreatePeriodEnd(e.target.value)} disabled={isPending} />
+                <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Period End</Label>
+                <Input type="date" value={createPeriodEnd} onChange={e => setCreatePeriodEnd(e.target.value)} disabled={isPending} className="dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-white dark:[color-scheme:dark]" />
               </div>
             </div>
           </div>
@@ -532,7 +648,7 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
               </div>
             )}
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-zinc-600">Amount (USD)</Label>
+              <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Amount (USD)</Label>
               <Input
                 type="number"
                 min="1"
@@ -541,31 +657,33 @@ export function DesignerInvoicesClient({ invoices: initialInvoices, isAdmin, des
                 value={submitAmount}
                 onChange={e => setSubmitAmount(e.target.value)}
                 disabled={isPending || uploadProgress}
+                className="dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-white placeholder:dark:text-zinc-500"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-zinc-600">Description</Label>
+              <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Description</Label>
               <Input
                 placeholder="e.g. March Retainer — Brand design"
                 value={submitDescription}
                 onChange={e => setSubmitDescription(e.target.value)}
                 disabled={isPending || uploadProgress}
+                className="dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-white placeholder:dark:text-zinc-500"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wide text-zinc-600">Period Start</Label>
-                <Input type="date" value={submitPeriodStart} onChange={e => setSubmitPeriodStart(e.target.value)} disabled={isPending || uploadProgress} />
+                <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Period Start</Label>
+                <Input type="date" value={submitPeriodStart} onChange={e => setSubmitPeriodStart(e.target.value)} disabled={isPending || uploadProgress} className="dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-white dark:[color-scheme:dark]" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs uppercase tracking-wide text-zinc-600">Period End</Label>
-                <Input type="date" value={submitPeriodEnd} onChange={e => setSubmitPeriodEnd(e.target.value)} disabled={isPending || uploadProgress} />
+                <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Period End</Label>
+                <Input type="date" value={submitPeriodEnd} onChange={e => setSubmitPeriodEnd(e.target.value)} disabled={isPending || uploadProgress} className="dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-white dark:[color-scheme:dark]" />
               </div>
             </div>
 
             {/* PDF upload */}
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-zinc-600">Invoice PDF (optional)</Label>
+              <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Invoice PDF (optional)</Label>
               <input
                 ref={fileRef}
                 type="file"

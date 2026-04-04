@@ -17,9 +17,9 @@ export default async function DesignerInvoicesPage() {
     .eq('id', user.id)
     .single()
 
-  const INTERNAL_ROLES = ['designer', 'developer', 'marketer', 'project_manager']
+  const INTERNAL_ROLES = ['designer', 'developer', 'marketer', 'project_manager'] as const
   const isAdmin        = profile?.role === 'admin'
-  const isInternalTeam = INTERNAL_ROLES.includes(profile?.role ?? '')
+  const isInternalTeam = INTERNAL_ROLES.includes((profile?.role ?? '') as typeof INTERNAL_ROLES[number])
 
   if (!isAdmin && !isInternalTeam) redirect('/dashboard')
 
@@ -52,8 +52,8 @@ export default async function DesignerInvoicesPage() {
       .order('period_start', { ascending: false }),
     admin
       .from('profiles')
-      .select('id, full_name, email, monthly_retainer')
-      .eq('role', 'designer')
+      .select('id, full_name, email, monthly_retainer, role')
+      .in('role', INTERNAL_ROLES)
       .order('full_name', { ascending: true }),
   ])
 

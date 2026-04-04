@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { AdminContractsClient } from './AdminContractsClient'
 import { ClientContractsClient } from './ClientContractsClient'
-import type { Contract, ContractTemplate } from '@/types/database'
+import type { Contract, ContractWithRecipient, ContractTemplate } from '@/types/database'
 
 export const metadata: Metadata = { title: 'Contracts' }
 
@@ -33,7 +33,7 @@ export default async function ContractsPage() {
       { data: clientProfiles },
       { data: internalProfiles },
     ] = await Promise.all([
-      admin.from('contracts').select('*').order('created_at', { ascending: false }),
+      admin.from('contracts').select('*, recipient:recipient_user_id(full_name)').order('created_at', { ascending: false }),
       admin.from('contract_templates').select('*').order('template_name'),
       admin.from('profiles').select('id, full_name, email').eq('role', 'client').order('full_name'),
       admin.from('profiles').select('id, full_name, email, role')
@@ -43,7 +43,7 @@ export default async function ContractsPage() {
 
     return (
       <AdminContractsClient
-        initialContracts={(contracts ?? []) as Contract[]}
+        initialContracts={(contracts ?? []) as unknown as ContractWithRecipient[]}
         initialTemplates={(templates ?? []) as ContractTemplate[]}
         clientProfiles={clientProfiles ?? []}
         internalProfiles={internalProfiles ?? []}

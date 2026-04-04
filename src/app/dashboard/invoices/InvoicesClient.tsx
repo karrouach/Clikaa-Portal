@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Plus, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CreateInvoiceModal } from './CreateInvoiceModal'
@@ -66,6 +66,41 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
   const [createOpen, setCreateOpen]   = useState(false)
   const [editInvoice, setEditInvoice] = useState<Invoice | null>(null)
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null)
+  const [filterMonth, setFilterMonth] = useState<string>('all')
+
+  // ── Derive available months from invoice data ──────────────────────────────
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>()
+    invoices.forEach(inv => {
+      const iso = inv.rawData?.issue_date as string | undefined
+      if (iso) {
+        months.add(iso.slice(0, 7))
+      } else if (inv.issued && inv.issued !== '—') {
+        const d = new Date(inv.issued)
+        if (!isNaN(d.getTime())) months.add(d.toISOString().slice(0, 7))
+      }
+    })
+    return [...months].sort().reverse()
+  }, [invoices])
+
+  function formatMonth(ym: string) {
+    const [year, month] = ym.split('-')
+    return new Date(parseInt(year), parseInt(month) - 1, 1)
+      .toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  }
+
+  const filteredInvoices = useMemo(() => {
+    if (filterMonth === 'all') return invoices
+    return invoices.filter(inv => {
+      const iso = inv.rawData?.issue_date as string | undefined
+      if (iso) return iso.startsWith(filterMonth)
+      if (inv.issued && inv.issued !== '—') {
+        const d = new Date(inv.issued)
+        return !isNaN(d.getTime()) && d.toISOString().startsWith(filterMonth)
+      }
+      return false
+    })
+  }, [invoices, filterMonth])
 
   function handleMarkPaid(id: string) {
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: 'paid' } : i))
@@ -103,7 +138,7 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
 
   function handleExport() {
     const headers = ['Invoice #', 'Client', 'Project', 'Amount', 'Status', 'Issued', 'Due']
-    const rows = invoices.map((inv) => [
+    const rows = filteredInvoices.map((inv) => [
       inv.invoice_number ?? inv.id,
       inv.client,
       inv.project || '',
@@ -119,7 +154,7 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
     a.href     = url
-    a.download = 'invoices-export.csv'
+    a.download = filterMonth === 'all' ? 'invoices-export.csv' : `invoices-${filterMonth}.csv`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -162,13 +197,24 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
         </div>
 
         {!isClient && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+            {/* Month filter */}
+            <select
+              value={filterMonth}
+              onChange={e => setFilterMonth(e.target.value)}
+              className="h-9 px-3 text-sm bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:border-zinc-300 dark:hover:border-zinc-600 focus:outline-none transition-colors duration-150 cursor-pointer"
+            >
+              <option value="all">All Time</option>
+              {availableMonths.map(ym => (
+                <option key={ym} value={ym}>{formatMonth(ym)}</option>
+              ))}
+            </select>
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 h-9 px-3.5 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-medium rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors duration-150"
+              className="flex items-center gap-1.5 h-9 px-3.5 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 text-sm font-medium rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors duration-150"
             >
               <Download size={13} strokeWidth={1.5} />
-              Export
+              Export CSV
             </button>
             <button
               onClick={() => setCreateOpen(true)}
@@ -204,7 +250,10 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
 
       {/* ── Mobile card list ──────────────────────────────────────────────── */}
       <div className="sm:hidden space-y-3">
-        {invoices.map(inv => (
+        {filteredInvoices.length === 0 && (
+          <p className="text-sm text-zinc-400 text-center py-8">No invoices for this period.</p>
+        )}
+        {filteredInvoices.map(inv => (
           <button
             key={inv.id}
             onClick={() => !isClient && setViewInvoice(inv)}
@@ -251,7 +300,14 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
               </tr>
             </thead>
             <tbody>
-              {invoices.map(inv => (
+              {filteredInvoices.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-sm text-zinc-400">
+                    No invoices for this period.
+                  </td>
+                </tr>
+              )}
+              {filteredInvoices.map(inv => (
                 <tr
                   key={inv.id}
                   onClick={() => !isClient && setViewInvoice(inv)}
