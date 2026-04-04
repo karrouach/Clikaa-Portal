@@ -247,9 +247,9 @@ export function KanbanBoard({
         </div>
 
         {/* ── Columns ──────────────────────────────────────────────────── */}
-        <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 md:p-6 snap-x snap-mandatory md:snap-none">
+        <div className="flex-1 overflow-y-hidden">
           <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
-            <div className="flex gap-4 h-full">
+            <div className="flex gap-4 h-full overflow-x-auto w-full p-4 md:p-6 pb-4">
               {KANBAN_COLUMNS.map((col) => (
                 <KanbanColumn
                   key={col.id}

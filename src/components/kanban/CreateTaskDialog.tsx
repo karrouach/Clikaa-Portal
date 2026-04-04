@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition, useRef } from 'react'
-import { Plus, Loader2, AlertCircle, CalendarIcon } from 'lucide-react'
+import { Plus, Loader2, AlertCircle, CalendarIcon, Paperclip, X } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { createTask } from '@/app/dashboard/task-actions'
+import { saveAttachmentMetadata } from '@/app/dashboard/attachment-actions'
+import { createClient } from '@/lib/supabase/client'
 import { getInitials } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type { Task } from '@/types/database'
@@ -75,11 +77,14 @@ export function CreateTaskDialog({
   const [assigneeId, setAssigneeId] = useState('__none__')
   const selectedMember = (members ?? []).find((m) => m.id === assigneeId)
 
-  // Date pickers — start date defaults to today
-  const [startDate, setStartDate] = useState<Date | undefined>(() => new Date())
+  // Date pickers — start date is always today (locked), due date is user-set
+  const [startDate] = useState<Date>(() => new Date())
   const [dueDate, setDueDate] = useState<Date | undefined>()
-  const [startOpen, setStartOpen] = useState(false)
   const [dueOpen, setDueOpen] = useState(false)
+
+  // File attachment
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const hasMembers = !!(members && members.length > 0)
 
@@ -91,8 +96,8 @@ export function CreateTaskDialog({
         setFieldErrors({})
         setPriority('medium')
         setAssigneeId('__none__')
-        setStartDate(new Date())
         setDueDate(undefined)
+        setSelectedFile(null)
         formRef.current?.reset()
       }
     }
@@ -130,6 +135,24 @@ export function CreateTaskDialog({
         return
       }
       if (result.task) {
+        // Upload attachment if one was selected
+        if (selectedFile) {
+          const supabase = createClient()
+          const sanitized = selectedFile.name.replace(/[^a-z0-9.\-_]/gi, '_')
+          const storagePath = `${workspaceId}/${result.task.id}/${Date.now()}-${sanitized}`
+          const { error: uploadError } = await supabase.storage
+            .from('task-attachments')
+            .upload(storagePath, selectedFile)
+          if (!uploadError) {
+            await saveAttachmentMetadata({
+              taskId: result.task.id,
+              fileName: selectedFile.name,
+              storagePath,
+              fileSize: selectedFile.size,
+              fileType: selectedFile.type || 'application/octet-stream',
+            })
+          }
+        }
         onTaskCreated(result.task)
         handleOpenChange(false)
       }
@@ -203,7 +226,10 @@ export function CreateTaskDialog({
                 autoFocus
                 placeholder="What needs to be done?"
                 onChange={() => setFieldErrors(p => ({ ...p, title: undefined }))}
-                className={cn(fieldErrors.title && 'border-red-300 focus-visible:border-red-400 focus-visible:shadow-[0_0_0_3px_rgba(239,68,68,0.08)]')}
+                className={cn(
+                  'dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-white dark:placeholder:text-zinc-500',
+                  fieldErrors.title && 'border-red-300 focus-visible:border-red-400 focus-visible:shadow-[0_0_0_3px_rgba(239,68,68,0.08)]',
+                )}
               />
               {fieldErrors.title && (
                 <p className="text-xs text-red-500">{fieldErrors.title}</p>
@@ -223,7 +249,43 @@ export function CreateTaskDialog({
                 name="description"
                 rows={3}
                 placeholder="Add any relevant context, links, or details…"
+                className="dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-white dark:placeholder:text-zinc-500"
               />
+            </div>
+
+            {/* ── Attachment ────────────────────────────────────────────── */}
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-widest">
+                Attachment
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+              />
+              {selectedFile ? (
+                <div className="flex items-center gap-2 h-9 px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50 text-sm">
+                  <Paperclip size={13} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
+                  <span className="flex-1 truncate text-zinc-700 dark:text-zinc-200">{selectedFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                    className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+                  >
+                    <X size={13} strokeWidth={1.5} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center gap-2 h-9 px-3 text-sm rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors"
+                >
+                  <Paperclip size={13} strokeWidth={1.5} />
+                  Attach a file
+                </button>
+              )}
             </div>
 
             {/* ── Priority ──────────────────────────────────────────────── */}
@@ -246,37 +308,15 @@ export function CreateTaskDialog({
 
             {/* ── Start Date + Due Date ──────────────────────────────────── */}
             <div className="grid grid-cols-2 gap-4">
-              {/* Start Date */}
+              {/* Start Date — always today, locked */}
               <div className="space-y-1.5">
                 <p className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-widest">
                   Start Date
                 </p>
-                <Popover open={startOpen} onOpenChange={setStartOpen}>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="
-                        w-full flex items-center gap-2 h-9 px-3 text-sm
-                        rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800
-                        hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors duration-150
-                        focus-visible:outline-none focus-visible:border-zinc-300 dark:focus-visible:border-zinc-600 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]
-                      "
-                    >
-                      <CalendarIcon size={13} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
-                      <span className={startDate ? 'text-black dark:text-zinc-100' : 'text-zinc-400'}>
-                        {startDate ? formatDate(startDate) : 'Pick date'}
-                      </span>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" className="p-0">
-                    <Calendar
-                      mode="single"
-                      selected={startDate}
-                      onSelect={(d) => { setStartDate(d); setStartOpen(false) }}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <div className="w-full flex items-center gap-2 h-9 px-3 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50 opacity-70 cursor-default select-none">
+                  <CalendarIcon size={13} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
+                  <span className="text-zinc-600 dark:text-zinc-300">{formatDate(startDate)}</span>
+                </div>
               </div>
 
               {/* Due Date */}

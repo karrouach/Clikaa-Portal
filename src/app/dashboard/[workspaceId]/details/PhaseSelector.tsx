@@ -42,7 +42,7 @@ export function PhaseSelector({ workspaceId, currentPhase: initialPhase, isAdmin
               value={phase}
               onChange={e => handleChange(Number(e.target.value))}
               disabled={isPending}
-              className="appearance-none h-8 pl-3 pr-8 text-xs border border-zinc-200 rounded-lg bg-white text-zinc-700 focus:outline-none focus:border-zinc-400 cursor-pointer disabled:opacity-50 transition-colors"
+              className="appearance-none h-8 pl-3 pr-8 text-xs border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-700 dark:text-white focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 cursor-pointer disabled:opacity-50 transition-colors"
             >
               {PHASES.map((name, i) => (
                 <option key={i} value={i + 1}>

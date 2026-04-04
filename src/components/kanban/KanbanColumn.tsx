@@ -22,7 +22,7 @@ interface KanbanColumnProps {
  */
 export const KanbanColumn = memo(function KanbanColumn({ columnId, label, dotClass, tasks, onCardClick }: KanbanColumnProps) {
   return (
-    <div className="flex flex-col w-[85vw] md:w-72 shrink-0 max-h-full snap-center rounded-xl overflow-hidden">
+    <div className="flex flex-col w-[320px] min-w-[320px] shrink-0 max-h-full rounded-xl overflow-hidden">
       {/* ── Column header ─────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
