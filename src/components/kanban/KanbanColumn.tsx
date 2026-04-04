@@ -22,7 +22,7 @@ interface KanbanColumnProps {
  */
 export const KanbanColumn = memo(function KanbanColumn({ columnId, label, dotClass, tasks, onCardClick }: KanbanColumnProps) {
   return (
-    <div className="flex flex-col w-[320px] min-w-[320px] shrink-0 max-h-full rounded-xl overflow-hidden">
+    <div className="flex flex-col flex-1 min-w-[200px] h-full bg-gray-50 dark:bg-[#121212] rounded-xl overflow-hidden p-3">
       {/* ── Column header ─────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
@@ -44,11 +44,9 @@ export const KanbanColumn = memo(function KanbanColumn({ columnId, label, dotCla
             {...provided.droppableProps}
             className={cn(
               // Base column body
-              'flex-1 overflow-y-auto p-2 space-y-2 transition-colors duration-150',
-              // Resting state
-              'bg-zinc-50 dark:bg-zinc-900',
-              // Active drop target — subtle highlight so the user sees where the card will land
-              snapshot.isDraggingOver && 'bg-zinc-100 dark:bg-zinc-800 ring-1 ring-inset ring-zinc-200 dark:ring-zinc-700',
+              'flex-1 overflow-y-auto space-y-2 transition-colors duration-150 rounded-lg',
+              // Active drop target
+              snapshot.isDraggingOver ? 'bg-zinc-100 dark:bg-zinc-800 ring-1 ring-inset ring-zinc-200 dark:ring-zinc-700' : 'bg-transparent',
               // Ensure empty columns are droppable
               'min-h-[120px]'
             )}
@@ -67,7 +65,7 @@ export const KanbanColumn = memo(function KanbanColumn({ columnId, label, dotCla
 
             {/* ── Empty state ────────────────────────────────────────── */}
             {tasks.length === 0 && !snapshot.isDraggingOver && (
-              <div className="flex items-center justify-center h-24 text-xs text-zinc-400">
+              <div className="flex flex-1 items-center justify-center py-10 text-xs text-zinc-400">
                 Drop cards here
               </div>
             )}

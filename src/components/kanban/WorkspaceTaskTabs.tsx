@@ -491,7 +491,7 @@ export function WorkspaceTaskTabs({
   return (
     <div className="flex flex-col h-full">
       {/* ── View tab bar ──────────────────────────────────────────────────── */}
-      <div className="shrink-0 px-4 md:px-6 bg-white dark:bg-[#0A0A0A] border-b border-zinc-100 dark:border-zinc-800 flex items-end">
+      <div className="shrink-0 px-4 md:px-6 bg-white dark:bg-[#0A0A0A] border-b border-gray-200 dark:border-zinc-800 flex items-end">
         <div className="flex items-end flex-1">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
@@ -501,7 +501,7 @@ export function WorkspaceTaskTabs({
                 'flex items-center gap-1.5 px-3 py-2.5 text-sm transition-colors duration-150 border-b-2 -mb-px whitespace-nowrap',
                 activeTab === id
                   ? 'text-black dark:text-white font-medium border-black dark:border-white'
-                  : 'text-zinc-400 border-transparent hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'
               )}
             >
               <Icon size={13} strokeWidth={1.5} />
@@ -509,8 +509,20 @@ export function WorkspaceTaskTabs({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* ── Workspace title + actions ─────────────────────────────────────── */}
+      <div className="shrink-0 flex items-center justify-between px-4 md:px-6 py-3 bg-white dark:bg-[#0A0A0A] border-b border-zinc-100 dark:border-zinc-800">
+        <div>
+          <h1 className="text-base font-semibold text-black dark:text-white tracking-tight">
+            {workspaceName}
+          </h1>
+          <p className="text-xs text-zinc-400 mt-0.5">
+            {tasks.length} task{tasks.length !== 1 ? 's' : ''}
+          </p>
+        </div>
         {currentUserProfile.role !== 'designer' && currentUserProfile.role !== 'client' && (
-          <div className="hidden md:block ml-3 pb-2">
+          <div className="hidden md:block">
             <CreateTaskDialog
               workspaceId={workspaceId}
               onTaskCreated={(task) => setTasks((prev) => prev.some((t) => t.id === task.id) ? prev : [...prev, task])}
@@ -521,11 +533,11 @@ export function WorkspaceTaskTabs({
       </div>
 
       {/* ── Content ───────────────────────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
 
         {/* Board — always mounted to preserve its state + realtime + DnD */}
         <div
-          className="flex-1 min-h-0"
+          className="flex-1 min-h-0 min-w-0 overflow-hidden"
           style={{ display: activeTab === 'board' ? 'flex' : 'none' }}
         >
           <KanbanBoard

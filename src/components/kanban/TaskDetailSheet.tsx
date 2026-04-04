@@ -115,7 +115,7 @@ function EditableTitle({
   if (!editing && draft !== value) setDraft(value)
 
   if (!isAdmin) {
-    return <h2 className="text-lg font-semibold text-zinc-900 leading-snug">{value}</h2>
+    return <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 leading-snug">{value}</h2>
   }
 
   if (editing) {
@@ -152,7 +152,7 @@ function EditableTitle({
 
   return (
     <button onClick={() => setEditing(true)} title="Click to edit title" className="block w-full text-left group">
-      <h2 className="text-lg font-semibold text-zinc-900 leading-snug group-hover:text-zinc-600 transition-colors">
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 leading-snug group-hover:text-zinc-600 dark:group-hover:text-zinc-400 transition-colors">
         {value}
       </h2>
       <p className="text-[10px] text-zinc-400 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">

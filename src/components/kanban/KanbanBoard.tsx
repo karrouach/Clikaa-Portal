@@ -235,21 +235,11 @@ export function KanbanBoard({
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
-      <div className="flex flex-col h-full">
-        {/* ── Board header ─────────────────────────────────────────────── */}
-        <div className="px-4 md:px-6 py-3 bg-white dark:bg-[#1A1A1A] border-b border-zinc-100 dark:border-zinc-800 shrink-0">
-          <h1 className="text-base font-semibold text-black dark:text-white tracking-tight">
-            {workspaceName}
-          </h1>
-          <p className="text-xs text-zinc-400 mt-0.5">
-            {tasks.length} task{tasks.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-
+      <div className="flex flex-col h-full w-full">
         {/* ── Columns ──────────────────────────────────────────────────── */}
-        <div className="flex-1 overflow-y-hidden">
+        <div className="flex-1 w-full overflow-hidden pb-4">
           <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
-            <div className="flex gap-4 h-full overflow-x-auto w-full p-4 md:p-6 pb-4">
+            <div className="flex w-full items-stretch gap-4 px-4 md:px-6 py-4 md:py-6 h-full">
               {KANBAN_COLUMNS.map((col) => (
                 <KanbanColumn
                   key={col.id}

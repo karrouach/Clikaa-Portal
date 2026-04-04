@@ -17,7 +17,7 @@ export function WorkspaceSubNav({ workspaceId }: { workspaceId: string }) {
   const base = `/dashboard/${workspaceId}`
 
   return (
-    <nav className="flex items-end gap-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-webkit-overflow-scrolling:touch]">
+    <nav className="flex items-end gap-0">
       {TABS.map(({ label, segment }) => {
         const href = segment ? `${base}/${segment}` : base
         const isActive = segment
@@ -29,10 +29,10 @@ export function WorkspaceSubNav({ workspaceId }: { workspaceId: string }) {
             key={label}
             href={href}
             className={cn(
-              'px-4 py-2.5 text-sm transition-colors duration-150 border-b-2 -mb-px whitespace-nowrap',
+              'px-4 py-2.5 text-sm transition-colors duration-150 border-b-[3px] whitespace-nowrap',
               isActive
-                ? 'text-black dark:text-white font-medium border-black dark:border-white'
-                : 'text-zinc-400 border-transparent hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-600'
+                ? 'text-black dark:text-white font-medium border-black dark:border-white -mb-px z-10'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'
             )}
           >
             {label}
