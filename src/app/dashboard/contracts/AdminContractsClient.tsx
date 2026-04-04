@@ -55,6 +55,7 @@ export function AdminContractsClient({ initialContracts, initialTemplates, clien
 
   const [viewContract, setViewContract] = useState<Contract | null>(null)
   const [previewTemplate, setPreviewTemplate] = useState<ContractTemplate | null>(null)
+  const [viewFilter, setViewFilter] = useState<'clients' | 'internal_team'>('clients')
   const [isPending, startTransition] = useTransition()
 
   // ── Create contract dialog ─────────────────────────────────────────────────
@@ -149,6 +150,15 @@ export function AdminContractsClient({ initialContracts, initialTemplates, clien
     })
   }
 
+  // ── Filtered contracts for the list view ──────────────────────────────────
+  const clientIds = new Set(clientProfiles.map(p => p.id))
+  const internalIds = new Set(internalProfiles.map(p => p.id))
+  const filteredContracts = contracts.filter(c =>
+    viewFilter === 'clients'
+      ? (!c.recipient_user_id || clientIds.has(c.recipient_user_id))
+      : (!!c.recipient_user_id && internalIds.has(c.recipient_user_id))
+  )
+
   const tabs = [
     { key: 'contracts' as const, label: 'Contracts', count: contracts.length },
     { key: 'templates' as const, label: 'Templates', count: templates.length },
@@ -200,12 +210,39 @@ export function AdminContractsClient({ initialContracts, initialTemplates, clien
 
       {/* ── Contracts tab ────────────────────────────────────────────────── */}
       {activeTab === 'contracts' && (
+        <>
+          {/* Filter pills */}
+          <div className="flex items-center gap-1 mb-4">
+            {(['clients', 'internal_team'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setViewFilter(f)}
+                className={cn(
+                  'h-7 px-3 text-xs font-medium rounded-full transition-colors duration-150',
+                  viewFilter === f
+                    ? 'bg-black dark:bg-white text-white dark:text-black'
+                    : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                )}
+              >
+                {f === 'clients' ? 'Clients' : 'Internal Team'}
+              </button>
+            ))}
+          </div>
+
         <div className="bg-white dark:bg-[#1A1A1A] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
           {contracts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
               <FileText size={28} strokeWidth={1} className="text-zinc-300 mb-1" />
               <p className="text-sm font-medium text-zinc-900 dark:text-white">No contracts yet</p>
               <p className="text-sm text-zinc-400">Create your first contract using the button above.</p>
+            </div>
+          ) : filteredContracts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
+              <FileText size={28} strokeWidth={1} className="text-zinc-300 mb-1" />
+              <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                No {viewFilter === 'clients' ? 'client' : 'internal team'} contracts found.
+              </p>
+              <p className="text-sm text-zinc-400">Create a contract and assign it to a recipient above.</p>
             </div>
           ) : (
             <table className="w-full text-sm">
@@ -218,7 +255,7 @@ export function AdminContractsClient({ initialContracts, initialTemplates, clien
                 </tr>
               </thead>
               <tbody>
-                {contracts.map((c) => (
+                {filteredContracts.map((c) => (
                   <tr key={c.id} className="border-b border-zinc-50 dark:border-zinc-800 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
                     <td className="px-6 py-3.5">
                       <button
@@ -265,6 +302,7 @@ export function AdminContractsClient({ initialContracts, initialTemplates, clien
             </table>
           )}
         </div>
+        </>
       )}
 
       {/* ── Templates tab ────────────────────────────────────────────────── */}
@@ -355,7 +393,7 @@ export function AdminContractsClient({ initialContracts, initialTemplates, clien
             <div className="space-y-2">
               <Label className="text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">Recipient</Label>
               {/* Segmented control */}
-              <div className="flex items-center gap-0.5 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+              <div className="flex items-center gap-0.5 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl">
                 {(['client', 'internal_team'] as const).map((type) => (
                   <button
                     key={type}
