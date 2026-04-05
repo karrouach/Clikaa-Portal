@@ -303,6 +303,116 @@ export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef
 
   return (
     <div className="flex flex-col gap-4">
+      {/* ── Comment input ─────────────────────────────────────────────────── */}
+      <form onSubmit={handleSubmit} className="w-full mb-6 pb-6 border-b border-zinc-100 dark:border-zinc-800">
+        <div className="w-full">
+            <div className="relative border border-gray-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-800 focus-within:border-zinc-300 dark:focus-within:border-zinc-600 focus-within:ring-0 focus-within:outline-none focus-within:shadow-none transition-colors duration-150">
+              {/* @mention dropdown */}
+              {mentionQuery !== null && mentionMatches.length > 0 && (
+                <div className="absolute bottom-full left-0 mb-1.5 w-56 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg shadow-black/5 z-50 overflow-hidden">
+                  <p className="px-3 pt-2 pb-1 text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
+                    Members
+                  </p>
+                  {mentionMatches.map((m, i) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onMouseDown={(e) => { e.preventDefault(); insertMention(m) }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${
+                        i === mentionHighlight ? 'bg-zinc-50 dark:bg-zinc-700' : 'hover:bg-zinc-50 dark:hover:bg-zinc-700'
+                      }`}
+                    >
+                      {m.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={m.avatar_url} alt="" className="w-5 h-5 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-600 flex items-center justify-center shrink-0">
+                          <span className="text-[8px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(m.full_name || m.email)}</span>
+                        </div>
+                      )}
+                      <span className="text-sm text-black dark:text-white truncate">
+                        {m.full_name || m.email}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Textarea */}
+              <Textarea
+                ref={textareaRef}
+                value={visibleBody}
+                onChange={handleBodyChange}
+                onKeyDown={handleKeyDown}
+                placeholder={members.length > 0 ? 'Add a comment… @ to mention' : 'Add a comment…'}
+                disabled={isPending}
+                className="border-0 bg-transparent rounded-xl shadow-none outline-none ring-0 focus:outline-none focus:ring-0 focus:shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none p-3 pb-1 resize-none text-sm min-h-[44px] text-zinc-900 dark:text-white placeholder:text-zinc-400"
+              />
+
+              {/* Bottom bar: quick chips + send */}
+              <div className="flex items-center justify-between px-2.5 pb-2 pt-1 gap-2">
+                {/* Quick-insert chips */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {(['Status update…', 'Thanks!', 'Approved ✓'] as const).map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      disabled={isPending}
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        setVisibleBody((prev) => (prev ? prev + ' ' + chip : chip))
+                        setTimeout(() => {
+                          autoResize()
+                          textareaRef.current?.focus()
+                        }, 0)
+                      }}
+                      className="px-2 py-0.5 text-[11px] text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 rounded-full transition-colors duration-150 disabled:opacity-50"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Paperclip + Send — grouped on the right */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <label
+                    htmlFor="comment-upload"
+                    title="Attach file"
+                    className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors duration-150 cursor-pointer"
+                  >
+                    <Paperclip size={13} strokeWidth={1.5} />
+                    <span className="sr-only">Attach file</span>
+                  </label>
+                  <input
+                    type="file"
+                    id="comment-upload"
+                    className="hidden"
+                    onChange={handleCommentFileUpload}
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={!visibleBody.trim() || isPending}
+                    className="flex items-center justify-center w-7 h-7 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    {isPending ? (
+                      <Loader2 size={12} strokeWidth={1.5} className="animate-spin" />
+                    ) : (
+                      <Send size={12} strokeWidth={1.5} />
+                    )}
+                    <span className="sr-only">Send comment</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Microcopy hint */}
+            <p className="mt-1.5 px-1 text-[11px] text-zinc-400">
+              Pro tip: press <kbd className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-300 rounded text-[10px] font-mono">⌘↵</kbd> to send
+            </p>
+        </div>
+      </form>
+
       {/* ── Comment list ──────────────────────────────────────────────────── */}
       {isLoading ? (
         <div className="flex items-center justify-center py-6">
@@ -404,116 +514,6 @@ export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef
         </div>
       )}
 
-      {/* ── Comment input ─────────────────────────────────────────────────── */}
-      <form onSubmit={handleSubmit} className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
-        {/* Unified input container — full width, no avatar */}
-        <div className="w-full">
-            <div className="relative border border-gray-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-800 focus-within:border-zinc-300 dark:focus-within:border-zinc-600 focus-within:ring-0 focus-within:outline-none focus-within:shadow-none transition-colors duration-150">
-              {/* @mention dropdown */}
-              {mentionQuery !== null && mentionMatches.length > 0 && (
-                <div className="absolute bottom-full left-0 mb-1.5 w-56 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg shadow-black/5 z-50 overflow-hidden">
-                  <p className="px-3 pt-2 pb-1 text-[10px] font-medium text-zinc-400 uppercase tracking-widest">
-                    Members
-                  </p>
-                  {mentionMatches.map((m, i) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onMouseDown={(e) => { e.preventDefault(); insertMention(m) }}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${
-                        i === mentionHighlight ? 'bg-zinc-50 dark:bg-zinc-700' : 'hover:bg-zinc-50 dark:hover:bg-zinc-700'
-                      }`}
-                    >
-                      {m.avatar_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={m.avatar_url} alt="" className="w-5 h-5 rounded-full object-cover shrink-0" />
-                      ) : (
-                        <div className="w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-600 flex items-center justify-center shrink-0">
-                          <span className="text-[8px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(m.full_name || m.email)}</span>
-                        </div>
-                      )}
-                      <span className="text-sm text-black dark:text-white truncate">
-                        {m.full_name || m.email}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Textarea — border-0 + shadow-none strips the Textarea base styles so the parent container owns focus styling */}
-              <Textarea
-                ref={textareaRef}
-                value={visibleBody}
-                onChange={handleBodyChange}
-                onKeyDown={handleKeyDown}
-                placeholder={members.length > 0 ? 'Add a comment… @ to mention' : 'Add a comment…'}
-                disabled={isPending}
-                className="border-0 bg-transparent rounded-xl shadow-none outline-none ring-0 focus:outline-none focus:ring-0 focus:shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none p-3 pb-1 resize-none text-sm min-h-[44px] text-zinc-900 dark:text-white placeholder:text-zinc-400"
-              />
-
-              {/* Bottom bar: quick chips + send */}
-              <div className="flex items-center justify-between px-2.5 pb-2 pt-1 gap-2">
-                {/* Quick-insert chips */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {(['Status update…', 'Thanks!', 'Approved ✓'] as const).map((chip) => (
-                    <button
-                      key={chip}
-                      type="button"
-                      disabled={isPending}
-                      onMouseDown={(e) => {
-                        e.preventDefault()
-                        setVisibleBody((prev) => (prev ? prev + ' ' + chip : chip))
-                        setTimeout(() => {
-                          autoResize()
-                          textareaRef.current?.focus()
-                        }, 0)
-                      }}
-                      className="px-2 py-0.5 text-[11px] text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 rounded-full transition-colors duration-150 disabled:opacity-50"
-                    >
-                      {chip}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Paperclip + Send — grouped on the right */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <label
-                    htmlFor="comment-upload"
-                    title="Attach file"
-                    className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors duration-150 cursor-pointer"
-                  >
-                    <Paperclip size={13} strokeWidth={1.5} />
-                    <span className="sr-only">Attach file</span>
-                  </label>
-                  <input
-                    type="file"
-                    id="comment-upload"
-                    className="hidden"
-                    onChange={handleCommentFileUpload}
-                  />
-
-                  <button
-                    type="submit"
-                    disabled={!visibleBody.trim() || isPending}
-                    className="flex items-center justify-center w-7 h-7 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    {isPending ? (
-                      <Loader2 size={12} strokeWidth={1.5} className="animate-spin" />
-                    ) : (
-                      <Send size={12} strokeWidth={1.5} />
-                    )}
-                    <span className="sr-only">Send comment</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Microcopy hint */}
-            <p className="mt-1.5 px-1 text-[11px] text-zinc-400">
-              Pro tip: press <kbd className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-300 rounded text-[10px] font-mono">⌘↵</kbd> to send
-            </p>
-        </div>
-      </form>
     </div>
   )
 }

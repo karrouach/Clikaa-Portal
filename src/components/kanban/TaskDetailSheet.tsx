@@ -51,6 +51,9 @@ import {
   Share2,
   Flag,
   MoreVertical,
+  Bold,
+  Italic,
+  List,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -191,16 +194,13 @@ function formatLinkLabel(url: string): string {
   }
 }
 
-function FigmaInlineIcon() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 38 57" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
-      <path d="M19 28.5A9.5 9.5 0 1 1 38 28.5A9.5 9.5 0 1 1 19 28.5Z" fill="#1ABCFE"/>
-      <path d="M0 47.5A9.5 9.5 0 0 1 9.5 38H19V57H9.5A9.5 9.5 0 0 1 0 47.5Z" fill="#0ACF83"/>
-      <path d="M19 0L9.5 0A9.5 9.5 0 0 0 0 9.5A9.5 9.5 0 0 0 9.5 19H19V0Z" fill="#F24E1E"/>
-      <path d="M0 28.5A9.5 9.5 0 0 0 9.5 38H19V19H9.5A9.5 9.5 0 0 0 0 28.5Z" fill="#A259FF"/>
-      <path d="M38 9.5A9.5 9.5 0 0 0 28.5 0H19V19H28.5A9.5 9.5 0 0 0 38 9.5Z" fill="#FF7262"/>
-    </svg>
-  )
+function getFaviconUrl(url: string): string {
+  try {
+    const { hostname } = new URL(url)
+    return `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`
+  } catch {
+    return `https://www.google.com/s2/favicons?domain=${url}&sz=32`
+  }
 }
 
 function RichDescription({ text }: { text: string }) {
@@ -213,7 +213,6 @@ function RichDescription({ text }: { text: string }) {
           return <React.Fragment key={i}>{part}</React.Fragment>
         }
         URL_RE.lastIndex = 0
-        const isFigma = part.includes('figma.com')
         return (
           <a
             key={i}
@@ -221,9 +220,16 @@ function RichDescription({ text }: { text: string }) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 rounded-md text-xs text-blue-700 dark:text-blue-400 transition-colors no-underline align-baseline"
+            className="inline-flex items-center gap-1.5 px-2 py-1 m-1 bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-md text-sm text-gray-800 dark:text-gray-200 transition-colors no-underline align-middle"
           >
-            {isFigma ? <FigmaInlineIcon /> : <Link2 size={10} strokeWidth={1.5} className="shrink-0" />}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={getFaviconUrl(part)}
+              alt=""
+              width={14}
+              height={14}
+              className="w-3.5 h-3.5 rounded-sm shrink-0"
+            />
             {formatLinkLabel(part)}
           </a>
         )
@@ -247,16 +253,60 @@ function EditableDescription({
   onSaved: (description: string | null) => void
 }) {
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(value ?? '')
+  // htmlContent mirrors the contentEditable innerHTML so execCommand changes are captured
+  const [htmlContent, setHtmlContent] = useState(value ?? '')
   const [isPending, startTransition] = useTransition()
+  const editorRef = React.useRef<HTMLDivElement>(null)
 
-  if (!editing && draft !== (value ?? '')) setDraft(value ?? '')
+  // Keep htmlContent in sync when the prop changes while not editing
+  React.useEffect(() => {
+    if (!editing) setHtmlContent(value ?? '')
+  }, [value, editing])
+
+  // Populate contentEditable and focus when editing starts
+  React.useEffect(() => {
+    if (editing && editorRef.current) {
+      editorRef.current.innerHTML = value ?? ''
+      editorRef.current.focus()
+      const range = document.createRange()
+      const sel = window.getSelection()
+      if (sel) {
+        range.selectNodeContents(editorRef.current)
+        range.collapse(false)
+        sel.removeAllRanges()
+        sel.addRange(range)
+      }
+    }
+  }, [editing]) // intentionally excludes value — we only want this on mount of edit mode
+
+  function save() {
+    // Use innerText to check for emptiness; save innerHTML to preserve formatting
+    const isEmpty = !(editorRef.current?.innerText.trim())
+    const toSave = isEmpty ? null : htmlContent
+    if (toSave === value) { setEditing(false); return }
+    startTransition(async () => {
+      await updateTaskDescription({ taskId, description: toSave })
+      onSaved(toSave)
+      setEditing(false)
+    })
+  }
+
+  function cancel() {
+    setHtmlContent(value ?? '')
+    setEditing(false)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  const exec = (cmd: string, arg?: string) => document.execCommand(cmd, false, arg)
 
   if (!canEdit) {
     return (
-      <div className="flex flex-col items-start justify-start text-left bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-zinc-800 rounded-xl p-4 min-h-[120px] w-full">
+      <div className="flex flex-col items-start justify-start text-left bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-zinc-800 rounded-xl overflow-hidden p-4 min-h-[120px] w-full">
         {value
-          ? <RichDescription text={value} />
+          ? <div
+              className="text-sm text-gray-700 dark:text-zinc-300 leading-relaxed break-words w-full [&_b]:font-bold [&_i]:italic [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5 [&_a]:text-blue-600 dark:[&_a]:text-blue-400 [&_a]:underline"
+              dangerouslySetInnerHTML={{ __html: value }}
+            />
           : <p className="text-sm text-zinc-400 italic">No description provided.</p>
         }
       </div>
@@ -264,30 +314,78 @@ function EditableDescription({
   }
 
   if (editing) {
-    function save() {
-      const trimmed = draft.trim() || null
-      if (trimmed === value) { setEditing(false); return }
-      startTransition(async () => {
-        await updateTaskDescription({ taskId, description: trimmed })
-        onSaved(trimmed)
-        setEditing(false)
-      })
-    }
-
     return (
-      <div className="relative">
-        <textarea
-          autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={save}
-          onKeyDown={(e) => { if (e.key === 'Escape') { setDraft(value ?? ''); setEditing(false) } }}
-          rows={5}
-          placeholder="Add a description…"
-          disabled={isPending}
-          className="w-full bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 resize-none leading-relaxed px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 focus-visible:outline-none focus-visible:border-zinc-300 dark:focus-visible:border-zinc-500 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)] transition-colors duration-150 disabled:opacity-60"
+      <div className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden focus-within:border-zinc-300 dark:focus-within:border-zinc-500 transition-colors duration-150">
+        {/* ── Formatting toolbar ─────────────────────────────────────────── */}
+        <div className="flex items-center gap-0.5 px-2 pt-2 pb-1.5 border-b border-gray-200 dark:border-zinc-700">
+          {([
+            { icon: Bold,   title: 'Bold',   cmd: 'bold'                },
+            { icon: Italic, title: 'Italic', cmd: 'italic'              },
+            { icon: List,   title: 'List',   cmd: 'insertUnorderedList' },
+          ] as const).map(({ icon: Icon, title, cmd }) => (
+            <button
+              key={title}
+              type="button"
+              title={title}
+              onMouseDown={(e) => { e.preventDefault(); exec(cmd) }}
+              className="flex items-center justify-center w-6 h-6 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+            >
+              <Icon size={12} strokeWidth={1.5} />
+            </button>
+          ))}
+          {/* Link — prompts for URL then wraps selection */}
+          <button
+            type="button"
+            title="Link"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              const url = window.prompt('Enter URL:')
+              if (url) exec('createLink', url)
+            }}
+            className="flex items-center justify-center w-6 h-6 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+          >
+            <Link2 size={12} strokeWidth={1.5} />
+          </button>
+          {isPending && <Loader2 size={11} strokeWidth={1.5} className="ml-auto mr-1 animate-spin text-zinc-400" />}
+        </div>
+
+        {/* ── ContentEditable editor ─────────────────────────────────────── */}
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={(e) => setHtmlContent(e.currentTarget.innerHTML)}
+          onKeyDown={(e) => { if (e.key === 'Escape') cancel() }}
+          data-placeholder="Add a description…"
+          style={{ outline: 'none' }}
+          className={cn(
+            'w-full bg-transparent text-sm text-zinc-900 dark:text-zinc-100 leading-relaxed px-3 py-2.5',
+            'min-h-[100px] h-auto max-h-[350px] overflow-y-auto',
+            'outline-none focus:outline-none focus-visible:outline-none ring-0',
+            '[&_b]:font-bold [&_i]:italic [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5 [&_a]:text-blue-600 dark:[&_a]:text-blue-400 [&_a]:underline',
+            '[&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-zinc-400 [&:empty]:before:italic [&:empty]:before:pointer-events-none',
+            isPending && 'opacity-60 pointer-events-none',
+          )}
         />
-        {isPending && <Loader2 size={12} strokeWidth={1.5} className="absolute right-2.5 bottom-2.5 animate-spin text-zinc-400" />}
+
+        {/* ── Save / Cancel footer ───────────────────────────────────────── */}
+        <div className="flex justify-end gap-2 px-2 py-2 border-t border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900/30">
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); cancel() }}
+            className="px-3 py-1.5 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); save() }}
+            disabled={isPending}
+            className="px-3 py-1.5 text-xs font-medium bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-50"
+          >
+            {isPending ? 'Saving…' : 'Save'}
+          </button>
+        </div>
       </div>
     )
   }
@@ -295,10 +393,13 @@ function EditableDescription({
   return (
     <button
       onClick={() => setEditing(true)}
-      className="flex flex-col items-start justify-start text-left w-full bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-zinc-800 rounded-xl p-4 min-h-[120px] hover:border-zinc-200 dark:hover:border-zinc-700 transition-colors"
+      className="flex flex-col items-start justify-start text-left w-full bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-zinc-800 rounded-xl overflow-hidden p-4 min-h-[120px] hover:border-zinc-200 dark:hover:border-zinc-700 transition-colors"
     >
       {value
-        ? <RichDescription text={value} />
+        ? <div
+            className="text-sm text-gray-700 dark:text-zinc-300 leading-relaxed break-words w-full [&_b]:font-bold [&_i]:italic [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5 [&_a]:text-blue-600 dark:[&_a]:text-blue-400 [&_a]:underline"
+            dangerouslySetInnerHTML={{ __html: value }}
+          />
         : <p className="text-sm text-zinc-400 italic">Add a description…</p>
       }
     </button>
