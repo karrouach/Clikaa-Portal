@@ -17,8 +17,9 @@ export const metadata: Metadata = {
   description: 'Client workspace portal for Clikaa design agency.',
   robots: { index: false, follow: false }, // Private portal — never index
   icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
+    icon: [{ url: '/icon.png', type: 'image/png' }],
+    shortcut: '/icon.png',
+    apple: '/icon.png',
   },
 }
 

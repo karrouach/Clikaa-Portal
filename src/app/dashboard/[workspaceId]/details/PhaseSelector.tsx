@@ -35,7 +35,7 @@ export function PhaseSelector({ workspaceId, currentPhase: initialPhase, isAdmin
       {/* Admin phase selector */}
       {isAdmin && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-zinc-500">Set current phase</p>
+          <p className="text-xs text-gray-500 dark:text-zinc-400">Set current phase</p>
           <div className="relative flex items-center gap-2">
             {isPending && <Loader2 size={12} strokeWidth={1.5} className="text-zinc-400 animate-spin" />}
             <select
@@ -57,7 +57,7 @@ export function PhaseSelector({ workspaceId, currentPhase: initialPhase, isAdmin
 
       {/* Visual timeline */}
       <div className="relative">
-        <div className="absolute left-[13px] top-3 bottom-3 w-px bg-zinc-100" />
+        <div className="absolute left-[13px] top-3 bottom-3 w-px bg-zinc-200 dark:bg-zinc-700" />
         <div className="space-y-0">
           {PHASES.map((name, i) => {
             const isDone    = i < phase - 1
@@ -68,30 +68,30 @@ export function PhaseSelector({ workspaceId, currentPhase: initialPhase, isAdmin
               <div key={name} className="flex items-start gap-3.5 pb-4 last:pb-0 relative">
                 <div className={cn(
                   'shrink-0 w-[27px] h-[27px] rounded-full border-2 flex items-center justify-center z-10',
-                  isDone    ? 'bg-black border-black'
-                  : isCurrent ? 'bg-white border-black'
-                  : 'bg-white border-zinc-200'
+                  isDone    ? 'bg-black dark:bg-white border-black dark:border-white'
+                  : isCurrent ? 'bg-white dark:bg-zinc-900 border-black dark:border-white'
+                  : 'bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600'
                 )}>
                   {isDone ? (
-                    <span className="text-white text-[10px]">✓</span>
+                    <span className="text-white dark:text-black text-[10px]">✓</span>
                   ) : isCurrent ? (
                     <span className="w-2.5 h-2.5 bg-black dark:bg-white rounded-full animate-pulse block" />
                   ) : (
-                    <span className="w-2 h-2 bg-zinc-200 rounded-full block" />
+                    <span className="w-2 h-2 bg-zinc-300 dark:bg-zinc-600 rounded-full block" />
                   )}
                 </div>
                 <div className="pt-1">
                   <p className={cn(
                     'text-sm',
-                    isDone    ? 'text-zinc-400 line-through'
-                    : isCurrent ? 'font-semibold text-black'
-                    : 'text-zinc-400'
+                    isDone    ? 'text-zinc-400 dark:text-zinc-500 line-through'
+                    : isCurrent ? 'font-semibold text-black dark:text-white'
+                    : 'text-zinc-400 dark:text-zinc-500'
                   )}>
                     {name}
                   </p>
-                  {isCurrent && <p className="text-[11px] text-zinc-500 mt-0.5">In progress</p>}
-                  {isDone    && <p className="text-[11px] text-zinc-300 mt-0.5">Completed</p>}
-                  {isFuture  && <p className="text-[11px] text-zinc-300 mt-0.5">Upcoming</p>}
+                  {isCurrent && <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">In progress</p>}
+                  {isDone    && <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">Completed</p>}
+                  {isFuture  && <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">Upcoming</p>}
                 </div>
               </div>
             )

@@ -207,8 +207,16 @@ function WorkspaceItem({
 export function Sidebar({ profile, workspaces, unreadMessageCount = 0, badgeCounts }: SidebarProps) {
   const INTERNAL_ROLES = ['designer', 'developer', 'marketer', 'project_manager']
 
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('clikaa_sidebar_collapsed') === 'true'
+  })
   const [msgBadge, setMsgBadge] = useState(unreadMessageCount)
+
+  // Persist collapsed state across page reloads
+  useEffect(() => {
+    localStorage.setItem('clikaa_sidebar_collapsed', String(isCollapsed))
+  }, [isCollapsed])
   const pathname  = usePathname()
   const initials  = getInitials(profile.full_name || profile.email)
   const isAdmin        = profile.role === 'admin'

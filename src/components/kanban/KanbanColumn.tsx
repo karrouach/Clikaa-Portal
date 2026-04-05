@@ -5,6 +5,7 @@ import { Droppable } from '@hello-pangea/dnd'
 import type { Task, TaskStatus } from '@/types/database'
 import { KanbanCard } from './KanbanCard'
 import { cn } from '@/lib/utils'
+import type { MemberOption } from './CreateTaskDialog'
 
 interface KanbanColumnProps {
   columnId: TaskStatus
@@ -12,6 +13,7 @@ interface KanbanColumnProps {
   dotClass: string
   tasks: Task[]
   onCardClick?: (task: Task) => void
+  members?: MemberOption[]
 }
 
 /**
@@ -20,9 +22,9 @@ interface KanbanColumnProps {
  * Wrapped in React.memo so columns that receive no task changes do not
  * re-render while the user drags a card in another column.
  */
-export const KanbanColumn = memo(function KanbanColumn({ columnId, label, dotClass, tasks, onCardClick }: KanbanColumnProps) {
+export const KanbanColumn = memo(function KanbanColumn({ columnId, label, dotClass, tasks, onCardClick, members }: KanbanColumnProps) {
   return (
-    <div className="flex flex-col flex-1 min-w-[200px] h-full bg-gray-50 dark:bg-[#121212] rounded-xl overflow-hidden p-3">
+    <div className="flex flex-col flex-1 min-w-[200px] h-full bg-gray-100 dark:bg-zinc-900/40 rounded-xl p-2.5">
       {/* ── Column header ─────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
@@ -43,8 +45,8 @@ export const KanbanColumn = memo(function KanbanColumn({ columnId, label, dotCla
             ref={provided.innerRef}
             {...provided.droppableProps}
             className={cn(
-              // Base column body
-              'flex-1 overflow-y-auto space-y-2 transition-colors duration-150 rounded-lg',
+              // Base column body — pt-1 gives the first card room to lift on hover without clipping
+              'flex-1 overflow-y-auto space-y-2 pt-1 transition-colors duration-150 rounded-lg',
               // Active drop target
               snapshot.isDraggingOver ? 'bg-zinc-100 dark:bg-zinc-800 ring-1 ring-inset ring-zinc-200 dark:ring-zinc-700' : 'bg-transparent',
               // Ensure empty columns are droppable
@@ -57,6 +59,7 @@ export const KanbanColumn = memo(function KanbanColumn({ columnId, label, dotCla
                 task={task}
                 index={index}
                 onClick={onCardClick}
+                members={members}
               />
             ))}
 

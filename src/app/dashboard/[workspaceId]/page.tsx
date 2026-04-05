@@ -56,11 +56,27 @@ export default async function WorkspacePage({ params }: Props) {
     .single()
 
   // ── Initial tasks — ordered by position for correct column order ──────────
-  const { data: tasks } = await supabase
+  const { data: rawTasks } = await supabase
     .from('tasks')
     .select('*')
     .eq('workspace_id', workspaceId)
     .order('position', { ascending: true })
+
+  // ── Comment counts per task ────────────────────────────────────────────────
+  const taskIds = (rawTasks ?? []).map((t) => t.id)
+  const { data: commentRows } = taskIds.length > 0
+    ? await supabase.from('comments').select('task_id').in('task_id', taskIds)
+    : { data: [] }
+
+  const commentCountMap = (commentRows ?? []).reduce<Record<string, number>>((acc, row) => {
+    acc[row.task_id] = (acc[row.task_id] ?? 0) + 1
+    return acc
+  }, {})
+
+  const tasks = (rawTasks ?? []).map((t) => ({
+    ...t,
+    comment_count: commentCountMap[t.id] ?? 0,
+  }))
 
   // ── Workspace members — for assignee select in CreateTaskDialog ───────────
   const { data: memberships } = await supabase
@@ -104,7 +120,7 @@ export default async function WorkspacePage({ params }: Props) {
       <WorkspaceTaskTabs
         workspaceId={workspaceId}
         workspaceName={workspace.name}
-        initialTasks={tasks ?? []}
+        initialTasks={tasks}
         currentUserProfile={currentUserProfile}
         workspaceMembers={workspaceMembers}
       />

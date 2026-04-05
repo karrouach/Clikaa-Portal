@@ -29,7 +29,7 @@ export function WorkspaceSubNav({ workspaceId }: { workspaceId: string }) {
             key={label}
             href={href}
             className={cn(
-              'px-4 py-2.5 text-sm transition-colors duration-150 border-b-[3px] whitespace-nowrap',
+              'px-4 py-2.5 text-sm transition-colors duration-150 border-b-2 whitespace-nowrap',
               isActive
                 ? 'text-black dark:text-white font-medium border-black dark:border-white -mb-px z-10'
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'

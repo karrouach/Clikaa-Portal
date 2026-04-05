@@ -248,6 +248,7 @@ export function KanbanBoard({
                   dotClass={col.dotClass}
                   tasks={sortedByStatus[col.id]}
                   onCardClick={handleCardClick}
+                  members={workspaceMembers}
                 />
               ))}
             </div>

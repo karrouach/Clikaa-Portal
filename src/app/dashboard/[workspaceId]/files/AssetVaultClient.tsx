@@ -272,16 +272,21 @@ function UploadModal({
             </label>
             <div
               onClick={() => fileRef.current?.click()}
-              className="w-full border border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl p-6 flex flex-col items-center gap-2 cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-3 cursor-pointer rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700 bg-gray-50/50 dark:bg-zinc-900/30 hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors duration-150"
             >
-              <Upload size={20} strokeWidth={1.5} className="text-zinc-400" />
+              <Upload size={16} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
               {file ? (
-                <>
-                  <p className="text-sm font-medium text-black dark:text-white truncate max-w-full px-4">{file.name}</p>
-                  <p className="text-xs text-zinc-400">{formatSize(file.size)}</p>
-                </>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-black dark:text-white truncate">{file.name}</p>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">{formatSize(file.size)}</p>
+                </div>
               ) : (
-                <p className="text-sm text-zinc-400">Click to choose a file</p>
+                <div>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-none">
+                    Drop file or <span className="text-black dark:text-white font-medium">click to upload</span>
+                  </p>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">Max 50 MB per file</p>
+                </div>
               )}
             </div>
             <input
@@ -393,8 +398,8 @@ export function AssetVaultClient({ workspaceId, initialAssets, isAdmin, userId }
       {/* ── Grid ─────────────────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="w-12 h-12 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
-            <File size={20} strokeWidth={1.5} className="text-zinc-400" />
+          <div className="w-14 h-14 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center mb-4">
+            <Upload size={22} strokeWidth={1.5} className="text-zinc-400" />
           </div>
           <p className="text-sm font-medium text-black dark:text-white">
             {activeFilter === 'all' ? 'No assets yet' : `No ${activeFilter.replace('_', ' ')} yet`}

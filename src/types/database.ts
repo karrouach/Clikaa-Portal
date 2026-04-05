@@ -138,6 +138,8 @@ export type Database = {
           created_by: string
           start_date: string | null
           due_date: string | null
+          links: string[]
+          comment_count?: number
           created_at: string
           updated_at: string
         }
@@ -153,6 +155,7 @@ export type Database = {
           created_by: string
           start_date?: string | null
           due_date?: string | null
+          links?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -168,6 +171,7 @@ export type Database = {
           created_by?: string
           start_date?: string | null
           due_date?: string | null
+          links?: string[]
           created_at?: string
           updated_at?: string
         }
