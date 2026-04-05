@@ -22,6 +22,7 @@ import {
   updateTaskPriority,
   updateTaskDates,
   updateTaskAssignee,
+  updateTaskLinks,
   deleteTask,
 } from '@/app/dashboard/task-actions'
 import { updateTaskTitle, updateTaskDescription } from '@/app/dashboard/comment-actions'
@@ -37,10 +38,15 @@ import {
   Maximize2,
   PanelRight,
   Pencil,
+  Link2,
+  Plus,
+  Share2,
+  Flag,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import type { MemberOption } from './CreateTaskDialog'
+import { toast } from 'sonner'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface CurrentUserProfile {
@@ -76,7 +82,6 @@ const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
   { value: 'low',    label: 'Low' },
   { value: 'medium', label: 'Medium' },
   { value: 'high',   label: 'High' },
-  { value: 'urgent', label: 'Urgent' },
 ]
 
 const PRIORITY_VARIANT = {
@@ -133,7 +138,6 @@ function EditableTitle({
     return (
       <div className="relative">
         <textarea
-          autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={save}
@@ -143,7 +147,8 @@ function EditableTitle({
           }}
           rows={2}
           disabled={isPending}
-          className="w-full bg-transparent text-lg font-semibold text-zinc-900 dark:text-zinc-100 resize-none leading-snug pb-0.5 border-0 border-b border-zinc-200 dark:border-zinc-700 focus-visible:outline-none focus-visible:border-zinc-400 dark:focus-visible:border-zinc-500 transition-colors duration-150 disabled:opacity-60"
+          style={{ border: 'none', outline: 'none', boxShadow: 'none' }}
+          className="w-full bg-transparent text-lg font-semibold text-zinc-900 dark:text-zinc-100 resize-none leading-snug focus:outline-none focus:ring-0 focus:border-transparent focus:bg-transparent px-2 -ml-2 rounded-md transition-colors duration-150 disabled:opacity-60"
         />
         {isPending && <Loader2 size={12} strokeWidth={1.5} className="absolute right-0 top-1 animate-spin text-zinc-400" />}
       </div>
@@ -151,13 +156,11 @@ function EditableTitle({
   }
 
   return (
-    <button onClick={() => setEditing(true)} title="Click to edit title" className="block w-full text-left group">
+    <button onClick={() => setEditing(true)} title="Click to edit title" className="flex items-center gap-1.5 w-full text-left group outline-none focus-visible:outline-none">
       <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 leading-snug group-hover:text-zinc-600 dark:group-hover:text-zinc-400 transition-colors">
         {value}
       </h2>
-      <p className="text-[10px] text-zinc-400 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-        Click to edit
-      </p>
+      <Pencil size={12} strokeWidth={1.5} className="shrink-0 text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity" />
     </button>
   )
 }
@@ -224,6 +227,152 @@ function EditableDescription({
         : <p className="text-sm text-zinc-400 italic group-hover:text-zinc-500 transition-colors">Add a description…</p>
       }
     </button>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EditableLinks — list of URLs (Figma, Notion, GitHub, etc.)
+// ─────────────────────────────────────────────────────────────────────────────
+function EditableLinks({
+  taskId,
+  value,
+  canEdit,
+  onSaved,
+}: {
+  taskId: string
+  value: string[]
+  canEdit: boolean
+  onSaved: (links: string[]) => void
+}) {
+  const [adding, setAdding] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [isPending, startTransition] = useTransition()
+
+  function isFigma(url: string) { return url.includes('figma.com') }
+
+  function getLinkLabel(url: string) {
+    try {
+      const { hostname } = new URL(url)
+      return hostname.replace(/^www\./, '')
+    } catch {
+      return url
+    }
+  }
+
+  function handleAdd() {
+    const trimmed = draft.trim()
+    if (!trimmed) { setAdding(false); return }
+    // Prepend https:// if missing
+    const url = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+    const next = [...value, url]
+    startTransition(async () => {
+      await updateTaskLinks({ taskId, links: next })
+      onSaved(next)
+      setDraft('')
+      setAdding(false)
+    })
+  }
+
+  function handleRemove(idx: number) {
+    const next = value.filter((_, i) => i !== idx)
+    startTransition(async () => {
+      await updateTaskLinks({ taskId, links: next })
+      onSaved(next)
+    })
+  }
+
+  return (
+    <div className="space-y-1.5">
+      {value.map((url, idx) => (
+        <div key={idx} className="group/link flex items-center gap-2">
+          {isFigma(url) ? (
+            <span className="shrink-0 w-4 h-4 flex items-center justify-center">
+              {/* Figma "F" icon */}
+              <svg viewBox="0 0 38 57" width="12" height="12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 28.5C19 25.9804 20.0009 23.5641 21.7825 21.7825C23.5641 20.0009 25.9804 19 28.5 19C31.0196 19 33.4359 20.0009 35.2175 21.7825C36.9991 23.5641 38 25.9804 38 28.5C38 31.0196 36.9991 33.4359 35.2175 35.2175C33.4359 36.9991 31.0196 38 28.5 38C25.9804 38 23.5641 36.9991 21.7825 35.2175C20.0009 33.4359 19 31.0196 19 28.5Z" fill="#1ABCFE"/>
+                <path d="M0 47.5C0 44.9804 1.00089 42.5641 2.78249 40.7825C4.56408 39.0009 6.98044 38 9.5 38H19V47.5C19 50.0196 17.9991 52.4359 16.2175 54.2175C14.4359 55.9991 12.0196 57 9.5 57C6.98044 57 4.56408 55.9991 2.78249 54.2175C1.00089 52.4359 0 50.0196 0 47.5Z" fill="#0ACF83"/>
+                <path d="M19 0V19H28.5C31.0196 19 33.4359 17.9991 35.2175 16.2175C36.9991 14.4359 38 12.0196 38 9.5C38 6.98044 36.9991 4.56408 35.2175 2.78249C33.4359 1.00089 31.0196 0 28.5 0H19Z" fill="#FF7262"/>
+                <path d="M0 9.5C0 12.0196 1.00089 14.4359 2.78249 16.2175C4.56408 17.9991 6.98044 19 9.5 19H19V0H9.5C6.98044 0 4.56408 1.00089 2.78249 2.78249C1.00089 4.56408 0 6.98044 0 9.5Z" fill="#F24E1E"/>
+                <path d="M0 28.5C0 31.0196 1.00089 33.4359 2.78249 35.2175C4.56408 36.9991 6.98044 38 9.5 38H19V19H9.5C6.98044 19 4.56408 20.0009 2.78249 21.7825C1.00089 23.5641 0 25.9804 0 28.5Z" fill="#A259FF"/>
+              </svg>
+            </span>
+          ) : (
+            <Link2 size={12} strokeWidth={1.5} className="shrink-0 text-zinc-400" />
+          )}
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 text-xs text-blue-600 dark:text-blue-400 hover:underline truncate"
+          >
+            {getLinkLabel(url)}
+          </a>
+          {canEdit && (
+            <button
+              onClick={() => handleRemove(idx)}
+              disabled={isPending}
+              className="opacity-0 group-hover/link:opacity-100 text-zinc-300 hover:text-red-500 transition-all duration-150 shrink-0"
+            >
+              <X size={11} strokeWidth={2} />
+            </button>
+          )}
+        </div>
+      ))}
+
+      {canEdit && (
+        adding ? (
+          <div className="flex items-center gap-1.5">
+            <input
+              autoFocus
+              type="text"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); handleAdd() }
+                if (e.key === 'Escape') { setDraft(''); setAdding(false) }
+              }}
+              onBlur={handleAdd}
+              placeholder="https://figma.com/..."
+              disabled={isPending}
+              className="flex-1 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-2 py-1.5 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus-visible:outline-none focus-visible:border-zinc-400 dark:focus-visible:border-zinc-500 transition-colors duration-150 disabled:opacity-60"
+            />
+            {isPending && <Loader2 size={11} strokeWidth={1.5} className="animate-spin text-zinc-400 shrink-0" />}
+          </div>
+        ) : (
+          <button
+            onClick={() => setAdding(true)}
+            className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors duration-150"
+          >
+            <Plus size={11} strokeWidth={2} />
+            Add link
+          </button>
+        )
+      )}
+
+      {!canEdit && value.length === 0 && (
+        <p className="text-xs text-zinc-400 italic">No links added.</p>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PriorityFlag — Flag icon + label, no background pill
+// ─────────────────────────────────────────────────────────────────────────────
+const PRIORITY_FLAG_CONFIG: Record<TaskPriority, { color: string; label: string }> = {
+  urgent: { color: 'text-red-500 dark:text-red-400',         label: 'High'   }, // legacy: treat urgent as High
+  high:   { color: 'text-red-500 dark:text-red-400',         label: 'High'   },
+  medium: { color: 'text-amber-500 dark:text-amber-400',     label: 'Medium' },
+  low:    { color: 'text-emerald-500 dark:text-emerald-400', label: 'Low'    },
+}
+
+function PriorityFlag({ priority }: { priority: TaskPriority }) {
+  const { color, label } = PRIORITY_FLAG_CONFIG[priority]
+  return (
+    <div className={cn('flex items-center gap-1.5 text-sm font-medium', color)}>
+      <Flag size={14} strokeWidth={2} className="shrink-0" />
+      {label}
+    </div>
   )
 }
 
@@ -310,6 +459,7 @@ export function TaskDetailSheet({
 }: TaskDetailSheetProps) {
   const [isDeleting, startDeleteTransition] = useTransition()
   const [isApproving, startApproveTransition] = useTransition()
+  const [activeTab, setActiveTab] = useState<'comments' | 'activities'>('comments')
 
   const [mode, setMode] = useState<LayoutMode>(() => {
     if (typeof window === 'undefined') return 'modal'
@@ -400,8 +550,14 @@ export function TaskDetailSheet({
     onTaskUpdated({ ...task, description })
   }
 
+  function handleLinksSaved(links: string[]) {
+    if (!task) return
+    onTaskUpdated({ ...task, links })
+  }
+
   function handleDelete() {
     if (!task) return
+    if (!window.confirm('Delete this task? This cannot be undone.')) return
     startDeleteTransition(async () => {
       const { error } = await deleteTask(task.id)
       if (!error) { onTaskDeleted(task.id); onOpenChange(false) }
@@ -431,16 +587,16 @@ export function TaskDetailSheet({
           borderRadius: '16px',
         }
       : {
-          // sidebar
+          // sidebar — floats with margin from all edges
           position: 'fixed',
-          right: '0',
-          top: '0',
-          bottom: '0',
+          right: '1rem',
+          top: '1rem',
+          bottom: '1rem',
           left: 'auto',
-          height: '100%',
+          height: 'calc(100vh - 2rem)',
           width: '480px',
-          maxWidth: '100%',
-          borderRadius: '0',
+          maxWidth: 'calc(100vw - 2rem)',
+          borderRadius: '16px',
         }
 
   const selectedMember = task?.assignee_id
@@ -457,6 +613,7 @@ export function TaskDetailSheet({
 
         {/* ── Panel ───────────────────────────────────────────────────────── */}
         <DialogPrimitive.Content
+          onOpenAutoFocus={(e) => e.preventDefault()}
           className={cn(
             // Animation classes — mobile base + desktop overrides via globals.css
             'task-panel',
@@ -465,7 +622,7 @@ export function TaskDetailSheet({
             mode === 'sidebar'    && 'task-panel-sidebar',
             // Base layout
             'fixed z-50 bg-white dark:bg-[#1A1A1A] flex flex-col overflow-hidden',
-            'shadow-2xl shadow-black/15',
+            'shadow-2xl shadow-black/15 border border-gray-200 dark:border-zinc-800',
             // Mobile fallback positioning (overridden by CSS !important at max-width:767px)
             'left-0 right-0 bottom-0 top-14',
           )}
@@ -482,9 +639,6 @@ export function TaskDetailSheet({
                     isAdmin={isAdmin}
                     onSaved={handleTitleSaved}
                   />
-                  <p className="text-[11px] text-zinc-400 mt-1.5">
-                    Created {formatDate(task.created_at)}
-                  </p>
                 </div>
 
                 {/* Controls: layout toggle (desktop) + close */}
@@ -513,6 +667,39 @@ export function TaskDetailSheet({
                       </button>
                     ))}
                   </div>
+
+                  {/* Delete — admin only, in header */}
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      title="Delete task"
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-150 disabled:opacity-40"
+                    >
+                      {isDeleting
+                        ? <Loader2 size={13} strokeWidth={1.5} className="animate-spin" />
+                        : <Trash2 size={13} strokeWidth={1.5} />
+                      }
+                      <span className="sr-only">Delete task</span>
+                    </button>
+                  )}
+
+                  {/* Share — copies deep-link ?taskId= URL to clipboard */}
+                  <button
+                    type="button"
+                    title="Copy link to task"
+                    onClick={() => {
+                      const url = `${window.location.origin}${window.location.pathname}?taskId=${task.id}`
+                      navigator.clipboard.writeText(url).then(() => {
+                        toast.success('Task link copied!')
+                      })
+                    }}
+                    className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-150"
+                  >
+                    <Share2 size={13} strokeWidth={1.5} />
+                    <span className="sr-only">Copy link</span>
+                  </button>
 
                   {/* Close */}
                   <DialogPrimitive.Close className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-150">
@@ -558,24 +745,20 @@ export function TaskDetailSheet({
                         <Select value={task.priority} onValueChange={handlePriorityChange}>
                           <SelectTrigger className="rounded-lg">
                             <SelectValue>
-                              <Badge variant={PRIORITY_VARIANT[task.priority]}>
-                                {task.priority}
-                              </Badge>
+                              <PriorityFlag priority={task.priority} />
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             {PRIORITY_OPTIONS.map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>
-                                <Badge variant={PRIORITY_VARIANT[opt.value]}>{opt.label}</Badge>
+                                <PriorityFlag priority={opt.value} />
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       ) : (
                         <div className="flex items-center h-9">
-                          <Badge variant={PRIORITY_VARIANT[task.priority]}>
-                            {task.priority}
-                          </Badge>
+                          <PriorityFlag priority={task.priority} />
                         </div>
                       )}
                     </div>
@@ -621,12 +804,14 @@ export function TaskDetailSheet({
                         <SelectTrigger className="rounded-lg">
                           {selectedMember ? (
                             <div className="flex items-center gap-2 min-w-0">
-                              <Avatar className="h-5 w-5 shrink-0">
-                                {selectedMember.avatar_url && <AvatarImage src={selectedMember.avatar_url} />}
-                                <AvatarFallback className="text-[8px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
-                                  {getInitials(selectedMember.full_name || selectedMember.email)}
-                                </AvatarFallback>
-                              </Avatar>
+                              {selectedMember.avatar_url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={selectedMember.avatar_url} alt="" className="h-5 w-5 rounded-md object-cover shrink-0" />
+                              ) : (
+                                <div className="h-5 w-5 rounded-md bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0">
+                                  <span className="text-[8px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(selectedMember.full_name || selectedMember.email)}</span>
+                                </div>
+                              )}
                               <span className="text-sm truncate">
                                 {selectedMember.full_name || selectedMember.email}
                               </span>
@@ -642,12 +827,14 @@ export function TaskDetailSheet({
                           {workspaceMembers.map((m) => (
                             <SelectItem key={m.id} value={m.id}>
                               <div className="flex items-center gap-2">
-                                <Avatar className="h-5 w-5 shrink-0">
-                                  {m.avatar_url && <AvatarImage src={m.avatar_url} />}
-                                  <AvatarFallback className="text-[8px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
-                                    {getInitials(m.full_name || m.email)}
-                                  </AvatarFallback>
-                                </Avatar>
+                                {m.avatar_url ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={m.avatar_url} alt="" className="h-5 w-5 rounded-md object-cover shrink-0" />
+                                ) : (
+                                  <div className="h-5 w-5 rounded-md bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0">
+                                    <span className="text-[8px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(m.full_name || m.email)}</span>
+                                  </div>
+                                )}
                                 <span>{m.full_name || m.email}</span>
                               </div>
                             </SelectItem>
@@ -656,12 +843,14 @@ export function TaskDetailSheet({
                       </Select>
                     ) : task.assignee_id && assignee ? (
                       <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6 shrink-0">
-                          {assignee.avatar_url && <AvatarImage src={assignee.avatar_url} />}
-                          <AvatarFallback className="text-[9px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
-                            {getInitials(assignee.full_name || assignee.email)}
-                          </AvatarFallback>
-                        </Avatar>
+                        {assignee.avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={assignee.avatar_url} alt="" className="h-6 w-6 rounded-md object-cover shrink-0" />
+                        ) : (
+                          <div className="h-6 w-6 rounded-md bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0">
+                            <span className="text-[9px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(assignee.full_name || assignee.email)}</span>
+                          </div>
+                        )}
                         <span className="text-sm text-zinc-900">{assignee.full_name || assignee.email}</span>
                       </div>
                     ) : (
@@ -704,6 +893,52 @@ export function TaskDetailSheet({
                     />
                   </div>
 
+                  {/* Links */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Links</p>
+                    </div>
+                    <EditableLinks
+                      taskId={task.id}
+                      value={task.links ?? []}
+                      canEdit={canEdit}
+                      onSaved={handleLinksSaved}
+                    />
+                  </div>
+
+                  {/* Designs — live Figma embed when a figma.com link is present */}
+                  {(() => {
+                    const figmaLink = (task.links ?? []).find((l) => l.includes('figma.com'))
+                    if (!figmaLink) return null
+                    const iframeSrc = `https://www.figma.com/embed?embed_host=clikaa&url=${encodeURIComponent(figmaLink)}`
+                    return (
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Designs</p>
+                        <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                          {/* Loading skeleton shown until iframe paints */}
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="flex flex-col items-center gap-2 text-zinc-400">
+                              <svg width="24" height="24" viewBox="0 0 38 57" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-40">
+                                <path d="M19 28.5A9.5 9.5 0 1 1 38 28.5A9.5 9.5 0 1 1 19 28.5Z" fill="#1ABCFE"/>
+                                <path d="M0 47.5A9.5 9.5 0 0 1 9.5 38H19V57H9.5A9.5 9.5 0 0 1 0 47.5Z" fill="#0ACF83"/>
+                                <path d="M19 0L9.5 0A9.5 9.5 0 0 0 0 9.5A9.5 9.5 0 0 0 9.5 19H19V0Z" fill="#F24E1E"/>
+                                <path d="M0 28.5A9.5 9.5 0 0 0 9.5 38H19V19H9.5A9.5 9.5 0 0 0 0 28.5Z" fill="#A259FF"/>
+                                <path d="M38 9.5A9.5 9.5 0 0 0 28.5 0H19V19H28.5A9.5 9.5 0 0 0 38 9.5Z" fill="#FF7262"/>
+                              </svg>
+                              <span className="text-[11px]">Loading Figma…</span>
+                            </div>
+                          </div>
+                          <iframe
+                            src={iframeSrc}
+                            className="relative w-full aspect-video"
+                            allowFullScreen
+                            loading="lazy"
+                          />
+                        </div>
+                      </div>
+                    )
+                  })()}
+
                   {/* Attachments */}
                   <div className="space-y-2">
                     <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Attachments</p>
@@ -714,48 +949,48 @@ export function TaskDetailSheet({
                     />
                   </div>
 
-                  {/* Admin: Delete */}
-                  {isAdmin && (
-                    <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                      <button
-                        onClick={handleDelete}
-                        disabled={isDeleting}
-                        className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-red-500 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isDeleting
-                          ? <Loader2 size={12} strokeWidth={1.5} className="animate-spin" />
-                          : <Trash2 size={12} strokeWidth={1.5} />
-                        }
-                        Delete task
-                      </button>
-                    </div>
-                  )}
                 </div>
 
-                {/* ── Right / Activity pane ─────────────────────────────────── */}
+                {/* ── Right / Tabbed pane ───────────────────────────────────── */}
                 <div className={cn(
-                  'px-6 pb-6 bg-[#F9FAFB] dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800',
-                  mode !== 'sidebar' && 'md:w-[360px] md:shrink-0 md:overflow-y-auto md:border-t-0',
+                  'flex flex-col bg-[#F9FAFB] dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800',
+                  mode !== 'sidebar' && 'md:w-[360px] md:shrink-0 md:border-t-0',
                   mode === 'sidebar' && 'w-full',
                 )}>
-                  {/* ── Audit Trail ───────────────────────────────────────── */}
-                  <div className="sticky top-0 bg-[#F9FAFB] dark:bg-zinc-900 pt-5 pb-3 mb-3 border-b border-zinc-100 dark:border-zinc-800 z-10">
-                    <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">
-                      History
-                    </p>
+                  {/* ── Tab header ────────────────────────────────────────── */}
+                  <div className="sticky top-0 z-10 bg-[#F9FAFB] dark:bg-zinc-900 flex items-end border-b border-gray-200 dark:border-zinc-800 px-6 pt-4 shrink-0">
+                    {(
+                      [
+                        { id: 'comments',   label: 'Comments'   },
+                        { id: 'activities', label: 'History'     },
+                      ] as const
+                    ).map(({ id, label }) => (
+                      <button
+                        key={id}
+                        onClick={() => setActiveTab(id)}
+                        className={cn(
+                          'mr-5 pb-2.5 text-xs font-medium border-b-2 transition-colors duration-150 whitespace-nowrap',
+                          activeTab === id
+                            ? 'border-black dark:border-white text-black dark:text-white -mb-px'
+                            : 'border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200'
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
-                  <TaskActivityFeed taskId={task.id} />
 
-                  {/* ── Comments ──────────────────────────────────────────── */}
-                  <div className="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                    <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest mb-3">
-                      Comments
-                    </p>
-                    <CommentFeed
-                      taskId={task.id}
-                      currentUserProfile={currentUserProfile}
-                      members={workspaceMembers}
-                    />
+                  {/* ── Tab body ──────────────────────────────────────────── */}
+                  <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+                    {activeTab === 'comments' ? (
+                      <CommentFeed
+                        taskId={task.id}
+                        currentUserProfile={currentUserProfile}
+                        members={workspaceMembers}
+                      />
+                    ) : (
+                      <TaskActivityFeed taskId={task.id} />
+                    )}
                   </div>
                 </div>
 
