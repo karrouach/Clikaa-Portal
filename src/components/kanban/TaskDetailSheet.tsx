@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useRef } from 'react'
+import React, { useState, useTransition, useRef } from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import confetti from 'canvas-confetti'
 import type { Task, TaskStatus, TaskPriority } from '@/types/database'
@@ -175,6 +175,64 @@ function EditableTitle({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// RichDescription — parses text for URLs and renders them as inline link pills
+// ─────────────────────────────────────────────────────────────────────────────
+const URL_RE = /(https?:\/\/[^\s]+)/g
+
+function formatLinkLabel(url: string): string {
+  try {
+    const { hostname, pathname } = new URL(url)
+    const host = hostname.replace(/^www\./, '')
+    // Show up to first two path segments for context
+    const segments = pathname.split('/').filter(Boolean).slice(0, 2)
+    return segments.length ? `${host}/${segments.join('/')}` : host
+  } catch {
+    return url
+  }
+}
+
+function FigmaInlineIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 38 57" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+      <path d="M19 28.5A9.5 9.5 0 1 1 38 28.5A9.5 9.5 0 1 1 19 28.5Z" fill="#1ABCFE"/>
+      <path d="M0 47.5A9.5 9.5 0 0 1 9.5 38H19V57H9.5A9.5 9.5 0 0 1 0 47.5Z" fill="#0ACF83"/>
+      <path d="M19 0L9.5 0A9.5 9.5 0 0 0 0 9.5A9.5 9.5 0 0 0 9.5 19H19V0Z" fill="#F24E1E"/>
+      <path d="M0 28.5A9.5 9.5 0 0 0 9.5 38H19V19H9.5A9.5 9.5 0 0 0 0 28.5Z" fill="#A259FF"/>
+      <path d="M38 9.5A9.5 9.5 0 0 0 28.5 0H19V19H28.5A9.5 9.5 0 0 0 38 9.5Z" fill="#FF7262"/>
+    </svg>
+  )
+}
+
+function RichDescription({ text }: { text: string }) {
+  const parts = text.split(URL_RE)
+  return (
+    <span className="text-sm text-gray-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap break-words">
+      {parts.map((part, i) => {
+        if (!URL_RE.test(part)) {
+          URL_RE.lastIndex = 0
+          return <React.Fragment key={i}>{part}</React.Fragment>
+        }
+        URL_RE.lastIndex = 0
+        const isFigma = part.includes('figma.com')
+        return (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 rounded-md text-xs text-blue-700 dark:text-blue-400 transition-colors no-underline align-baseline"
+          >
+            {isFigma ? <FigmaInlineIcon /> : <Link2 size={10} strokeWidth={1.5} className="shrink-0" />}
+            {formatLinkLabel(part)}
+          </a>
+        )
+      })}
+    </span>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // EditableDescription
 // ─────────────────────────────────────────────────────────────────────────────
 function EditableDescription({
@@ -196,9 +254,9 @@ function EditableDescription({
 
   if (!canEdit) {
     return (
-      <div className="bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-zinc-800 rounded-xl p-4 min-h-[100px]">
+      <div className="flex flex-col items-start justify-start text-left bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-zinc-800 rounded-xl p-4 min-h-[120px] w-full">
         {value
-          ? <p className="text-sm text-gray-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">{value}</p>
+          ? <RichDescription text={value} />
           : <p className="text-sm text-zinc-400 italic">No description provided.</p>
         }
       </div>
@@ -237,10 +295,10 @@ function EditableDescription({
   return (
     <button
       onClick={() => setEditing(true)}
-      className="block w-full text-left bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-zinc-800 rounded-xl p-4 min-h-[100px] hover:border-zinc-200 dark:hover:border-zinc-700 transition-colors"
+      className="flex flex-col items-start justify-start text-left w-full bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-zinc-800 rounded-xl p-4 min-h-[120px] hover:border-zinc-200 dark:hover:border-zinc-700 transition-colors"
     >
       {value
-        ? <p className="text-sm text-gray-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">{value}</p>
+        ? <RichDescription text={value} />
         : <p className="text-sm text-zinc-400 italic">Add a description…</p>
       }
     </button>
@@ -368,6 +426,123 @@ function EditableLinks({
 
       {!canEdit && value.length === 0 && (
         <p className="text-xs text-zinc-400 italic">No links added.</p>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FigmaDesignBlock — smart Figma embed: input when no link, iframe+detach when set
+// ─────────────────────────────────────────────────────────────────────────────
+function FigmaDesignBlock({
+  taskId,
+  value,
+  canEdit,
+  onSaved,
+}: {
+  taskId: string
+  value: string[]
+  canEdit: boolean
+  onSaved: (links: string[]) => void
+}) {
+  const [draft, setDraft] = useState('')
+  const [isPending, startTransition] = useTransition()
+
+  const figmaLink = value.find((l) => l.includes('figma.com'))
+
+  function handleAdd() {
+    const trimmed = draft.trim()
+    if (!trimmed) return
+    const url = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+    // Replace any existing Figma link, keep others
+    const next = [...value.filter((l) => !l.includes('figma.com')), url]
+    startTransition(async () => {
+      await updateTaskLinks({ taskId, links: next })
+      onSaved(next)
+      setDraft('')
+    })
+  }
+
+  function handleDetach() {
+    const next = value.filter((l) => !l.includes('figma.com'))
+    startTransition(async () => {
+      await updateTaskLinks({ taskId, links: next })
+      onSaved(next)
+    })
+  }
+
+  if (figmaLink) {
+    const iframeSrc = `https://www.figma.com/embed?embed_host=clikaa&url=${encodeURIComponent(figmaLink)}`
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Design</p>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={handleDetach}
+              disabled={isPending}
+              className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 transition-colors duration-150 disabled:opacity-50"
+            >
+              {isPending
+                ? <Loader2 size={11} strokeWidth={1.5} className="animate-spin" />
+                : <Trash2 size={11} strokeWidth={1.5} />
+              }
+              Detach
+            </button>
+          )}
+        </div>
+        <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+          {/* Loading skeleton shown until iframe paints */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="flex flex-col items-center gap-2 text-zinc-400">
+              <svg width="24" height="24" viewBox="0 0 38 57" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-40">
+                <path d="M19 28.5A9.5 9.5 0 1 1 38 28.5A9.5 9.5 0 1 1 19 28.5Z" fill="#1ABCFE"/>
+                <path d="M0 47.5A9.5 9.5 0 0 1 9.5 38H19V57H9.5A9.5 9.5 0 0 1 0 47.5Z" fill="#0ACF83"/>
+                <path d="M19 0L9.5 0A9.5 9.5 0 0 0 0 9.5A9.5 9.5 0 0 0 9.5 19H19V0Z" fill="#F24E1E"/>
+                <path d="M0 28.5A9.5 9.5 0 0 0 9.5 38H19V19H9.5A9.5 9.5 0 0 0 0 28.5Z" fill="#A259FF"/>
+                <path d="M38 9.5A9.5 9.5 0 0 0 28.5 0H19V19H28.5A9.5 9.5 0 0 0 38 9.5Z" fill="#FF7262"/>
+              </svg>
+              <span className="text-[11px]">Loading Figma…</span>
+            </div>
+          </div>
+          <iframe
+            src={iframeSrc}
+            className="relative w-full aspect-video"
+            allowFullScreen
+            loading="lazy"
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // State 1 — no Figma link: show input
+  return (
+    <div className="space-y-2">
+      <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Design</p>
+      {canEdit ? (
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdd() } }}
+            placeholder="Paste Figma link to embed…"
+            disabled={isPending}
+            className="flex-1 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus-visible:outline-none focus-visible:border-zinc-400 dark:focus-visible:border-zinc-500 transition-colors duration-150 disabled:opacity-60"
+          />
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={!draft.trim() || isPending}
+            className="shrink-0 px-3 py-2 text-xs font-medium bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isPending ? <Loader2 size={11} strokeWidth={1.5} className="animate-spin" /> : 'Add'}
+          </button>
+        </div>
+      ) : (
+        <p className="text-xs text-zinc-400 italic">No design linked.</p>
       )}
     </div>
   )
@@ -964,6 +1139,14 @@ export function TaskDetailSheet({
                     />
                   </div>
 
+                  {/* Design — smart Figma block */}
+                  <FigmaDesignBlock
+                    taskId={task.id}
+                    value={task.links ?? []}
+                    canEdit={canEdit}
+                    onSaved={handleLinksSaved}
+                  />
+
                   {/* Attachments */}
                   <div className="space-y-2">
                     <AttachmentPanel
@@ -972,53 +1155,6 @@ export function TaskDetailSheet({
                       currentUserProfile={currentUserProfile}
                     />
                   </div>
-
-                  {/* Links */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Links</p>
-                    </div>
-                    <EditableLinks
-                      taskId={task.id}
-                      value={task.links ?? []}
-                      canEdit={canEdit}
-                      onSaved={handleLinksSaved}
-                    />
-                  </div>
-
-                  {/* Designs — live Figma embed when a figma.com link is present */}
-                  {(() => {
-                    const figmaLink = (task.links ?? []).find((l) => l.includes('figma.com'))
-                    if (!figmaLink) return null
-                    const iframeSrc = `https://www.figma.com/embed?embed_host=clikaa&url=${encodeURIComponent(figmaLink)}`
-                    return (
-                      <div className="space-y-2">
-                        <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Designs</p>
-                        <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-                          {/* Loading skeleton shown until iframe paints */}
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div className="flex flex-col items-center gap-2 text-zinc-400">
-                              <svg width="24" height="24" viewBox="0 0 38 57" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-40">
-                                <path d="M19 28.5A9.5 9.5 0 1 1 38 28.5A9.5 9.5 0 1 1 19 28.5Z" fill="#1ABCFE"/>
-                                <path d="M0 47.5A9.5 9.5 0 0 1 9.5 38H19V57H9.5A9.5 9.5 0 0 1 0 47.5Z" fill="#0ACF83"/>
-                                <path d="M19 0L9.5 0A9.5 9.5 0 0 0 0 9.5A9.5 9.5 0 0 0 9.5 19H19V0Z" fill="#F24E1E"/>
-                                <path d="M0 28.5A9.5 9.5 0 0 0 9.5 38H19V19H9.5A9.5 9.5 0 0 0 0 28.5Z" fill="#A259FF"/>
-                                <path d="M38 9.5A9.5 9.5 0 0 0 28.5 0H19V19H28.5A9.5 9.5 0 0 0 38 9.5Z" fill="#FF7262"/>
-                              </svg>
-                              <span className="text-[11px]">Loading Figma…</span>
-                            </div>
-                          </div>
-                          <iframe
-                            src={iframeSrc}
-                            className="relative w-full aspect-video"
-                            allowFullScreen
-                            loading="lazy"
-                          />
-                        </div>
-                      </div>
-                    )
-                  })()}
-
 
                 </div>
 

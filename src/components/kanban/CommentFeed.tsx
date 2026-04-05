@@ -17,7 +17,7 @@ function parseMentions(body: string) {
     const match = part.match(/^@\[([^\]]+)\]\(([a-f0-9-]{36})\)$/)
     if (match) {
       return (
-        <span key={i} className="font-semibold text-black dark:text-white">
+        <span key={i} className="font-medium text-blue-500 dark:text-blue-400">
           @{match[1]}
         </span>
       )
@@ -448,7 +448,7 @@ export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef
                 onKeyDown={handleKeyDown}
                 placeholder={members.length > 0 ? 'Add a comment… @ to mention' : 'Add a comment…'}
                 disabled={isPending}
-                className="border-0 bg-transparent rounded-xl shadow-none outline-none ring-0 focus:outline-none focus:ring-0 focus:shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none px-3 pt-2.5 pb-1 resize-none text-sm min-h-[44px]"
+                className="border-0 bg-transparent rounded-xl shadow-none outline-none ring-0 focus:outline-none focus:ring-0 focus:shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none p-3 pb-1 resize-none text-sm min-h-[44px] text-zinc-900 dark:text-white placeholder:text-zinc-400"
               />
 
               {/* Bottom bar: quick chips + send */}
@@ -475,40 +475,36 @@ export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef
                   ))}
                 </div>
 
-                {/* Paperclip — wired to hidden file input */}
-                <label
-                  htmlFor="comment-upload"
-                  title="Attach file"
-                  className="flex items-center justify-center w-7 h-7 shrink-0 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors duration-150 cursor-pointer"
-                >
-                  <Paperclip size={13} strokeWidth={1.5} />
-                  <span className="sr-only">Attach file</span>
-                </label>
-                <input
-                  type="file"
-                  id="comment-upload"
-                  className="hidden"
-                  onChange={handleCommentFileUpload}
-                />
+                {/* Paperclip + Send — grouped on the right */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <label
+                    htmlFor="comment-upload"
+                    title="Attach file"
+                    className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors duration-150 cursor-pointer"
+                  >
+                    <Paperclip size={13} strokeWidth={1.5} />
+                    <span className="sr-only">Attach file</span>
+                  </label>
+                  <input
+                    type="file"
+                    id="comment-upload"
+                    className="hidden"
+                    onChange={handleCommentFileUpload}
+                  />
 
-                {/* Send button */}
-                <button
-                  type="submit"
-                  disabled={!visibleBody.trim() || isPending}
-                  className="
-                    flex items-center justify-center w-7 h-7 shrink-0
-                    bg-black dark:bg-white text-white dark:text-black rounded-lg
-                    hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors duration-150
-                    disabled:opacity-30 disabled:cursor-not-allowed
-                  "
-                >
-                  {isPending ? (
-                    <Loader2 size={12} strokeWidth={1.5} className="animate-spin" />
-                  ) : (
-                    <Send size={12} strokeWidth={1.5} />
-                  )}
-                  <span className="sr-only">Send comment</span>
-                </button>
+                  <button
+                    type="submit"
+                    disabled={!visibleBody.trim() || isPending}
+                    className="flex items-center justify-center w-7 h-7 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    {isPending ? (
+                      <Loader2 size={12} strokeWidth={1.5} className="animate-spin" />
+                    ) : (
+                      <Send size={12} strokeWidth={1.5} />
+                    )}
+                    <span className="sr-only">Send comment</span>
+                  </button>
+                </div>
               </div>
             </div>
 
