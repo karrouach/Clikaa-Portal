@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef } from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import confetti from 'canvas-confetti'
 import type { Task, TaskStatus, TaskPriority } from '@/types/database'
@@ -14,6 +14,14 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { Badge } from '@/components/ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
 import { CommentFeed } from './CommentFeed'
 import { AttachmentPanel } from './AttachmentPanel'
 import { TaskActivityFeed } from './TaskActivityFeed'
@@ -42,6 +50,7 @@ import {
   Plus,
   Share2,
   Flag,
+  MoreVertical,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -469,6 +478,7 @@ export function TaskDetailSheet({
   const [isDeleting, startDeleteTransition] = useTransition()
   const [isApproving, startApproveTransition] = useTransition()
   const [activeTab, setActiveTab] = useState<'comments' | 'activities'>('comments')
+  const commentInputRef = useRef<HTMLTextAreaElement | null>(null)
 
   const [mode, setMode] = useState<LayoutMode>(() => {
     if (typeof window === 'undefined') return 'modal'
@@ -677,23 +687,6 @@ export function TaskDetailSheet({
                     ))}
                   </div>
 
-                  {/* Delete — admin only, in header */}
-                  {isAdmin && (
-                    <button
-                      type="button"
-                      title="Delete task"
-                      onClick={handleDelete}
-                      disabled={isDeleting}
-                      className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-150 disabled:opacity-40"
-                    >
-                      {isDeleting
-                        ? <Loader2 size={13} strokeWidth={1.5} className="animate-spin" />
-                        : <Trash2 size={13} strokeWidth={1.5} />
-                      }
-                      <span className="sr-only">Delete task</span>
-                    </button>
-                  )}
-
                   {/* Share — copies deep-link ?taskId= URL to clipboard */}
                   <button
                     type="button"
@@ -710,11 +703,42 @@ export function TaskDetailSheet({
                     <span className="sr-only">Copy link</span>
                   </button>
 
-                  {/* Close */}
-                  <DialogPrimitive.Close className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-150">
-                    <X size={15} strokeWidth={1.5} />
-                    <span className="sr-only">Close</span>
-                  </DialogPrimitive.Close>
+                  {/* Kebab menu — Close + Delete */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-150"
+                      >
+                        {isDeleting
+                          ? <Loader2 size={13} strokeWidth={1.5} className="animate-spin" />
+                          : <MoreVertical size={15} strokeWidth={1.5} />
+                        }
+                        <span className="sr-only">More actions</span>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
+                      <DialogPrimitive.Close asChild>
+                        <DropdownMenuItem className="cursor-pointer">
+                          <X size={13} strokeWidth={1.5} className="mr-2 text-zinc-400" />
+                          Close task
+                        </DropdownMenuItem>
+                      </DialogPrimitive.Close>
+                      {isAdmin && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400 focus:bg-red-50 dark:focus:bg-red-950/30"
+                          >
+                            <Trash2 size={13} strokeWidth={1.5} className="mr-2" />
+                            Delete task
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
 
@@ -744,7 +768,7 @@ export function TaskDetailSheet({
                       </span>
                       <div className="flex-1 min-w-0">
                         <Select value={task.status} onValueChange={handleStatusChange} disabled={!canEdit && !isInternalTeam}>
-                          <SelectTrigger className="h-auto bg-transparent border-transparent shadow-none px-2 py-1 -ml-2 w-full text-sm hover:bg-gray-100 dark:hover:bg-zinc-800 hover:border-transparent focus:border-transparent rounded-md">
+                          <SelectTrigger className="h-auto bg-transparent border-transparent shadow-none px-2 py-1 -ml-2 w-full text-sm hover:bg-gray-100 dark:hover:bg-zinc-800 hover:border-transparent focus:border-transparent rounded-md [&>svg:last-child]:hidden">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -765,7 +789,7 @@ export function TaskDetailSheet({
                       <div className="flex-1 min-w-0">
                         {canEdit ? (
                           <Select value={task.priority} onValueChange={handlePriorityChange}>
-                            <SelectTrigger className="h-auto bg-transparent border-transparent shadow-none px-2 py-1 -ml-2 w-full text-sm hover:bg-gray-100 dark:hover:bg-zinc-800 hover:border-transparent focus:border-transparent rounded-md">
+                            <SelectTrigger className="h-auto bg-transparent border-transparent shadow-none px-2 py-1 -ml-2 w-full text-sm hover:bg-gray-100 dark:hover:bg-zinc-800 hover:border-transparent focus:border-transparent rounded-md [&>svg:last-child]:hidden">
                               <SelectValue>
                                 <PriorityFlag priority={task.priority} />
                               </SelectValue>
@@ -807,67 +831,99 @@ export function TaskDetailSheet({
                         Assignee
                       </span>
                       <div className="flex-1 min-w-0">
-                        {isAdmin && workspaceMembers.length > 0 ? (
-                          <Select
-                            value={task.assignee_id ?? '__none__'}
-                            onValueChange={handleAssigneeChange}
-                          >
-                            <SelectTrigger className="h-auto border-0 shadow-none p-0 bg-transparent hover:bg-transparent focus:outline-none focus:ring-0 w-auto gap-2 [&>svg:last-child]:hidden">
-                              <div className="flex items-center gap-2">
-                                {selectedMember && (
-                                  <div className="flex -space-x-2">
-                                    {selectedMember.avatar_url ? (
-                                      // eslint-disable-next-line @next/next/no-img-element
-                                      <img src={selectedMember.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover border-2 border-white dark:border-[#1A1A1A]" />
-                                    ) : (
-                                      <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-700 border-2 border-white dark:border-[#1A1A1A] flex items-center justify-center">
-                                        <span className="text-[8px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(selectedMember.full_name || selectedMember.email)}</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Assigned member avatar — click to swap */}
+                          {isAdmin && workspaceMembers.length > 0 ? (
+                            <>
+                              {selectedMember && (
+                                <div className="flex -space-x-2">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button type="button" title={`Swap ${selectedMember.full_name || selectedMember.email}`} className="rounded-full ring-2 ring-white dark:ring-[#1A1A1A] focus:outline-none">
+                                        {selectedMember.avatar_url ? (
+                                          // eslint-disable-next-line @next/next/no-img-element
+                                          <img src={selectedMember.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                                        ) : (
+                                          <div className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center">
+                                            <span className="text-[9px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(selectedMember.full_name || selectedMember.email)}</span>
+                                          </div>
+                                        )}
+                                      </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start" className="w-48">
+                                      <DropdownMenuLabel className="text-[10px] text-zinc-400 uppercase tracking-widest px-2 py-1">Swap assignee</DropdownMenuLabel>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => handleAssigneeChange('__none__')} className="cursor-pointer">
+                                        <span className="text-zinc-400">Remove assignee</span>
+                                      </DropdownMenuItem>
+                                      {workspaceMembers.filter((m) => m.id !== selectedMember.id).map((m) => (
+                                        <DropdownMenuItem key={m.id} onClick={() => handleAssigneeChange(m.id)} className="cursor-pointer">
+                                          <div className="flex items-center gap-2">
+                                            {m.avatar_url ? (
+                                              // eslint-disable-next-line @next/next/no-img-element
+                                              <img src={m.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover shrink-0" />
+                                            ) : (
+                                              <div className="h-5 w-5 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0">
+                                                <span className="text-[8px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(m.full_name || m.email)}</span>
+                                              </div>
+                                            )}
+                                            <span className="text-sm">{m.full_name || m.email}</span>
+                                          </div>
+                                        </DropdownMenuItem>
+                                      ))}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              )}
+
+                              {/* + Add button */}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    type="button"
+                                    title="Add assignee"
+                                    className="w-7 h-7 rounded-full border-2 border-dashed border-zinc-300 dark:border-zinc-600 flex items-center justify-center text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                                  >
+                                    <Plus size={11} strokeWidth={2.5} />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-48">
+                                  <DropdownMenuLabel className="text-[10px] text-zinc-400 uppercase tracking-widest px-2 py-1">Assign member</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  {workspaceMembers.map((m) => (
+                                    <DropdownMenuItem key={m.id} onClick={() => handleAssigneeChange(m.id)} className="cursor-pointer">
+                                      <div className="flex items-center gap-2">
+                                        {m.avatar_url ? (
+                                          // eslint-disable-next-line @next/next/no-img-element
+                                          <img src={m.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover shrink-0" />
+                                        ) : (
+                                          <div className="h-5 w-5 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0">
+                                            <span className="text-[8px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(m.full_name || m.email)}</span>
+                                          </div>
+                                        )}
+                                        <span className="text-sm">{m.full_name || m.email}</span>
                                       </div>
-                                    )}
-                                  </div>
-                                )}
-                                <span className="inline-flex items-center gap-1 text-sm px-2 py-1 rounded-md bg-transparent text-zinc-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
-                                  <Plus size={10} strokeWidth={2.5} />
-                                  {selectedMember ? 'Change' : 'Add member'}
-                                </span>
-                              </div>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__">
-                                <span className="text-zinc-400">Unassigned</span>
-                              </SelectItem>
-                              {workspaceMembers.map((m) => (
-                                <SelectItem key={m.id} value={m.id}>
-                                  <div className="flex items-center gap-2">
-                                    {m.avatar_url ? (
-                                      // eslint-disable-next-line @next/next/no-img-element
-                                      <img src={m.avatar_url} alt="" className="h-5 w-5 rounded-md object-cover shrink-0" />
-                                    ) : (
-                                      <div className="h-5 w-5 rounded-md bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0">
-                                        <span className="text-[8px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(m.full_name || m.email)}</span>
-                                      </div>
-                                    )}
-                                    <span>{m.full_name || m.email}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : task.assignee_id && assignee ? (
-                          <div className="flex items-center gap-2">
-                            {assignee.avatar_url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={assignee.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
-                            ) : (
-                              <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0">
-                                <span className="text-[9px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(assignee.full_name || assignee.email)}</span>
-                              </div>
-                            )}
-                            <span className="text-sm text-zinc-700 dark:text-zinc-300">{assignee.full_name || assignee.email}</span>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-zinc-400 italic">Unassigned</span>
-                        )}
+                                    </DropdownMenuItem>
+                                  ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </>
+                          ) : task.assignee_id && assignee ? (
+                            <div className="flex items-center gap-2">
+                              {assignee.avatar_url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={assignee.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                              ) : (
+                                <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0">
+                                  <span className="text-[9px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(assignee.full_name || assignee.email)}</span>
+                                </div>
+                              )}
+                              <span className="text-sm text-zinc-700 dark:text-zinc-300">{assignee.full_name || assignee.email}</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-zinc-400 italic">Unassigned</span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -972,12 +1028,14 @@ export function TaskDetailSheet({
                   mode !== 'sidebar' && 'md:w-[360px] md:shrink-0 md:border-t-0',
                   mode === 'sidebar' && 'w-full',
                 )}>
-                  {/* ── Tab header ────────────────────────────────────────── */}
-                  <div className="sticky top-0 z-10 bg-[#F9FAFB] dark:bg-zinc-900 flex items-end border-b border-gray-200 dark:border-zinc-800 px-6 pt-4 shrink-0">
+                  {/* ── Activity header + tabs ────────────────────────────── */}
+                  <div className="sticky top-0 z-10 bg-[#F9FAFB] dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-6 pt-4 shrink-0">
+                    <p className="text-[11px] font-medium text-zinc-400 uppercase tracking-widest mb-3">Activity</p>
+                    <div className="flex items-end">
                     {(
                       [
-                        { id: 'comments',   label: 'Comments'   },
-                        { id: 'activities', label: 'History'     },
+                        { id: 'comments',   label: 'Comments' },
+                        { id: 'activities', label: 'History'  },
                       ] as const
                     ).map(({ id, label }) => (
                       <button
@@ -993,6 +1051,7 @@ export function TaskDetailSheet({
                         {label}
                       </button>
                     ))}
+                    </div>
                   </div>
 
                   {/* ── Tab body ──────────────────────────────────────────── */}
@@ -1002,6 +1061,7 @@ export function TaskDetailSheet({
                         taskId={task.id}
                         currentUserProfile={currentUserProfile}
                         members={workspaceMembers}
+                        inputRef={commentInputRef}
                       />
                     ) : (
                       <TaskActivityFeed taskId={task.id} />

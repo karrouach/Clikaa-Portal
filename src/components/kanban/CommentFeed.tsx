@@ -7,7 +7,7 @@ import type { CommentWithAuthor } from '@/types/database'
 import type { MemberOption } from './CreateTaskDialog'
 import { Textarea } from '@/components/ui/textarea'
 import { getInitials, formatRelativeTime } from '@/lib/utils'
-import { Send, Loader2, Paperclip, ThumbsUp, CornerUpLeft, SmilePlus } from 'lucide-react'
+import { Send, Loader2, Paperclip, CornerUpLeft, SmilePlus } from 'lucide-react'
 
 // ─── Mention format: @[Display Name](uuid) ───────────────────────────────────
 const MENTION_RE = /(@\[[^\]]+\]\([a-f0-9-]{36}\))/g
@@ -37,6 +37,7 @@ interface CommentFeedProps {
     email: string
   }
   members?: MemberOption[]
+  inputRef?: React.RefObject<HTMLTextAreaElement | null>
 }
 
 /**
@@ -45,10 +46,11 @@ interface CommentFeedProps {
  * Type @ in the input to trigger a member picker dropdown.
  * Mentions are stored as @[Name](uuid) and rendered highlighted.
  */
-export function CommentFeed({ taskId, currentUserProfile, members = [] }: CommentFeedProps) {
+export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef: externalInputRef }: CommentFeedProps) {
   const [comments, setComments] = useState<CommentWithAuthor[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
+  const [pickerOpenId, setPickerOpenId] = useState<string | null>(null)
   // visibleBody: what the textarea displays (@Name format)
   // mentionMap: name → uuid for all inserted mentions (used to rebuild raw body on submit)
   const [visibleBody, setVisibleBody] = useState('')
@@ -56,6 +58,8 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
   const [isPending, startTransition] = useTransition()
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  // Merge external ref (passed from parent) with internal ref
+  const resolvedInputRef = externalInputRef ?? textareaRef
 
   // @mention state
   const [mentionQuery, setMentionQuery] = useState<string | null>(null)
@@ -274,6 +278,20 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
     e.target.value = ''
   }
 
+  function handleReply(authorName: string) {
+    const mention = `@${authorName} `
+    setVisibleBody((prev) => (prev ? `${prev} ${mention}` : mention))
+    setTimeout(() => {
+      const el = resolvedInputRef.current ?? textareaRef.current
+      if (el) {
+        el.focus()
+        el.setSelectionRange(el.value.length, el.value.length)
+      }
+      autoResize()
+    }, 0)
+    // Switch to comments tab if on history
+  }
+
   function toggleLike(id: string) {
     setLikedIds((prev) => {
       const next = new Set(prev)
@@ -326,35 +344,56 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
                   </p>
 
                   {/* Action bar */}
-                  <div className="flex items-center gap-3 mt-2 text-gray-400">
+                  <div className="relative flex items-center gap-2 mt-2">
+                    {/* Reply */}
                     <button
                       type="button"
                       title="Reply"
-                      className="hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                      onClick={() => handleReply(comment.profiles?.full_name || comment.profiles?.email || 'User')}
+                      className="flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
                     >
-                      <CornerUpLeft size={13} strokeWidth={1.5} />
+                      <CornerUpLeft size={12} strokeWidth={1.5} />
                     </button>
+
+                    {/* Thumbs up emoji */}
                     <button
                       type="button"
                       title="Like"
                       onClick={() => toggleLike(comment.id)}
-                      className={`transition-colors ${
-                        likedIds.has(comment.id)
-                          ? 'text-blue-500'
-                          : 'hover:text-gray-700 dark:hover:text-gray-200'
+                      className={`flex items-center justify-center w-6 h-6 rounded text-sm transition-colors hover:bg-gray-100 dark:hover:bg-zinc-800 ${
+                        likedIds.has(comment.id) ? 'opacity-100' : 'opacity-50 hover:opacity-100'
                       }`}
                     >
-                      <ThumbsUp size={13} strokeWidth={1.5} className={likedIds.has(comment.id) ? 'fill-current' : ''} />
+                      👍
                     </button>
+                    {likedIds.has(comment.id) && (
+                      <span className="text-[11px] text-zinc-500 -ml-1">1</span>
+                    )}
+
+                    {/* Emoji picker toggle */}
                     <button
                       type="button"
                       title="React"
-                      className="hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                      onClick={() => setPickerOpenId(pickerOpenId === comment.id ? null : comment.id)}
+                      className="flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
                     >
-                      <SmilePlus size={13} strokeWidth={1.5} />
+                      <SmilePlus size={12} strokeWidth={1.5} />
                     </button>
-                    {likedIds.has(comment.id) && (
-                      <span className="text-[11px] text-blue-500 -ml-2">1</span>
+
+                    {/* Emoji picker popover */}
+                    {pickerOpenId === comment.id && (
+                      <div className="absolute left-0 bottom-8 z-50 flex items-center gap-1 px-2 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg shadow-black/10">
+                        {(['🔥', '❤️', '🎉', '👀', '😂'] as const).map((emoji) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => setPickerOpenId(null)}
+                            className="text-base w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
