@@ -203,39 +203,53 @@ function getFaviconUrl(url: string): string {
   }
 }
 
-function RichDescription({ text }: { text: string }) {
-  const parts = text.split(URL_RE)
-  return (
-    <span className="text-sm text-gray-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap break-words">
-      {parts.map((part, i) => {
-        if (!URL_RE.test(part)) {
-          URL_RE.lastIndex = 0
-          return <React.Fragment key={i}>{part}</React.Fragment>
-        }
-        URL_RE.lastIndex = 0
-        return (
-          <a
-            key={i}
-            href={part}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1.5 px-2 py-1 m-1 bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-md text-sm text-gray-800 dark:text-gray-200 transition-colors no-underline align-middle"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={getFaviconUrl(part)}
-              alt=""
-              width={14}
-              height={14}
-              className="w-3.5 h-3.5 rounded-sm shrink-0"
-            />
-            {formatLinkLabel(part)}
-          </a>
-        )
-      })}
-    </span>
+// ─────────────────────────────────────────────────────────────────────────────
+// formatDescriptionLinks — replaces <a> tags (and bare URLs) in description HTML
+// with fully-styled inline pill snippets. contenteditable="false" prevents the
+// cursor from getting trapped inside the pill while editing.
+// ─────────────────────────────────────────────────────────────────────────────
+function formatDescriptionLinks(html: string): string {
+  if (!html) return ''
+
+  // Pass 1 — replace existing <a href="..."> tags with styled pills
+  let result = html.replace(
+    /<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1[^>]*>.*?<\/a>/gi,
+    (_match, _quote, url: string) => {
+      const faviconDomain = (() => { try { return new URL(url).hostname } catch { return url } })()
+      const label = formatLinkLabel(url)
+      return (
+        `<a href="${url}" target="_blank" rel="noopener noreferrer" contenteditable="false" ` +
+        `class="inline-flex items-center gap-1.5 px-2 py-0.5 mx-1 bg-gray-100 dark:bg-zinc-800 ` +
+        `border border-gray-200 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 ` +
+        `rounded-md text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors no-underline align-middle">` +
+        `<img src="https://www.google.com/s2/favicons?domain=${faviconDomain}&sz=32" ` +
+        `class="w-4 h-4 rounded-sm shrink-0" alt="" style="display:inline-block;vertical-align:middle" />` +
+        `<span>${label}</span>` +
+        `</a>`
+      )
+    }
   )
+
+  // Pass 2 — wrap bare https?:// URLs not already inside an <a> tag
+  result = result.replace(
+    /(?<!href=["'])(?<!src=["'])(https?:\/\/[^\s<"']+)/g,
+    (url) => {
+      const faviconDomain = (() => { try { return new URL(url).hostname } catch { return url } })()
+      const label = formatLinkLabel(url)
+      return (
+        `<a href="${url}" target="_blank" rel="noopener noreferrer" contenteditable="false" ` +
+        `class="inline-flex items-center gap-1.5 px-2 py-0.5 mx-1 bg-gray-100 dark:bg-zinc-800 ` +
+        `border border-gray-200 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 ` +
+        `rounded-md text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors no-underline align-middle">` +
+        `<img src="https://www.google.com/s2/favicons?domain=${faviconDomain}&sz=32" ` +
+        `class="w-4 h-4 rounded-sm shrink-0" alt="" style="display:inline-block;vertical-align:middle" />` +
+        `<span>${label}</span>` +
+        `</a>`
+      )
+    }
+  )
+
+  return result
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -266,7 +280,7 @@ function EditableDescription({
   // Populate contentEditable and focus when editing starts
   React.useEffect(() => {
     if (editing && editorRef.current) {
-      editorRef.current.innerHTML = value ?? ''
+      editorRef.current.innerHTML = formatDescriptionLinks(value ?? '')
       editorRef.current.focus()
       const range = document.createRange()
       const sel = window.getSelection()
@@ -305,7 +319,7 @@ function EditableDescription({
         {value
           ? <div
               className="text-sm text-gray-700 dark:text-zinc-300 leading-relaxed break-words w-full [&_b]:font-bold [&_i]:italic [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5 [&_a]:text-blue-600 dark:[&_a]:text-blue-400 [&_a]:underline"
-              dangerouslySetInnerHTML={{ __html: value }}
+              dangerouslySetInnerHTML={{ __html: formatDescriptionLinks(value) }}
             />
           : <p className="text-sm text-zinc-400 italic">No description provided.</p>
         }
@@ -314,6 +328,7 @@ function EditableDescription({
   }
 
   if (editing) {
+
     return (
       <div className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden focus-within:border-zinc-300 dark:focus-within:border-zinc-500 transition-colors duration-150">
         {/* ── Formatting toolbar ─────────────────────────────────────────── */}
@@ -1238,6 +1253,36 @@ export function TaskDetailSheet({
                       canEdit={canEdit}
                       onSaved={handleDescriptionSaved}
                     />
+
+                    {/* Link cards — stacked, favicon + domain, matches reference screenshot */}
+                    {(task.links ?? []).filter((l) => !l.includes('figma.com')).length > 0 && (
+                      <div className="flex flex-col gap-2 mt-3">
+                        {(task.links ?? []).filter((l) => !l.includes('figma.com')).map((url, i) => (
+                          <a
+                            key={i}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600 rounded-xl shadow-sm hover:shadow-md transition-all duration-150 no-underline w-full max-w-xs"
+                          >
+                            {/* Favicon in a small icon box */}
+                            <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-zinc-700 flex items-center justify-center shrink-0 overflow-hidden">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={getFaviconUrl(url)}
+                                alt=""
+                                width={20}
+                                height={20}
+                                className="w-5 h-5"
+                              />
+                            </div>
+                            <span className="text-sm font-medium text-gray-900 dark:text-zinc-100 truncate">
+                              {formatLinkLabel(url)}
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Design — smart Figma block */}

@@ -114,7 +114,7 @@ export const KanbanCard = memo(function KanbanCard({ task, index, onClick, membe
           {/* ── Description ─────────────────────────────────────────────── */}
           {task.description && (
             <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-              {task.description}
+              {task.description.replace(/<[^>]+>/g, '')}
             </p>
           )}
 
