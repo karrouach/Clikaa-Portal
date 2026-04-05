@@ -186,9 +186,14 @@ function EditableDescription({
   if (!editing && draft !== (value ?? '')) setDraft(value ?? '')
 
   if (!canEdit) {
-    return value
-      ? <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-wrap">{value}</p>
-      : <p className="text-sm text-zinc-400 italic">No description provided.</p>
+    return (
+      <div className="bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-zinc-800 rounded-xl p-4 min-h-[100px]">
+        {value
+          ? <p className="text-sm text-gray-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">{value}</p>
+          : <p className="text-sm text-zinc-400 italic">No description provided.</p>
+        }
+      </div>
+    )
   }
 
   if (editing) {
@@ -221,10 +226,13 @@ function EditableDescription({
   }
 
   return (
-    <button onClick={() => setEditing(true)} className="block w-full text-left group">
+    <button
+      onClick={() => setEditing(true)}
+      className="block w-full text-left bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-zinc-800 rounded-xl p-4 min-h-[100px] hover:border-zinc-200 dark:hover:border-zinc-700 transition-colors"
+    >
       {value
-        ? <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-wrap group-hover:text-zinc-800 transition-colors">{value}</p>
-        : <p className="text-sm text-zinc-400 italic group-hover:text-zinc-500 transition-colors">Add a description…</p>
+        ? <p className="text-sm text-gray-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">{value}</p>
+        : <p className="text-sm text-zinc-400 italic">Add a description…</p>
       }
     </button>
   )
@@ -395,7 +403,8 @@ function DatePickerButton({
 
   if (!canEdit) {
     return (
-      <p className="flex items-center gap-2 h-9 w-full px-3 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">
+      <p className="flex items-center gap-2 px-2 py-1 -ml-2 text-sm text-zinc-700 dark:text-zinc-300">
+        <CalendarIcon size={13} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
         {value ? formatDisplayDate(value) : <span className="text-zinc-400 italic">Not set</span>}
       </p>
     )
@@ -407,10 +416,10 @@ function DatePickerButton({
         <button
           type="button"
           className={cn(
-            'flex items-center gap-2 h-9 w-full px-3 text-sm rounded-lg border transition-colors duration-150',
-            'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-600',
-            'focus-visible:outline-none focus-visible:border-zinc-300 dark:focus-visible:border-zinc-500 focus-visible:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]',
-            !value && 'text-zinc-400',
+            'flex items-center gap-2 w-full px-2 py-1 -ml-2 text-sm rounded-md',
+            'bg-transparent border-transparent shadow-none transition-colors duration-150',
+            'hover:bg-gray-100 dark:hover:bg-zinc-800',
+            'focus-visible:outline-none',
           )}
         >
           <CalendarIcon size={13} strokeWidth={1.5} className="text-zinc-400 shrink-0" />
@@ -724,138 +733,144 @@ export function TaskDetailSheet({
                   mode === 'sidebar' && 'w-full',
                 )}>
 
-                  {/* Status + Priority */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Status</p>
-                      <Select value={task.status} onValueChange={handleStatusChange} disabled={!canEdit && !isInternalTeam}>
-                        <SelectTrigger className="rounded-lg">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {STATUS_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Priority</p>
-                      {canEdit ? (
-                        <Select value={task.priority} onValueChange={handlePriorityChange}>
-                          <SelectTrigger className="rounded-lg">
-                            <SelectValue>
-                              <PriorityFlag priority={task.priority} />
-                            </SelectValue>
+                  {/* ── Metadata rows ─────────────────────────────────────── */}
+                  <div className="flex flex-col gap-4">
+
+                    {/* Status (col 1) */}
+                    <div className="flex items-center gap-4">
+                      <span className="w-28 shrink-0 text-xs text-gray-500 dark:text-zinc-500 flex items-center gap-1.5">
+                        <LayoutGrid size={11} strokeWidth={1.5} className="shrink-0" />
+                        Status
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <Select value={task.status} onValueChange={handleStatusChange} disabled={!canEdit && !isInternalTeam}>
+                          <SelectTrigger className="h-auto bg-transparent border-transparent shadow-none px-2 py-1 -ml-2 w-full text-sm hover:bg-gray-100 dark:hover:bg-zinc-800 hover:border-transparent focus:border-transparent rounded-md">
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {PRIORITY_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                <PriorityFlag priority={opt.value} />
-                              </SelectItem>
+                            {STATUS_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                      ) : (
-                        <div className="flex items-center h-9">
+                      </div>
+                    </div>
+
+                    {/* Priority (col 2) */}
+                    <div className="flex items-center gap-4">
+                      <span className="w-28 shrink-0 text-xs text-gray-500 dark:text-zinc-500 flex items-center gap-1.5">
+                        <Flag size={11} strokeWidth={1.5} className="shrink-0" />
+                        Priority
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        {canEdit ? (
+                          <Select value={task.priority} onValueChange={handlePriorityChange}>
+                            <SelectTrigger className="h-auto bg-transparent border-transparent shadow-none px-2 py-1 -ml-2 w-full text-sm hover:bg-gray-100 dark:hover:bg-zinc-800 hover:border-transparent focus:border-transparent rounded-md">
+                              <SelectValue>
+                                <PriorityFlag priority={task.priority} />
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PRIORITY_OPTIONS.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                  <PriorityFlag priority={opt.value} />
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
                           <PriorityFlag priority={task.priority} />
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Dates */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest flex items-center gap-1">
-                        <CalendarIcon size={10} strokeWidth={1.5} />Start Date
-                      </p>
-                      {/* Start date is read-only for existing tasks — only editable at creation */}
-                      <DatePickerButton
-                        label="start date"
-                        value={task.start_date}
-                        canEdit={false}
-                        onChange={handleStartDateChange}
-                      />
+                    {/* Due Date (col 1) */}
+                    <div className="flex items-center gap-4">
+                      <span className="w-28 shrink-0 text-xs text-gray-500 dark:text-zinc-500 flex items-center gap-1.5">
+                        <CalendarIcon size={11} strokeWidth={1.5} className="shrink-0" />
+                        Due Date
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <DatePickerButton
+                          label="due date"
+                          value={task.due_date}
+                          canEdit={canEdit}
+                          onChange={handleDueDateChange}
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest flex items-center gap-1">
-                        <CalendarIcon size={10} strokeWidth={1.5} />Due Date
-                      </p>
-                      <DatePickerButton
-                        label="due date"
-                        value={task.due_date}
-                        canEdit={canEdit}
-                        onChange={handleDueDateChange}
-                      />
-                    </div>
-                  </div>
 
-                  {/* Assignee */}
-                  <div className="space-y-1.5">
-                    <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest flex items-center gap-1">
-                      <User size={10} strokeWidth={1.5} />Assignee
-                    </p>
-                    {isAdmin && workspaceMembers.length > 0 ? (
-                      <Select
-                        value={task.assignee_id ?? '__none__'}
-                        onValueChange={handleAssigneeChange}
-                      >
-                        <SelectTrigger className="rounded-lg">
-                          {selectedMember ? (
-                            <div className="flex items-center gap-2 min-w-0">
-                              {selectedMember.avatar_url ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={selectedMember.avatar_url} alt="" className="h-5 w-5 rounded-md object-cover shrink-0" />
-                              ) : (
-                                <div className="h-5 w-5 rounded-md bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0">
-                                  <span className="text-[8px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(selectedMember.full_name || selectedMember.email)}</span>
-                                </div>
-                              )}
-                              <span className="text-sm truncate">
-                                {selectedMember.full_name || selectedMember.email}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-zinc-400">Unassigned</span>
-                          )}
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__none__">
-                            <span className="text-zinc-400">Unassigned</span>
-                          </SelectItem>
-                          {workspaceMembers.map((m) => (
-                            <SelectItem key={m.id} value={m.id}>
+                    {/* Assignee (col 2) */}
+                    <div className="flex items-center gap-4">
+                      <span className="w-28 shrink-0 text-xs text-gray-500 dark:text-zinc-500 flex items-center gap-1.5">
+                        <User size={11} strokeWidth={1.5} className="shrink-0" />
+                        Assignee
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        {isAdmin && workspaceMembers.length > 0 ? (
+                          <Select
+                            value={task.assignee_id ?? '__none__'}
+                            onValueChange={handleAssigneeChange}
+                          >
+                            <SelectTrigger className="h-auto border-0 shadow-none p-0 bg-transparent hover:bg-transparent focus:outline-none focus:ring-0 w-auto gap-2 [&>svg:last-child]:hidden">
                               <div className="flex items-center gap-2">
-                                {m.avatar_url ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={m.avatar_url} alt="" className="h-5 w-5 rounded-md object-cover shrink-0" />
-                                ) : (
-                                  <div className="h-5 w-5 rounded-md bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0">
-                                    <span className="text-[8px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(m.full_name || m.email)}</span>
+                                {selectedMember && (
+                                  <div className="flex -space-x-2">
+                                    {selectedMember.avatar_url ? (
+                                      // eslint-disable-next-line @next/next/no-img-element
+                                      <img src={selectedMember.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover border-2 border-white dark:border-[#1A1A1A]" />
+                                    ) : (
+                                      <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-700 border-2 border-white dark:border-[#1A1A1A] flex items-center justify-center">
+                                        <span className="text-[8px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(selectedMember.full_name || selectedMember.email)}</span>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
-                                <span>{m.full_name || m.email}</span>
+                                <span className="inline-flex items-center gap-1 text-sm px-2 py-1 rounded-md bg-transparent text-zinc-500 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
+                                  <Plus size={10} strokeWidth={2.5} />
+                                  {selectedMember ? 'Change' : 'Add member'}
+                                </span>
                               </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : task.assignee_id && assignee ? (
-                      <div className="flex items-center gap-2">
-                        {assignee.avatar_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={assignee.avatar_url} alt="" className="h-6 w-6 rounded-md object-cover shrink-0" />
-                        ) : (
-                          <div className="h-6 w-6 rounded-md bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0">
-                            <span className="text-[9px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(assignee.full_name || assignee.email)}</span>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">
+                                <span className="text-zinc-400">Unassigned</span>
+                              </SelectItem>
+                              {workspaceMembers.map((m) => (
+                                <SelectItem key={m.id} value={m.id}>
+                                  <div className="flex items-center gap-2">
+                                    {m.avatar_url ? (
+                                      // eslint-disable-next-line @next/next/no-img-element
+                                      <img src={m.avatar_url} alt="" className="h-5 w-5 rounded-md object-cover shrink-0" />
+                                    ) : (
+                                      <div className="h-5 w-5 rounded-md bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0">
+                                        <span className="text-[8px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(m.full_name || m.email)}</span>
+                                      </div>
+                                    )}
+                                    <span>{m.full_name || m.email}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : task.assignee_id && assignee ? (
+                          <div className="flex items-center gap-2">
+                            {assignee.avatar_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={assignee.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0">
+                                <span className="text-[9px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(assignee.full_name || assignee.email)}</span>
+                              </div>
+                            )}
+                            <span className="text-sm text-zinc-700 dark:text-zinc-300">{assignee.full_name || assignee.email}</span>
                           </div>
+                        ) : (
+                          <span className="text-sm text-zinc-400 italic">Unassigned</span>
                         )}
-                        <span className="text-sm text-zinc-900">{assignee.full_name || assignee.email}</span>
                       </div>
-                    ) : (
-                      <p className="text-sm text-zinc-400 italic">Unassigned</p>
-                    )}
+                    </div>
+
                   </div>
 
                   {/* Client: Approve Design */}
@@ -890,6 +905,15 @@ export function TaskDetailSheet({
                       value={task.description}
                       canEdit={canEdit}
                       onSaved={handleDescriptionSaved}
+                    />
+                  </div>
+
+                  {/* Attachments */}
+                  <div className="space-y-2">
+                    <AttachmentPanel
+                      taskId={task.id}
+                      workspaceId={task.workspace_id}
+                      currentUserProfile={currentUserProfile}
                     />
                   </div>
 
@@ -939,15 +963,6 @@ export function TaskDetailSheet({
                     )
                   })()}
 
-                  {/* Attachments */}
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-widest">Attachments</p>
-                    <AttachmentPanel
-                      taskId={task.id}
-                      workspaceId={task.workspace_id}
-                      currentUserProfile={currentUserProfile}
-                    />
-                  </div>
 
                 </div>
 

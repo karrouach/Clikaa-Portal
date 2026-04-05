@@ -117,12 +117,31 @@ export async function updateTaskPosition({
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorised.' }
 
+  // Capture old status before update so we can log accurately
+  const { data: existingTask } = await supabase
+    .from('tasks')
+    .select('status')
+    .eq('id', taskId)
+    .single()
+
   const { error } = await supabase
     .from('tasks')
     .update({ status, position, updated_at: new Date().toISOString() })
     .eq('id', taskId)
 
   if (error) return { error: error.message }
+
+  // Log activity whenever the column (status) changes via drag-and-drop
+  if (existingTask && existingTask.status !== status) {
+    supabase.from('task_activities').insert({
+      task_id: taskId,
+      user_id: user.id,
+      action: 'status_changed',
+      old_status: existingTask.status,
+      new_status: status,
+    }).then(() => {}) // fire-and-forget
+  }
+
   return {}
 }
 
@@ -264,6 +283,29 @@ export async function updateTaskAssignee({
   const { error } = await supabase
     .from('tasks')
     .update({ assignee_id: assigneeId, updated_at: new Date().toISOString() })
+    .eq('id', taskId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// updateTaskLinks
+// ─────────────────────────────────────────────────────────────────────────────
+export async function updateTaskLinks({
+  taskId,
+  links,
+}: {
+  taskId: string
+  links: string[]
+}): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorised.' }
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({ links, updated_at: new Date().toISOString() })
     .eq('id', taskId)
 
   if (error) return { error: error.message }

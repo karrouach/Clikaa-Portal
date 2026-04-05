@@ -5,10 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import { addComment } from '@/app/dashboard/comment-actions'
 import type { CommentWithAuthor } from '@/types/database'
 import type { MemberOption } from './CreateTaskDialog'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from '@/components/ui/textarea'
 import { getInitials, formatRelativeTime } from '@/lib/utils'
-import { Send, Loader2 } from 'lucide-react'
+import { Send, Loader2, Paperclip, ThumbsUp, CornerUpLeft, SmilePlus } from 'lucide-react'
 
 // ─── Mention format: @[Display Name](uuid) ───────────────────────────────────
 const MENTION_RE = /(@\[[^\]]+\]\([a-f0-9-]{36}\))/g
@@ -49,6 +48,7 @@ interface CommentFeedProps {
 export function CommentFeed({ taskId, currentUserProfile, members = [] }: CommentFeedProps) {
   const [comments, setComments] = useState<CommentWithAuthor[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
   // visibleBody: what the textarea displays (@Name format)
   // mentionMap: name → uuid for all inserted mentions (used to rebuild raw body on submit)
   const [visibleBody, setVisibleBody] = useState('')
@@ -269,6 +269,20 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
     }
   }
 
+  function handleCommentFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    // TODO: wire to comment attachment upload
+    e.target.value = ''
+  }
+
+  function toggleLike(id: string) {
+    setLikedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {/* ── Comment list ──────────────────────────────────────────────────── */}
@@ -289,12 +303,14 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
 
             return (
               <div key={comment.id} className="flex gap-2.5">
-                <Avatar className="w-6 h-6 shrink-0 mt-0.5">
-                  <AvatarImage src={comment.profiles?.avatar_url ?? undefined} />
-                  <AvatarFallback className="text-[9px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
-                    {getInitials(name)}
-                  </AvatarFallback>
-                </Avatar>
+                {comment.profiles?.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={comment.profiles.avatar_url} alt={name} className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5" />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-[9px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(name)}</span>
+                  </div>
+                )}
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2 mb-1">
@@ -308,6 +324,39 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
                   <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed break-words whitespace-pre-wrap">
                     {parseMentions(comment.body)}
                   </p>
+
+                  {/* Action bar */}
+                  <div className="flex items-center gap-3 mt-2 text-gray-400">
+                    <button
+                      type="button"
+                      title="Reply"
+                      className="hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                    >
+                      <CornerUpLeft size={13} strokeWidth={1.5} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Like"
+                      onClick={() => toggleLike(comment.id)}
+                      className={`transition-colors ${
+                        likedIds.has(comment.id)
+                          ? 'text-blue-500'
+                          : 'hover:text-gray-700 dark:hover:text-gray-200'
+                      }`}
+                    >
+                      <ThumbsUp size={13} strokeWidth={1.5} className={likedIds.has(comment.id) ? 'fill-current' : ''} />
+                    </button>
+                    <button
+                      type="button"
+                      title="React"
+                      className="hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                    >
+                      <SmilePlus size={13} strokeWidth={1.5} />
+                    </button>
+                    {likedIds.has(comment.id) && (
+                      <span className="text-[11px] text-blue-500 -ml-2">1</span>
+                    )}
+                  </div>
                 </div>
               </div>
             )
@@ -318,18 +367,9 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
 
       {/* ── Comment input ─────────────────────────────────────────────────── */}
       <form onSubmit={handleSubmit} className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
-        <div className="flex items-start gap-2.5">
-          {/* Current user avatar */}
-          <Avatar className="w-7 h-7 shrink-0 mt-2">
-            <AvatarImage src={currentUserProfile.avatar_url ?? undefined} />
-            <AvatarFallback className="text-[9px] bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
-              {getInitials(currentUserProfile.full_name || currentUserProfile.email)}
-            </AvatarFallback>
-          </Avatar>
-
-          {/* Unified input container */}
-          <div className="flex-1 min-w-0">
-            <div className="relative border border-gray-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-800 focus-within:border-zinc-300 dark:focus-within:border-zinc-600 focus-within:shadow-[0_0_0_3px_rgba(0,0,0,0.04)] transition-all duration-150">
+        {/* Unified input container — full width, no avatar */}
+        <div className="w-full">
+            <div className="relative border border-gray-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-800 focus-within:border-zinc-300 dark:focus-within:border-zinc-600 focus-within:ring-0 focus-within:outline-none focus-within:shadow-none transition-colors duration-150">
               {/* @mention dropdown */}
               {mentionQuery !== null && mentionMatches.length > 0 && (
                 <div className="absolute bottom-full left-0 mb-1.5 w-56 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg shadow-black/5 z-50 overflow-hidden">
@@ -345,12 +385,14 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
                         i === mentionHighlight ? 'bg-zinc-50 dark:bg-zinc-700' : 'hover:bg-zinc-50 dark:hover:bg-zinc-700'
                       }`}
                     >
-                      <Avatar className="w-5 h-5 shrink-0">
-                        {m.avatar_url && <AvatarImage src={m.avatar_url} />}
-                        <AvatarFallback className="text-[8px] bg-zinc-100 dark:bg-zinc-600 text-zinc-600 dark:text-zinc-300">
-                          {getInitials(m.full_name || m.email)}
-                        </AvatarFallback>
-                      </Avatar>
+                      {m.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={m.avatar_url} alt="" className="w-5 h-5 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-zinc-100 dark:bg-zinc-600 flex items-center justify-center shrink-0">
+                          <span className="text-[8px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(m.full_name || m.email)}</span>
+                        </div>
+                      )}
                       <span className="text-sm text-black dark:text-white truncate">
                         {m.full_name || m.email}
                       </span>
@@ -367,7 +409,7 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
                 onKeyDown={handleKeyDown}
                 placeholder={members.length > 0 ? 'Add a comment… @ to mention' : 'Add a comment…'}
                 disabled={isPending}
-                className="border-0 bg-transparent rounded-xl shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none px-3 pt-2.5 pb-1 resize-none text-sm min-h-[44px]"
+                className="border-0 bg-transparent rounded-xl shadow-none outline-none ring-0 focus:outline-none focus:ring-0 focus:shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none px-3 pt-2.5 pb-1 resize-none text-sm min-h-[44px]"
               />
 
               {/* Bottom bar: quick chips + send */}
@@ -394,6 +436,22 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
                   ))}
                 </div>
 
+                {/* Paperclip — wired to hidden file input */}
+                <label
+                  htmlFor="comment-upload"
+                  title="Attach file"
+                  className="flex items-center justify-center w-7 h-7 shrink-0 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors duration-150 cursor-pointer"
+                >
+                  <Paperclip size={13} strokeWidth={1.5} />
+                  <span className="sr-only">Attach file</span>
+                </label>
+                <input
+                  type="file"
+                  id="comment-upload"
+                  className="hidden"
+                  onChange={handleCommentFileUpload}
+                />
+
                 {/* Send button */}
                 <button
                   type="submit"
@@ -419,7 +477,6 @@ export function CommentFeed({ taskId, currentUserProfile, members = [] }: Commen
             <p className="mt-1.5 px-1 text-[11px] text-zinc-400">
               Pro tip: press <kbd className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-300 rounded text-[10px] font-mono">⌘↵</kbd> to send
             </p>
-          </div>
         </div>
       </form>
     </div>
