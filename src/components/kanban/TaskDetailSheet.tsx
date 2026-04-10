@@ -211,22 +211,27 @@ function getFaviconUrl(url: string): string {
 function formatDescriptionLinks(html: string): string {
   if (!html) return ''
 
+  // Shared pill builder — used by both passes
+  function createPillHTML(url: string, displayText: string): string {
+    const faviconDomain = (() => { try { return new URL(url).hostname } catch { return url } })()
+    return (
+      `<a href="${url}" target="_blank" rel="noopener noreferrer" contenteditable="false" ` +
+      `class="inline-flex items-center gap-2 px-3 py-1.5 m-1 bg-gray-50 dark:bg-zinc-800/50 ` +
+      `border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-800 ` +
+      `rounded-lg text-sm font-medium !text-gray-900 dark:!text-gray-100 !no-underline transition-colors align-middle shadow-sm">` +
+      `<img src="https://www.google.com/s2/favicons?domain=${faviconDomain}&sz=32" ` +
+      `class="w-4 h-4 rounded-sm shrink-0" alt="" style="display:inline-block;vertical-align:middle" />` +
+      `<span>${displayText}</span>` +
+      `</a>`
+    )
+  }
+
   // Pass 1 — replace existing <a href="..."> tags with styled pills
   let result = html.replace(
     /<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1[^>]*>.*?<\/a>/gi,
     (_match, _quote, url: string) => {
-      const faviconDomain = (() => { try { return new URL(url).hostname } catch { return url } })()
-      const label = formatLinkLabel(url)
-      return (
-        `<a href="${url}" target="_blank" rel="noopener noreferrer" contenteditable="false" ` +
-        `class="inline-flex items-center gap-2 px-3 py-1.5 m-1 bg-gray-50 dark:bg-zinc-800/50 ` +
-        `border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-800 ` +
-        `rounded-lg text-sm font-medium !text-gray-900 dark:!text-gray-100 !no-underline transition-colors align-middle shadow-sm">` +
-        `<img src="https://www.google.com/s2/favicons?domain=${faviconDomain}&sz=32" ` +
-        `class="w-4 h-4 rounded-sm shrink-0" alt="" style="display:inline-block;vertical-align:middle" />` +
-        `<span>${label}</span>` +
-        `</a>`
-      )
+      const displayText = url.replace(/^https?:\/\/(www\.)?/, '')
+      return createPillHTML(url, displayText)
     }
   )
 
@@ -234,18 +239,8 @@ function formatDescriptionLinks(html: string): string {
   result = result.replace(
     /(?<!href=["'])(?<!src=["'])(https?:\/\/[^\s<"']+)/g,
     (url) => {
-      const faviconDomain = (() => { try { return new URL(url).hostname } catch { return url } })()
-      const label = formatLinkLabel(url)
-      return (
-        `<a href="${url}" target="_blank" rel="noopener noreferrer" contenteditable="false" ` +
-        `class="inline-flex items-center gap-2 px-3 py-1.5 m-1 bg-gray-50 dark:bg-zinc-800/50 ` +
-        `border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-800 ` +
-        `rounded-lg text-sm font-medium !text-gray-900 dark:!text-gray-100 !no-underline transition-colors align-middle shadow-sm">` +
-        `<img src="https://www.google.com/s2/favicons?domain=${faviconDomain}&sz=32" ` +
-        `class="w-4 h-4 rounded-sm shrink-0" alt="" style="display:inline-block;vertical-align:middle" />` +
-        `<span>${label}</span>` +
-        `</a>`
-      )
+      const displayText = url.replace(/^https?:\/\/(www\.)?/, '')
+      return createPillHTML(url, displayText)
     }
   )
 
@@ -371,6 +366,26 @@ function EditableDescription({
           suppressContentEditableWarning
           onInput={(e) => setHtmlContent(e.currentTarget.innerHTML)}
           onKeyDown={(e) => { if (e.key === 'Escape') cancel() }}
+          onPaste={() => {
+            // After the browser inserts pasted content, run the formatter so
+            // bare URLs become pills immediately without requiring a save/reopen.
+            setTimeout(() => {
+              if (!editorRef.current) return
+              const formatted = formatDescriptionLinks(editorRef.current.innerHTML)
+              if (formatted === editorRef.current.innerHTML) return
+              editorRef.current.innerHTML = formatted
+              setHtmlContent(formatted)
+              // Restore cursor to end of editor
+              const range = document.createRange()
+              const sel = window.getSelection()
+              if (sel) {
+                range.selectNodeContents(editorRef.current)
+                range.collapse(false)
+                sel.removeAllRanges()
+                sel.addRange(range)
+              }
+            }, 0)
+          }}
           data-placeholder="Add a description…"
           style={{ outline: 'none' }}
           className={cn(
@@ -412,8 +427,8 @@ function EditableDescription({
     >
       {value
         ? <div
-            className="text-sm text-gray-700 dark:text-zinc-300 leading-relaxed break-words w-full [&_b]:font-bold [&_i]:italic [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5 [&_a]:text-blue-600 dark:[&_a]:text-blue-400 [&_a]:underline"
-            dangerouslySetInnerHTML={{ __html: value }}
+            className="text-sm text-gray-700 dark:text-zinc-300 leading-relaxed break-words w-full [&_b]:font-bold [&_i]:italic [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5"
+            dangerouslySetInnerHTML={{ __html: formatDescriptionLinks(value) }}
           />
         : <p className="text-sm text-zinc-400 italic">Add a description…</p>
       }

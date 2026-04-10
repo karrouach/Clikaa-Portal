@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef, useTransition, useCallback } from 'react'
-import { MessageSquare, Send, Loader2, ChevronLeft, Search, X, Plus, Paperclip } from 'lucide-react'
+import { MessageSquare, Send, Loader2, ChevronLeft, Search, X, Plus, Paperclip, Archive, Inbox } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import { createBrowserClient } from '@supabase/ssr'
 import { createClient } from '@/lib/supabase/client'
-import { sendMessageReply, markConversationRead, searchUsersForMessaging, sendNewMessage } from './message-actions'
+import { sendMessageReply, markConversationRead, searchUsersForMessaging, sendNewMessage, toggleArchiveConversation } from './message-actions'
 import { toast } from 'sonner'
 
 interface ConvItem {
@@ -14,6 +14,7 @@ interface ConvItem {
   created_at: string
   updated_at: string
   unread_count: number
+  archived: boolean
 }
 
 interface MsgItem {
@@ -52,7 +53,9 @@ function timeAgo(iso: string): string {
 }
 
 export function ClientMessagesClient({ initialConversations, currentUserId, adminName, adminAvatarUrl }: Props) {
-  const [conversations, setConversations] = useState<ConvItem[]>(initialConversations)
+  const [conversations, setConversations] = useState<ConvItem[]>(
+    initialConversations.map((c) => ({ ...c, archived: c.archived ?? false }))
+  )
   const [selectedId, setSelectedId]       = useState<string | null>(initialConversations[0]?.id ?? null)
   const [messages, setMessages]           = useState<MsgItem[]>([])
   const [loadingMsgs, setLoadingMsgs]     = useState(false)
@@ -63,7 +66,11 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
   const attachRef  = useRef<HTMLInputElement>(null)
   const threadEndRef = useRef<HTMLDivElement>(null)
 
-  // Search / new message (shows admins only — RBAC enforced server-side)
+  // ── Inbox search & filter ─────────────────────────────────────────────────
+  const [inboxSearch, setInboxSearch] = useState('')
+  const [inboxFilter, setInboxFilter] = useState<'all' | 'unread' | 'archived'>('all')
+
+  // ── New message panel ─────────────────────────────────────────────────────
   const [searchOpen, setSearchOpen]       = useState(false)
   const [searchQuery, setSearchQuery]     = useState('')
   const [searchResults, setSearchResults] = useState<SearchUser[]>([])
@@ -89,6 +96,18 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
   useEffect(() => { if (searchOpen) runSearch('') }, [searchOpen, runSearch])
 
   const selectedConv = conversations.find((c) => c.id === selectedId) ?? null
+
+  // ── Filtered conversation list ────────────────────────────────────────────
+  const displayedConversations = conversations.filter((c) => {
+    const subject = (c.subject || '').toLowerCase()
+    const q = inboxSearch.toLowerCase()
+    const matchesSearch = !q || subject.includes(q)
+    const matchesFilter =
+      inboxFilter === 'unread'   ? c.unread_count > 0 && !c.archived :
+      inboxFilter === 'archived' ? c.archived :
+      !c.archived // 'all' hides archived threads
+    return matchesSearch && matchesFilter
+  })
 
   // ── Load messages for selected conversation ───────────────────────────────
   useEffect(() => {
@@ -116,12 +135,11 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
     threadEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // ── selectedId ref — lets the realtime callback read current value
-  //    without needing the channel to be recreated on each selection change
+  // ── selectedId ref — lets the realtime callback read current value ────────
   const selectedIdRef = useRef(selectedId)
   useEffect(() => { selectedIdRef.current = selectedId }, [selectedId])
 
-  // ── Single consolidated realtime channel ──────────────────────────────────
+  // ── Realtime ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -134,9 +152,7 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         async (payload) => {
-          console.log('Realtime Message Received!', payload)
           const raw = payload.new as MsgItem
-          // Skip own optimistic messages
           if (raw.sender_id === currentUserId) return
 
           if (raw.conversation_id === selectedIdRef.current) {
@@ -147,7 +163,6 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
               .single()
             setMessages((prevMessages) => [...prevMessages, { ...raw, sender: senderData ?? null }])
           }
-          // Bubble conversation to top and bump unread if not active
           setConversations((prev) =>
             prev
               .map((c) => c.id === raw.conversation_id
@@ -166,17 +181,18 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'conversations' },
         (payload) => {
-          const raw = payload.new as { id: string; updated_at: string }
+          const raw = payload.new as { id: string; updated_at: string; archived: boolean }
           setConversations((prev) =>
             prev
-              .map((c) => c.id === raw.id ? { ...c, updated_at: raw.updated_at } : c)
+              .map((c) => c.id === raw.id
+                ? { ...c, updated_at: raw.updated_at, archived: raw.archived ?? c.archived }
+                : c
+              )
               .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
           )
         }
       )
-      .subscribe((status) => {
-        console.log('Supabase Realtime Status:', status)
-      })
+      .subscribe()
 
     return () => { supabase.removeChannel(channel) }
   }, [currentUserId])
@@ -226,7 +242,7 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
     })
   }
 
-  // ── Start new conversation ─────────────────────────────────────────────────
+  // ── Start new conversation ────────────────────────────────────────────────
   function handleNewConversation() {
     if (!newSubject.trim() || !newBody.trim()) return
     startTransition(async () => {
@@ -238,14 +254,40 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
       setNewSubject('')
       setNewBody('')
       setSelectedId(result.id)
-      // Optimistically add to list
       setConversations((prev) => [{
         id: result.id,
         subject: newSubject.trim(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         unread_count: 0,
+        archived: false,
       }, ...prev])
+    })
+  }
+
+  // ── Archive toggle ────────────────────────────────────────────────────────
+  function handleToggleArchive() {
+    if (!selectedId || !selectedConv) return
+    const nextArchived = !selectedConv.archived
+    // Optimistic update
+    setConversations((prev) =>
+      prev.map((c) => c.id === selectedId ? { ...c, archived: nextArchived } : c)
+    )
+    // Deselect when archiving from All/Unread view — conversation disappears from list
+    if (nextArchived && inboxFilter !== 'archived') {
+      setSelectedId(displayedConversations.find((c) => c.id !== selectedId)?.id ?? null)
+    }
+    startTransition(async () => {
+      const result = await toggleArchiveConversation(selectedId, nextArchived)
+      if (result?.error) {
+        toast.error(result.error)
+        // Rollback
+        setConversations((prev) =>
+          prev.map((c) => c.id === selectedId ? { ...c, archived: !nextArchived } : c)
+        )
+      } else {
+        toast.success(nextArchived ? 'Conversation archived' : 'Conversation unarchived')
+      }
     })
   }
 
@@ -257,10 +299,11 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
         'w-full md:w-72 shrink-0 border-r border-zinc-100 dark:border-zinc-800 flex flex-col',
         selectedId && !searchOpen ? 'hidden md:flex' : 'flex'
       )}>
+        {/* Header */}
         <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-semibold text-black dark:text-white">Messages</h2>
-            <p className="text-xs text-zinc-400">{conversations.length} thread{conversations.length !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-zinc-400">{displayedConversations.length} thread{displayedConversations.length !== 1 ? 's' : ''}</p>
           </div>
           <button
             onClick={() => { setSearchOpen((v) => !v); setSearchQuery('') }}
@@ -271,7 +314,7 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
           </button>
         </div>
 
-        {/* Search / New message — shows only admins (RBAC) */}
+        {/* New message panel */}
         {searchOpen && (
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="p-3 border-b border-zinc-100 dark:border-zinc-800">
@@ -338,53 +381,113 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
           </div>
         )}
 
+        {/* Inbox search + filter tabs */}
         {!searchOpen && (
-        <div className="flex-1 overflow-y-auto divide-y divide-zinc-50 dark:divide-zinc-800">
-          {conversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-2 text-center px-4">
-              <MessageSquare size={28} strokeWidth={1} className="text-zinc-200" />
-              <p className="text-sm text-zinc-400">No conversations yet</p>
-              <p className="text-xs text-zinc-300">Use the + button to message the team</p>
-            </div>
-          ) : (
-            conversations.map((conv) => {
-              const isSelected = conv.id === selectedId
-              return (
+          <div className="px-3 pt-3 pb-2 space-y-2 border-b border-zinc-100 dark:border-zinc-800">
+            {/* Search bar */}
+            <div className="relative">
+              <Search size={13} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+              <input
+                type="text"
+                value={inboxSearch}
+                onChange={(e) => setInboxSearch(e.target.value)}
+                placeholder="Search conversations…"
+                className="w-full h-8 pl-8 pr-3 text-xs bg-gray-50 dark:bg-zinc-900 border-none rounded-xl text-zinc-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white transition-all"
+              />
+              {inboxSearch && (
                 <button
-                  key={conv.id}
-                  onClick={() => setSelectedId(conv.id)}
+                  type="button"
+                  onClick={() => setInboxSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                >
+                  <X size={11} strokeWidth={2} />
+                </button>
+              )}
+            </div>
+
+            {/* Filter tabs */}
+            <div className="flex gap-1 bg-gray-100 dark:bg-zinc-800 p-1 rounded-xl">
+              {(['all', 'unread', 'archived'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setInboxFilter(tab)}
                   className={cn(
-                    'w-full text-left px-4 py-3.5 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/80',
-                    isSelected && 'bg-zinc-50 dark:bg-zinc-800'
+                    'flex-1 py-1 text-[11px] font-medium rounded-lg capitalize transition-all',
+                    inboxFilter === tab
+                      ? 'bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm'
+                      : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200'
                   )}
                 >
-                  <div className="flex items-start gap-3">
-                    {/* Clikaa support avatar */}
-                    {adminAvatarUrl ? (
-                      <img src={adminAvatarUrl} alt="" className="shrink-0 w-8 h-8 rounded-full object-cover" />
-                    ) : (
-                      <div className="shrink-0 w-8 h-8 rounded-full bg-black flex items-center justify-center text-white text-[9px] font-semibold">
-                        {getInitials(adminName)}
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className={cn('text-sm truncate', conv.unread_count > 0 ? 'font-semibold text-black dark:text-white' : 'font-medium text-zinc-700 dark:text-zinc-200')}>
-                          {conv.subject || 'No subject'}
-                        </p>
-                        <span className="text-[10px] text-zinc-400 shrink-0">{timeAgo(conv.updated_at)}</span>
-                      </div>
-                      <p className="text-xs text-zinc-400 mt-0.5">with {adminName}</p>
-                    </div>
-                    {conv.unread_count > 0 && (
-                      <span className="shrink-0 w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5" />
-                    )}
-                  </div>
+                  {tab}
                 </button>
-              )
-            })
-          )}
-        </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Conversation list */}
+        {!searchOpen && (
+          <div className="flex-1 overflow-y-auto divide-y divide-zinc-50 dark:divide-zinc-800">
+            {displayedConversations.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-2 text-center px-4">
+                <MessageSquare size={28} strokeWidth={1} className="text-zinc-200" />
+                <p className="text-sm text-zinc-400">
+                  {inboxFilter === 'archived' ? 'No archived conversations' :
+                   inboxFilter === 'unread'   ? 'No unread messages' :
+                   conversations.length === 0 ? 'No conversations yet' : 'No results'}
+                </p>
+                {conversations.length === 0 && (
+                  <p className="text-xs text-zinc-300">Use the + button to message the team</p>
+                )}
+              </div>
+            ) : (
+              displayedConversations.map((conv) => {
+                const isSelected = conv.id === selectedId
+                return (
+                  <button
+                    key={conv.id}
+                    onClick={() => setSelectedId(conv.id)}
+                    className={cn(
+                      'w-full text-left px-4 py-3.5 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/80',
+                      isSelected && 'bg-zinc-50 dark:bg-zinc-800'
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      {adminAvatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={adminAvatarUrl} alt="" className="shrink-0 w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <div className="shrink-0 w-8 h-8 rounded-full bg-black flex items-center justify-center text-white text-[9px] font-semibold">
+                          {getInitials(adminName)}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={cn('text-sm truncate', conv.unread_count > 0 ? 'font-semibold text-black dark:text-white' : 'font-medium text-zinc-700 dark:text-zinc-200')}>
+                            {conv.subject || 'No subject'}
+                          </p>
+                          <span className="text-[10px] text-zinc-400 shrink-0">{timeAgo(conv.updated_at)}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <p className="text-xs text-zinc-400">with {adminName}</p>
+                          {conv.archived && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
+                              <Archive size={9} strokeWidth={1.5} />
+                              Archived
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {conv.unread_count > 0 && (
+                        <span className="shrink-0 w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5" />
+                      )}
+                    </div>
+                  </button>
+                )
+              })
+            )}
+          </div>
         )}
       </div>
 
@@ -402,10 +505,24 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
             >
               <ChevronLeft size={16} strokeWidth={1.5} />
             </button>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-black dark:text-white truncate">{selectedConv.subject || 'No subject'}</p>
               <p className="text-xs text-zinc-400">with {adminName}</p>
             </div>
+
+            {/* Archive / Unarchive button */}
+            <button
+              type="button"
+              title={selectedConv.archived ? 'Unarchive conversation' : 'Archive conversation'}
+              onClick={handleToggleArchive}
+              disabled={isPending}
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-40 shrink-0"
+            >
+              {selectedConv.archived
+                ? <Inbox size={15} strokeWidth={1.5} />
+                : <Archive size={15} strokeWidth={1.5} />
+              }
+            </button>
           </div>
 
           {/* Messages */}
@@ -427,6 +544,7 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
                 return (
                   <div key={msg.id} className={cn('flex gap-3', isMe && 'flex-row-reverse')}>
                     {msg.sender?.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img src={msg.sender.avatar_url} alt="" className="shrink-0 w-7 h-7 rounded-full object-cover" />
                     ) : (
                       <div className={cn(

@@ -68,7 +68,7 @@ export default async function MessagesPage() {
   // ══════════════════════════════════════════════════════════════════════════
   const { data: conversations } = await admin
     .from('conversations')
-    .select('id, subject, created_at, updated_at')
+    .select('id, subject, created_at, updated_at, archived')
     .eq('client_id', user.id)
     .order('updated_at', { ascending: false })
 
