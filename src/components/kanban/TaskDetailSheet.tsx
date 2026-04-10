@@ -219,9 +219,9 @@ function formatDescriptionLinks(html: string): string {
       const label = formatLinkLabel(url)
       return (
         `<a href="${url}" target="_blank" rel="noopener noreferrer" contenteditable="false" ` +
-        `class="inline-flex items-center gap-1.5 px-2 py-0.5 mx-1 bg-gray-100 dark:bg-zinc-800 ` +
-        `border border-gray-200 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 ` +
-        `rounded-md text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors no-underline align-middle">` +
+        `class="inline-flex items-center gap-2 px-3 py-1.5 m-1 bg-gray-50 dark:bg-zinc-800/50 ` +
+        `border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-800 ` +
+        `rounded-lg text-sm font-medium !text-gray-900 dark:!text-gray-100 !no-underline transition-colors align-middle shadow-sm">` +
         `<img src="https://www.google.com/s2/favicons?domain=${faviconDomain}&sz=32" ` +
         `class="w-4 h-4 rounded-sm shrink-0" alt="" style="display:inline-block;vertical-align:middle" />` +
         `<span>${label}</span>` +
@@ -238,9 +238,9 @@ function formatDescriptionLinks(html: string): string {
       const label = formatLinkLabel(url)
       return (
         `<a href="${url}" target="_blank" rel="noopener noreferrer" contenteditable="false" ` +
-        `class="inline-flex items-center gap-1.5 px-2 py-0.5 mx-1 bg-gray-100 dark:bg-zinc-800 ` +
-        `border border-gray-200 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 ` +
-        `rounded-md text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors no-underline align-middle">` +
+        `class="inline-flex items-center gap-2 px-3 py-1.5 m-1 bg-gray-50 dark:bg-zinc-800/50 ` +
+        `border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-800 ` +
+        `rounded-lg text-sm font-medium !text-gray-900 dark:!text-gray-100 !no-underline transition-colors align-middle shadow-sm">` +
         `<img src="https://www.google.com/s2/favicons?domain=${faviconDomain}&sz=32" ` +
         `class="w-4 h-4 rounded-sm shrink-0" alt="" style="display:inline-block;vertical-align:middle" />` +
         `<span>${label}</span>` +
@@ -318,7 +318,7 @@ function EditableDescription({
       <div className="flex flex-col items-start justify-start text-left bg-gray-50 dark:bg-zinc-900/50 border border-gray-100 dark:border-zinc-800 rounded-xl overflow-hidden p-4 min-h-[120px] w-full">
         {value
           ? <div
-              className="text-sm text-gray-700 dark:text-zinc-300 leading-relaxed break-words w-full [&_b]:font-bold [&_i]:italic [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5 [&_a]:text-blue-600 dark:[&_a]:text-blue-400 [&_a]:underline"
+              className="text-sm text-gray-700 dark:text-zinc-300 leading-relaxed break-words w-full [&_b]:font-bold [&_i]:italic [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5"
               dangerouslySetInnerHTML={{ __html: formatDescriptionLinks(value) }}
             />
           : <p className="text-sm text-zinc-400 italic">No description provided.</p>
@@ -377,7 +377,7 @@ function EditableDescription({
             'w-full bg-transparent text-sm text-zinc-900 dark:text-zinc-100 leading-relaxed px-3 py-2.5',
             'min-h-[100px] h-auto max-h-[350px] overflow-y-auto',
             'outline-none focus:outline-none focus-visible:outline-none ring-0',
-            '[&_b]:font-bold [&_i]:italic [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5 [&_a]:text-blue-600 dark:[&_a]:text-blue-400 [&_a]:underline',
+            '[&_b]:font-bold [&_i]:italic [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5',
             '[&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-zinc-400 [&:empty]:before:italic [&:empty]:before:pointer-events-none',
             isPending && 'opacity-60 pointer-events-none',
           )}

@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect, useRef, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { addComment } from '@/app/dashboard/comment-actions'
+import { addComment, updateCommentReactions } from '@/app/dashboard/comment-actions'
 import type { CommentWithAuthor } from '@/types/database'
 import type { MemberOption } from './CreateTaskDialog'
 import { Textarea } from '@/components/ui/textarea'
 import { getInitials, formatRelativeTime } from '@/lib/utils'
-import { Send, Loader2, Paperclip, CornerUpLeft, SmilePlus } from 'lucide-react'
+import { Send, Loader2, Paperclip, CornerUpLeft, SmilePlus, X } from 'lucide-react'
 
 // ─── Mention format: @[Display Name](uuid) ───────────────────────────────────
 const MENTION_RE = /(@\[[^\]]+\]\([a-f0-9-]{36}\))/g
@@ -40,17 +40,20 @@ interface CommentFeedProps {
   inputRef?: React.RefObject<HTMLTextAreaElement | null>
 }
 
+const EMOJI_PICKER = ['🔥', '❤️', '🎉', '👀', '😂'] as const
+
 /**
- * CommentFeed — self-contained comment thread with @mention support.
+ * CommentFeed — threaded comment feed with @mention support and persisted emoji reactions.
  *
- * Type @ in the input to trigger a member picker dropdown.
- * Mentions are stored as @[Name](uuid) and rendered highlighted.
+ * - 1-level deep threading: replies nest under the parent comment.
+ * - Reactions persist to the database via updateCommentReactions server action.
+ * - Reply button sets replyingTo state and focuses the input.
  */
 export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef: externalInputRef }: CommentFeedProps) {
   const [comments, setComments] = useState<CommentWithAuthor[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
   const [pickerOpenId, setPickerOpenId] = useState<string | null>(null)
+  const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null)
   // visibleBody: what the textarea displays (@Name format)
   // mentionMap: name → uuid for all inserted mentions (used to rebuild raw body on submit)
   const [visibleBody, setVisibleBody] = useState('')
@@ -115,6 +118,21 @@ export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef
               if (prev.some((c) => c.id === (data as { id: string }).id)) return prev
               return [...prev, data as unknown as CommentWithAuthor]
             })
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'comments', filter: `task_id=eq.${taskId}` },
+        (payload) => {
+          if (mounted) {
+            setComments((prev) =>
+              prev.map((c) =>
+                c.id === (payload.new as { id: string }).id
+                  ? { ...c, reactions: (payload.new as CommentWithAuthor).reactions }
+                  : c
+              )
+            )
           }
         }
       )
@@ -188,13 +206,12 @@ export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef
   }
 
   // ── Submit ────────────────────────────────────────────────────────────────
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  function submitComment() {
     const trimmedVisible = visibleBody.trim()
     if (!trimmedVisible || isPending) return
 
-    // Rebuild raw body with @[Name](uuid) format for storage
     const rawBody = buildRawBody(trimmedVisible)
+    const parentId = replyingTo?.id ?? null
 
     const optimisticId = `optimistic-${Date.now()}`
     const optimistic: CommentWithAuthor = {
@@ -202,6 +219,8 @@ export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef
       task_id: taskId,
       author_id: currentUserProfile.id,
       body: rawBody,
+      parent_id: parentId,
+      reactions: {},
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       profiles: {
@@ -213,11 +232,12 @@ export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef
 
     setComments((prev) => [...prev, optimistic])
     setVisibleBody('')
+    setReplyingTo(null)
     setMentionQuery(null)
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
 
     startTransition(async () => {
-      const result = await addComment({ taskId, body: rawBody })
+      const result = await addComment({ taskId, body: rawBody, parentId })
 
       if (result.error) {
         setComments((prev) => prev.filter((c) => c.id !== optimisticId))
@@ -239,6 +259,11 @@ export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef
         })
       }
     })
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    submitComment()
   }
 
   // ── Keyboard handler ──────────────────────────────────────────────────────
@@ -269,7 +294,7 @@ export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef
     // Cmd+Enter to submit
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault()
-      handleSubmit(e as unknown as React.FormEvent)
+      submitComment()
     }
   }
 
@@ -278,9 +303,12 @@ export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef
     e.target.value = ''
   }
 
-  function handleReply(authorName: string) {
-    const mention = `@${authorName} `
-    setVisibleBody((prev) => (prev ? `${prev} ${mention}` : mention))
+  // ── Reply: set replyingTo, enforce 1-level depth ──────────────────────────
+  function handleReply(comment: CommentWithAuthor) {
+    // If this comment is itself a reply, target its parent to keep threads 1-level deep
+    const rootId = comment.parent_id ?? comment.id
+    const authorName = comment.profiles?.full_name || comment.profiles?.email || 'User'
+    setReplyingTo({ id: rootId, name: authorName })
     setTimeout(() => {
       const el = resolvedInputRef.current ?? textareaRef.current
       if (el) {
@@ -289,22 +317,162 @@ export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef
       }
       autoResize()
     }, 0)
-    // Switch to comments tab if on history
   }
 
-  function toggleLike(id: string) {
-    setLikedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+  // ── Reactions: optimistic update + persist ────────────────────────────────
+  function handleToggleReaction(commentId: string, emoji: string) {
+    setComments((prev) =>
+      prev.map((c) => {
+        if (c.id !== commentId) return c
+        const current = c.reactions ?? {}
+        const users: string[] = current[emoji] ?? []
+        const hasReacted = users.includes(currentUserProfile.id)
+        const nextUsers = hasReacted
+          ? users.filter((uid) => uid !== currentUserProfile.id)
+          : [...users, currentUserProfile.id]
+        const next = { ...current }
+        if (nextUsers.length === 0) delete next[emoji]
+        else next[emoji] = nextUsers
+        // Persist in background — ignore errors silently (optimistic already applied)
+        updateCommentReactions({ commentId, reactions: next }).catch(() => {})
+        return { ...c, reactions: next }
+      })
+    )
+  }
+
+  // ── Group comments into threads ───────────────────────────────────────────
+  const rootComments = comments.filter((c) => !c.parent_id)
+  const repliesByParent = comments.reduce<Record<string, CommentWithAuthor[]>>((acc, c) => {
+    if (c.parent_id) {
+      acc[c.parent_id] = [...(acc[c.parent_id] ?? []), c]
+    }
+    return acc
+  }, {})
+
+  // ── Render a single comment row ───────────────────────────────────────────
+  function renderComment(comment: CommentWithAuthor, isReply = false) {
+    const name = comment.profiles?.full_name || comment.profiles?.email || 'Unknown'
+    const isMe = comment.author_id === currentUserProfile.id
+    const reactions = comment.reactions ?? {}
+    const hasReactions = Object.keys(reactions).length > 0
+
+    return (
+      <div
+        key={comment.id}
+        className={isReply ? 'ml-10 mt-3 pl-4 border-l-2 border-gray-200 dark:border-zinc-700' : ''}
+      >
+        <div className="flex gap-2.5">
+          {comment.profiles?.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={comment.profiles.avatar_url} alt={name} className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5" />
+          ) : (
+            <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0 mt-0.5">
+              <span className="text-[9px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(name)}</span>
+            </div>
+          )}
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="text-xs font-medium text-black dark:text-white leading-none">
+                {isMe ? 'You' : name}
+              </span>
+              <span className="text-[10px] text-zinc-400 tabular-nums leading-none">
+                {formatRelativeTime(comment.created_at)}
+              </span>
+            </div>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed break-words whitespace-pre-wrap">
+              {parseMentions(comment.body)}
+            </p>
+
+            {/* Persisted reactions display */}
+            {hasReactions && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {Object.entries(reactions).map(([emoji, users]) => {
+                  const iReacted = users.includes(currentUserProfile.id)
+                  return (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => handleToggleReaction(comment.id, emoji)}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-colors ${
+                        iReacted
+                          ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300'
+                          : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600'
+                      }`}
+                    >
+                      <span>{emoji}</span>
+                      <span className="tabular-nums">{users.length}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Action bar */}
+            <div className="relative flex items-center gap-2 mt-2">
+              {/* Reply */}
+              <button
+                type="button"
+                title="Reply"
+                onClick={() => handleReply(comment)}
+                className="flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                <CornerUpLeft size={12} strokeWidth={1.5} />
+              </button>
+
+              {/* Thumbs up — quick reaction shortcut */}
+              <button
+                type="button"
+                title="Like"
+                onClick={() => handleToggleReaction(comment.id, '👍')}
+                className={`flex items-center justify-center w-6 h-6 rounded text-sm transition-colors hover:bg-gray-100 dark:hover:bg-zinc-800 ${
+                  (reactions['👍'] ?? []).includes(currentUserProfile.id)
+                    ? 'opacity-100'
+                    : 'opacity-50 hover:opacity-100'
+                }`}
+              >
+                👍
+              </button>
+
+              {/* Emoji picker toggle */}
+              <button
+                type="button"
+                title="React"
+                onClick={() => setPickerOpenId(pickerOpenId === comment.id ? null : comment.id)}
+                className="flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                <SmilePlus size={12} strokeWidth={1.5} />
+              </button>
+
+              {/* Emoji picker popover */}
+              {pickerOpenId === comment.id && (
+                <div className="absolute left-0 bottom-8 z-50 flex items-center gap-1 px-2 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg shadow-black/10">
+                  {EMOJI_PICKER.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => {
+                        handleToggleReaction(comment.id, emoji)
+                        setPickerOpenId(null)
+                      }}
+                      className="text-base w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="flex flex-col gap-4">
       {/* ── Comment input ─────────────────────────────────────────────────── */}
-      <form onSubmit={handleSubmit} className="w-full mb-6 pb-6 border-b border-zinc-100 dark:border-zinc-800">
+      <form onSubmit={handleSubmit} className="w-full mb-4">
         <div className="w-full">
             <div className="relative border border-gray-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-800 focus-within:border-zinc-300 dark:focus-within:border-zinc-600 focus-within:ring-0 focus-within:outline-none focus-within:shadow-none transition-colors duration-150">
               {/* @mention dropdown */}
@@ -335,6 +503,22 @@ export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef
                       </span>
                     </button>
                   ))}
+                </div>
+              )}
+
+              {/* Replying-to indicator */}
+              {replyingTo && (
+                <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
+                  <span className="text-[11px] text-zinc-400">
+                    Replying to <span className="font-medium text-zinc-600 dark:text-zinc-300">{replyingTo.name}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setReplyingTo(null)}
+                    className="ml-auto text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                  >
+                    <X size={11} strokeWidth={2} />
+                  </button>
                 </div>
               )}
 
@@ -418,98 +602,21 @@ export function CommentFeed({ taskId, currentUserProfile, members = [], inputRef
         <div className="flex items-center justify-center py-6">
           <Loader2 size={16} strokeWidth={1.5} className="text-zinc-300 animate-spin" />
         </div>
-      ) : comments.length === 0 ? (
+      ) : rootComments.length === 0 ? (
         <p className="text-xs text-zinc-400 py-2">
           No comments yet. Be the first to leave one.
         </p>
       ) : (
         <div className="space-y-5">
-          {comments.map((comment) => {
-            const name =
-              comment.profiles?.full_name || comment.profiles?.email || 'Unknown'
-            const isMe = comment.author_id === currentUserProfile.id
-
-            return (
-              <div key={comment.id} className="flex gap-2.5">
-                {comment.profiles?.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={comment.profiles.avatar_url} alt={name} className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5" />
-                ) : (
-                  <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="text-[9px] font-medium text-zinc-600 dark:text-zinc-300">{getInitials(name)}</span>
-                  </div>
-                )}
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-xs font-medium text-black dark:text-white leading-none">
-                      {isMe ? 'You' : name}
-                    </span>
-                    <span className="text-[10px] text-zinc-400 tabular-nums leading-none">
-                      {formatRelativeTime(comment.created_at)}
-                    </span>
-                  </div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed break-words whitespace-pre-wrap">
-                    {parseMentions(comment.body)}
-                  </p>
-
-                  {/* Action bar */}
-                  <div className="relative flex items-center gap-2 mt-2">
-                    {/* Reply */}
-                    <button
-                      type="button"
-                      title="Reply"
-                      onClick={() => handleReply(comment.profiles?.full_name || comment.profiles?.email || 'User')}
-                      className="flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-                    >
-                      <CornerUpLeft size={12} strokeWidth={1.5} />
-                    </button>
-
-                    {/* Thumbs up emoji */}
-                    <button
-                      type="button"
-                      title="Like"
-                      onClick={() => toggleLike(comment.id)}
-                      className={`flex items-center justify-center w-6 h-6 rounded text-sm transition-colors hover:bg-gray-100 dark:hover:bg-zinc-800 ${
-                        likedIds.has(comment.id) ? 'opacity-100' : 'opacity-50 hover:opacity-100'
-                      }`}
-                    >
-                      👍
-                    </button>
-                    {likedIds.has(comment.id) && (
-                      <span className="text-[11px] text-zinc-500 -ml-1">1</span>
-                    )}
-
-                    {/* Emoji picker toggle */}
-                    <button
-                      type="button"
-                      title="React"
-                      onClick={() => setPickerOpenId(pickerOpenId === comment.id ? null : comment.id)}
-                      className="flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-                    >
-                      <SmilePlus size={12} strokeWidth={1.5} />
-                    </button>
-
-                    {/* Emoji picker popover */}
-                    {pickerOpenId === comment.id && (
-                      <div className="absolute left-0 bottom-8 z-50 flex items-center gap-1 px-2 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg shadow-black/10">
-                        {(['🔥', '❤️', '🎉', '👀', '😂'] as const).map((emoji) => (
-                          <button
-                            key={emoji}
-                            type="button"
-                            onClick={() => setPickerOpenId(null)}
-                            className="text-base w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+          {rootComments.map((comment) => (
+            <div key={comment.id}>
+              {renderComment(comment, false)}
+              {/* Replies nested under parent */}
+              {(repliesByParent[comment.id] ?? []).map((reply) =>
+                renderComment(reply, true)
+              )}
+            </div>
+          ))}
           <div ref={bottomRef} />
         </div>
       )}

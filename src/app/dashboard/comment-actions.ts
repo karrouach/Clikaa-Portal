@@ -21,9 +21,11 @@ export type AddCommentResult = {
 export async function addComment({
   taskId,
   body,
+  parentId,
 }: {
   taskId: string
   body: string
+  parentId?: string | null
 }): Promise<AddCommentResult> {
   const trimmed = body.trim()
   if (!trimmed) return { error: 'Comment cannot be empty.' }
@@ -36,7 +38,7 @@ export async function addComment({
 
   const { data: comment, error } = await supabase
     .from('comments')
-    .insert({ task_id: taskId, author_id: user.id, body: trimmed })
+    .insert({ task_id: taskId, author_id: user.id, body: trimmed, parent_id: parentId ?? null })
     .select('*, profiles (full_name, avatar_url, email)')
     .single()
 
@@ -133,6 +135,44 @@ export async function updateTaskDescription({
       updated_at: new Date().toISOString(),
     })
     .eq('id', taskId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// updateCommentReactions
+// Persists the full reactions map for a comment.
+// Uses admin client to bypass the author-only update RLS; server-side auth
+// check ensures only authenticated workspace members can call this.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function updateCommentReactions({
+  commentId,
+  reactions,
+}: {
+  commentId: string
+  reactions: Record<string, string[]>
+}): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorised.' }
+
+  // Verify the user can read this comment (i.e. is a workspace member)
+  const { data: existing } = await supabase
+    .from('comments')
+    .select('id')
+    .eq('id', commentId)
+    .single()
+
+  if (!existing) return { error: 'Comment not found or access denied.' }
+
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('comments')
+    .update({ reactions })
+    .eq('id', commentId)
 
   if (error) return { error: error.message }
   return {}

@@ -295,6 +295,8 @@ export type Database = {
           task_id: string
           author_id: string
           body: string
+          parent_id: string | null
+          reactions: Record<string, string[]>
           created_at: string
           updated_at: string
         }
@@ -303,6 +305,8 @@ export type Database = {
           task_id: string
           author_id: string
           body: string
+          parent_id?: string | null
+          reactions?: Record<string, string[]>
           created_at?: string
           updated_at?: string
         }
@@ -311,6 +315,8 @@ export type Database = {
           task_id?: string
           author_id?: string
           body?: string
+          parent_id?: string | null
+          reactions?: Record<string, string[]>
           created_at?: string
           updated_at?: string
         }
