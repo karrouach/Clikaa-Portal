@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { AdminContractsClient } from './AdminContractsClient'
 import { ClientContractsClient } from './ClientContractsClient'
-import type { Contract, ContractWithRecipient, ContractTemplate } from '@/types/database'
+import type { Contract, ContractWithRecipient, ContractTemplate, ContractWithWorkspace } from '@/types/database'
 
 export const metadata: Metadata = { title: 'Contracts' }
 
@@ -57,7 +57,7 @@ export default async function ContractsPage() {
   const [{ data: memberships }, { data: directContracts }] = await Promise.all([
     supabase.from('workspace_members').select('workspace_id').eq('user_id', user.id),
     admin.from('contracts')
-      .select('*')
+      .select('*, workspace:workspace_id(name)')
       .eq('recipient_user_id', user.id)
       .neq('status', 'draft')
       .order('created_at', { ascending: false }),
@@ -65,23 +65,23 @@ export default async function ContractsPage() {
 
   const workspaceIds = (memberships ?? []).map(m => m.workspace_id)
 
-  let workspaceContracts: Contract[] = []
+  let workspaceContracts: ContractWithWorkspace[] = []
   if (workspaceIds.length > 0) {
     const { data } = await admin
       .from('contracts')
-      .select('*')
+      .select('*, workspace:workspace_id(name)')
       .in('workspace_id', workspaceIds)
       .is('recipient_user_id', null) // only broadcast contracts (targeted ones are fetched above)
       .neq('status', 'draft')
       .order('created_at', { ascending: false })
-    workspaceContracts = (data ?? []) as Contract[]
+    workspaceContracts = (data ?? []) as unknown as ContractWithWorkspace[]
   }
 
   // Merge and deduplicate by id
   const seen = new Set<string>()
-  const contracts: Contract[] = []
+  const contracts: ContractWithWorkspace[] = []
   for (const c of [...(directContracts ?? []), ...workspaceContracts]) {
-    if (!seen.has(c.id)) { seen.add(c.id); contracts.push(c as Contract) }
+    if (!seen.has(c.id)) { seen.add(c.id); contracts.push(c as unknown as ContractWithWorkspace) }
   }
 
   return <ClientContractsClient initialContracts={contracts} />

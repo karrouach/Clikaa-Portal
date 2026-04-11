@@ -52,6 +52,14 @@ function timeAgo(iso: string): string {
   return `${days}d ago`
 }
 
+// Strip attachment markers and newlines for sidebar preview
+function toSnippet(body: string): string {
+  return body
+    .replace(/📎 \[.+?\]\(https?:\/\/.+?\)/g, '📎 Attachment')
+    .replace(/\n+/g, ' ')
+    .trim()
+}
+
 export function ClientMessagesClient({ initialConversations, currentUserId, adminName, adminAvatarUrl }: Props) {
   const [conversations, setConversations] = useState<ConvItem[]>(
     initialConversations.map((c) => ({ ...c, archived: c.archived ?? false }))
@@ -65,6 +73,9 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
   const [uploading, setUploading]         = useState(false)
   const attachRef  = useRef<HTMLInputElement>(null)
   const threadEndRef = useRef<HTMLDivElement>(null)
+
+  // ── Sidebar snippets — last message body per conversation ─────────────────
+  const [snippets, setSnippets] = useState<Record<string, string>>({})
 
   // ── Inbox search & filter ─────────────────────────────────────────────────
   const [inboxSearch, setInboxSearch] = useState('')
@@ -105,9 +116,30 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
     const matchesFilter =
       inboxFilter === 'unread'   ? c.unread_count > 0 && !c.archived :
       inboxFilter === 'archived' ? c.archived :
-      !c.archived // 'all' hides archived threads
+      !c.archived
     return matchesSearch && matchesFilter
   })
+
+  // ── Fetch latest message snippet per conversation on mount ────────────────
+  useEffect(() => {
+    const ids = conversations.map((c) => c.id)
+    if (ids.length === 0) return
+    const supabase = createClient()
+    supabase
+      .from('messages')
+      .select('conversation_id, body, created_at')
+      .in('conversation_id', ids)
+      .order('created_at', { ascending: false })
+      .limit(ids.length * 3)
+      .then(({ data }) => {
+        const map: Record<string, string> = {}
+        for (const msg of (data ?? [])) {
+          if (!map[msg.conversation_id]) map[msg.conversation_id] = msg.body
+        }
+        setSnippets(map)
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── Load messages for selected conversation ───────────────────────────────
   useEffect(() => {
@@ -121,12 +153,17 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
       .eq('conversation_id', selectedId)
       .order('created_at', { ascending: true })
       .then(({ data }) => {
-        setMessages((data ?? []) as MsgItem[])
+        const msgs = (data ?? []) as MsgItem[]
+        setMessages(msgs)
         setLoadingMsgs(false)
         markConversationRead(selectedId)
         setConversations((prev) =>
           prev.map((c) => c.id === selectedId ? { ...c, unread_count: 0 } : c)
         )
+        // Update snippet for this conversation with the latest message
+        if (msgs.length > 0) {
+          setSnippets((prev) => ({ ...prev, [selectedId]: msgs[msgs.length - 1].body }))
+        }
       })
   }, [selectedId])
 
@@ -163,6 +200,8 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
               .single()
             setMessages((prevMessages) => [...prevMessages, { ...raw, sender: senderData ?? null }])
           }
+          // Update sidebar snippet
+          setSnippets((prev) => ({ ...prev, [raw.conversation_id]: raw.body }))
           setConversations((prev) =>
             prev
               .map((c) => c.id === raw.conversation_id
@@ -237,6 +276,7 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
         sender: null,
       }
       setMessages((prev) => [...prev, optimistic])
+      setSnippets((prev) => ({ ...prev, [selectedId]: body }))
       const result = await sendMessageReply(selectedId, body)
       if (result?.error) toast.error(result.error)
     })
@@ -254,6 +294,7 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
       setNewSubject('')
       setNewBody('')
       setSelectedId(result.id)
+      setSnippets((prev) => ({ ...prev, [result.id]: newBody.trim() }))
       setConversations((prev) => [{
         id: result.id,
         subject: newSubject.trim(),
@@ -269,11 +310,9 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
   function handleToggleArchive() {
     if (!selectedId || !selectedConv) return
     const nextArchived = !selectedConv.archived
-    // Optimistic update
     setConversations((prev) =>
       prev.map((c) => c.id === selectedId ? { ...c, archived: nextArchived } : c)
     )
-    // Deselect when archiving from All/Unread view — conversation disappears from list
     if (nextArchived && inboxFilter !== 'archived') {
       setSelectedId(displayedConversations.find((c) => c.id !== selectedId)?.id ?? null)
     }
@@ -281,7 +320,6 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
       const result = await toggleArchiveConversation(selectedId, nextArchived)
       if (result?.error) {
         toast.error(result.error)
-        // Rollback
         setConversations((prev) =>
           prev.map((c) => c.id === selectedId ? { ...c, archived: !nextArchived } : c)
         )
@@ -384,7 +422,6 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
         {/* Inbox search + filter tabs */}
         {!searchOpen && (
           <div className="px-3 pt-3 pb-2 space-y-2 border-b border-zinc-100 dark:border-zinc-800">
-            {/* Search bar */}
             <div className="relative">
               <Search size={13} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
               <input
@@ -404,8 +441,6 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
                 </button>
               )}
             </div>
-
-            {/* Filter tabs */}
             <div className="flex gap-1 bg-gray-100 dark:bg-zinc-800 p-1 rounded-xl">
               {(['all', 'unread', 'archived'] as const).map((tab) => (
                 <button
@@ -444,6 +479,7 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
             ) : (
               displayedConversations.map((conv) => {
                 const isSelected = conv.id === selectedId
+                const snippet = snippets[conv.id]
                 return (
                   <button
                     key={conv.id}
@@ -456,31 +492,32 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
                     <div className="flex items-start gap-3">
                       {adminAvatarUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={adminAvatarUrl} alt="" className="shrink-0 w-8 h-8 rounded-full object-cover" />
+                        <img src={adminAvatarUrl} alt="" className="shrink-0 w-8 h-8 rounded-full object-cover mt-0.5" />
                       ) : (
-                        <div className="shrink-0 w-8 h-8 rounded-full bg-black flex items-center justify-center text-white text-[9px] font-semibold">
+                        <div className="shrink-0 w-8 h-8 rounded-full bg-black flex items-center justify-center text-white text-[9px] font-semibold mt-0.5">
                           {getInitials(adminName)}
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className={cn('text-sm truncate', conv.unread_count > 0 ? 'font-semibold text-black dark:text-white' : 'font-medium text-zinc-700 dark:text-zinc-200')}>
+                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                          <p className={cn('text-sm truncate leading-snug', conv.unread_count > 0 ? 'font-semibold text-black dark:text-white' : 'font-medium text-zinc-700 dark:text-zinc-200')}>
                             {conv.subject || 'No subject'}
                           </p>
                           <span className="text-[10px] text-zinc-400 shrink-0">{timeAgo(conv.updated_at)}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <p className="text-xs text-zinc-400">with {adminName}</p>
-                          {conv.archived && (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
-                              <Archive size={9} strokeWidth={1.5} />
-                              Archived
-                            </span>
-                          )}
-                        </div>
+                        {/* Step 3: snippet replaces "with {adminName}" */}
+                        <p className="text-xs text-gray-500 dark:text-zinc-400 truncate leading-snug">
+                          {snippet ? toSnippet(snippet) : adminName}
+                        </p>
+                        {conv.archived && (
+                          <span className="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
+                            <Archive size={9} strokeWidth={1.5} />
+                            Archived
+                          </span>
+                        )}
                       </div>
                       {conv.unread_count > 0 && (
-                        <span className="shrink-0 w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5" />
+                        <span className="shrink-0 w-1.5 h-1.5 bg-red-500 rounded-full mt-2" />
                       )}
                     </div>
                   </button>
@@ -497,7 +534,7 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
           'flex-1 flex flex-col min-w-0',
           !selectedId ? 'hidden md:flex' : 'flex'
         )}>
-          {/* Thread header */}
+          {/* Step 3: Thread header — admin avatar + title + archive button */}
           <div className="px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
             <button
               className="md:hidden flex items-center justify-center w-7 h-7 text-zinc-400 hover:text-black dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
@@ -505,12 +542,23 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
             >
               <ChevronLeft size={16} strokeWidth={1.5} />
             </button>
+
+            {/* Admin avatar */}
+            {adminAvatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={adminAvatarUrl} alt={adminName} className="shrink-0 w-8 h-8 rounded-full object-cover" />
+            ) : (
+              <div className="shrink-0 w-8 h-8 rounded-full bg-black flex items-center justify-center text-white text-[9px] font-semibold">
+                {getInitials(adminName)}
+              </div>
+            )}
+
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-black dark:text-white truncate">{selectedConv.subject || 'No subject'}</p>
-              <p className="text-xs text-zinc-400">with {adminName}</p>
+              <p className="text-sm font-semibold text-black dark:text-white truncate leading-snug">{selectedConv.subject || 'No subject'}</p>
+              <p className="text-xs text-zinc-400 leading-snug">{adminName}</p>
             </div>
 
-            {/* Archive / Unarchive button */}
+            {/* Archive / Unarchive — far right */}
             <button
               type="button"
               title={selectedConv.archived ? 'Unarchive conversation' : 'Archive conversation'}
@@ -525,8 +573,8 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
             </button>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {/* Messages — Step 1 (inverted bubbles) + Step 2 (grouping) */}
+          <div className="flex-1 overflow-y-auto px-5 py-4">
             {loadingMsgs ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 size={18} strokeWidth={1.5} className="animate-spin text-zinc-400" />
@@ -536,44 +584,63 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
                 <p className="text-sm text-zinc-400">No messages in this thread yet.</p>
               </div>
             ) : (
-              messages.map((msg) => {
+              messages.map((msg, idx) => {
                 const isMe = msg.sender_id === currentUserId
+                const nextMsg = messages[idx + 1]
+                const isLastInGroup = !nextMsg || nextMsg.sender_id !== msg.sender_id
                 const name = isMe ? 'You' : (msg.sender?.full_name || adminName)
                 const initials = getInitials(isMe ? 'You' : name)
 
                 return (
-                  <div key={msg.id} className={cn('flex gap-3', isMe && 'flex-row-reverse')}>
-                    {msg.sender?.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={msg.sender.avatar_url} alt="" className="shrink-0 w-7 h-7 rounded-full object-cover" />
-                    ) : (
-                      <div className={cn(
-                        'shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold',
-                        isMe ? 'bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300' : 'bg-black text-white'
-                      )}>
-                        {initials}
-                      </div>
+                  <div
+                    key={msg.id}
+                    className={cn(
+                      'flex gap-2.5',
+                      isMe && 'flex-row-reverse',
+                      isLastInGroup ? 'mb-4' : 'mb-1'
                     )}
+                  >
+                    {/* Avatar — only visible on last message of a group */}
+                    <div className="shrink-0 w-7 self-end">
+                      {isLastInGroup && (
+                        msg.sender?.avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={msg.sender.avatar_url} alt={name} className="w-7 h-7 rounded-full object-cover" />
+                        ) : (
+                          <div className={cn(
+                            'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold',
+                            isMe ? 'bg-zinc-900 dark:bg-white text-white dark:text-black' : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
+                          )}>
+                            {initials}
+                          </div>
+                        )
+                      )}
+                    </div>
+
                     <div className={cn('max-w-[70%]', isMe && 'items-end flex flex-col')}>
+                      {/* Step 1: Inverted bubble colors */}
                       <div className={cn(
-                        'rounded-xl px-3.5 py-2.5 text-sm leading-relaxed',
+                        'px-3.5 py-2.5 text-sm leading-relaxed',
                         isMe
-                          ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-tr-sm'
-                          : 'bg-black text-white rounded-tl-sm'
+                          ? 'bg-zinc-900 dark:bg-white text-white dark:text-black rounded-2xl rounded-br-sm'
+                          : 'bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 rounded-2xl rounded-bl-sm'
                       )}>
                         {msg.body.split('\n').map((line, li) => {
                           const m = line.match(/^📎 \[(.+?)\]\((https?:\/\/.+?)\)$/)
                           if (m) return (
-                            <a key={li} href={m[2]} target="_blank" rel="noopener noreferrer" className={cn('flex items-center gap-1 underline underline-offset-2 text-xs mt-1', isMe ? 'text-zinc-500' : 'text-zinc-300')}>
+                            <a key={li} href={m[2]} target="_blank" rel="noopener noreferrer" className={cn('flex items-center gap-1 underline underline-offset-2 text-xs mt-1', isMe ? 'text-zinc-300 dark:text-zinc-700' : 'text-zinc-500 dark:text-zinc-400')}>
                               <Paperclip size={10} strokeWidth={1.5} className="shrink-0" />{m[1]}
                             </a>
                           )
                           return line ? <span key={li} className="block">{line}</span> : null
                         })}
                       </div>
-                      <p className="text-[10px] text-zinc-400 mt-1 px-1">
-                        {isMe ? 'You' : name} · {timeAgo(msg.created_at)}
-                      </p>
+                      {/* Step 2: Timestamp only on last message of group */}
+                      {isLastInGroup && (
+                        <p className="text-[10px] text-zinc-400 mt-1 px-1">
+                          {isMe ? 'You' : name} · {timeAgo(msg.created_at)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )
@@ -582,10 +649,10 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
             <div ref={threadEndRef} />
           </div>
 
-          {/* Reply form */}
-          <form onSubmit={handleReply} className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+          {/* Step 4: Modernized pill input bar */}
+          <form onSubmit={handleReply} className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-800">
             {attachFile && (
-              <div className="flex items-center gap-2 px-2 py-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-600 dark:text-zinc-400">
+              <div className="flex items-center gap-2 px-3 py-1.5 mb-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-600 dark:text-zinc-400">
                 <Paperclip size={11} strokeWidth={1.5} className="shrink-0 text-zinc-400" />
                 <span className="truncate flex-1">{attachFile.name}</span>
                 <button type="button" onClick={() => { setAttachFile(null); if (attachRef.current) attachRef.current.value = '' }} className="shrink-0 text-zinc-400 hover:text-red-500">
@@ -593,30 +660,40 @@ export function ClientMessagesClient({ initialConversations, currentUserId, admi
                 </button>
               </div>
             )}
-            <div className="flex gap-2">
-              <input ref={attachRef} type="file" className="hidden" onChange={(e) => setAttachFile(e.target.files?.[0] ?? null)} />
+            <input ref={attachRef} type="file" className="hidden" onChange={(e) => setAttachFile(e.target.files?.[0] ?? null)} />
+
+            {/* Unified pill wrapper */}
+            <div className="flex items-center gap-3 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-full px-4 py-2 w-full">
               <button
                 type="button"
                 onClick={() => attachRef.current?.click()}
-                className="h-9 w-9 flex items-center justify-center text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors shrink-0"
                 title="Attach file"
+                className="shrink-0 text-gray-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
               >
-                <Paperclip size={14} strokeWidth={1.5} />
+                <Paperclip size={16} strokeWidth={1.5} />
               </button>
+
               <input
                 type="text"
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit() }
+                }}
                 placeholder="Type a reply…"
-                className="flex-1 h-9 px-3 text-sm bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:bg-white dark:focus:bg-zinc-800 transition-colors placeholder:text-zinc-400"
+                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-sm text-zinc-900 dark:text-white placeholder:text-gray-400 p-0 min-w-0"
                 disabled={isPending || uploading}
               />
+
               <button
                 type="submit"
                 disabled={isPending || uploading || (!reply.trim() && !attachFile)}
-                className="h-9 w-9 flex items-center justify-center bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                className="shrink-0 p-1.5 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-full hover:opacity-80 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
               >
-                {(isPending || uploading) ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} strokeWidth={1.5} />}
+                {(isPending || uploading)
+                  ? <Loader2 size={14} className="animate-spin" />
+                  : <Send size={14} strokeWidth={1.5} />
+                }
               </button>
             </div>
           </form>

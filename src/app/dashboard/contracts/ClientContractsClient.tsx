@@ -4,29 +4,29 @@ import { useState } from 'react'
 import { FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ContractViewModal } from './ContractViewModal'
-import type { Contract } from '@/types/database'
+import type { ContractWithWorkspace } from '@/types/database'
 
 // ─── Status styles ────────────────────────────────────────────────────────────
-const STATUS_STYLES: Record<Contract['status'], string> = {
+const STATUS_STYLES: Record<ContractWithWorkspace['status'], string> = {
   draft:             'bg-zinc-100 text-zinc-600 border-zinc-200',
   pending_signature: 'bg-amber-50 text-amber-700 border-amber-100',
   signed:            'bg-emerald-50 text-emerald-700 border-emerald-100',
 }
-const STATUS_LABELS: Record<Contract['status'], string> = {
+const STATUS_LABELS: Record<ContractWithWorkspace['status'], string> = {
   draft:             'Draft',
   pending_signature: 'Awaiting Your Signature',
   signed:            'Signed',
 }
 
 interface Props {
-  initialContracts: Contract[]
+  initialContracts: ContractWithWorkspace[]
 }
 
 export function ClientContractsClient({ initialContracts }: Props) {
-  const [contracts, setContracts] = useState<Contract[]>(initialContracts)
-  const [viewContract, setViewContract] = useState<Contract | null>(null)
+  const [contracts, setContracts] = useState<ContractWithWorkspace[]>(initialContracts)
+  const [viewContract, setViewContract] = useState<ContractWithWorkspace | null>(null)
 
-  function handleSigned(updated: Contract) {
+  function handleSigned(updated: ContractWithWorkspace) {
     setContracts(prev => prev.map(c => c.id === updated.id ? updated : c))
   }
 
@@ -105,7 +105,7 @@ function ContractCard({
   onClick,
   highlight = false,
 }: {
-  contract: Contract
+  contract: ContractWithWorkspace
   onClick: () => void
   highlight?: boolean
 }) {
@@ -131,6 +131,12 @@ function ContractCard({
             </span>
           </div>
           <p className="font-semibold text-black dark:text-white text-sm leading-snug truncate">{contract.title}</p>
+
+          {/* Project / workspace context */}
+          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+            For: {contract.workspace?.name || 'Workspace'}
+          </p>
+
           {contract.status === 'signed' && contract.client_signature_name && (
             <p className="text-xs text-zinc-400 mt-1">
               Signed by {contract.client_signature_name}
@@ -140,7 +146,9 @@ function ContractCard({
             </p>
           )}
           {contract.status === 'pending_signature' && (
-            <p className="text-xs text-amber-600 mt-1 font-medium">Tap to review and sign →</p>
+            <div className="mt-3 px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:opacity-90 transition-opacity w-fit">
+              Review &amp; Sign
+            </div>
           )}
         </div>
         <div className="shrink-0 w-9 h-9 rounded-xl bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center">

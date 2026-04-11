@@ -172,6 +172,11 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
     .filter(i => i.status === 'paid')
     .reduce((sum, i) => sum + parseFloat(i.amount.replace(/[$,]/g, '')), 0)
 
+  const outstandingBalance = invoices
+    .filter(i => i.status === 'pending' || i.status === 'overdue')
+    .reduce((sum, i) => sum + parseFloat(i.amount.replace(/[$,]/g, '')), 0)
+  const fmtBalance = '$' + outstandingBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
   const KPI_CARDS = [
     { label: 'All Invoices',   value: kpiAll,     sub: null },
     { label: 'Draft / Pending', value: kpiDraft + kpiOpen, sub: `${kpiDraft} draft · ${kpiOpen} pending` },
@@ -226,6 +231,14 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
           </div>
         )}
       </div>
+
+      {/* ── Outstanding balance (client only) ────────────────────────────── */}
+      {isClient && (
+        <div className="mb-8 p-6 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl max-w-sm">
+          <p className="text-sm text-gray-500 dark:text-zinc-400">Total Outstanding Balance</p>
+          <p className="mt-1 text-3xl font-semibold text-black dark:text-white tabular-nums">{fmtBalance}</p>
+        </div>
+      )}
 
       {/* ── KPI cards ─────────────────────────────────────────────────────── */}
       {!isClient && (
@@ -291,7 +304,7 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
             <thead>
               <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                 <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Invoice</th>
-                <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Client</th>
+                {!isClient && <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Client</th>}
                 <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden lg:table-cell whitespace-nowrap">Issued</th>
                 <th className="px-6 py-3 text-left text-[10px] font-medium text-zinc-400 uppercase tracking-widest hidden lg:table-cell whitespace-nowrap">Due</th>
                 <th className="px-6 py-3 text-right text-[10px] font-medium text-zinc-400 uppercase tracking-widest whitespace-nowrap">Amount</th>
@@ -317,7 +330,7 @@ export function InvoicesClient({ initialInvoices, workspaces = [], isClient = fa
                   )}
                 >
                   <td className="px-6 py-4 font-mono text-xs text-zinc-500 whitespace-nowrap">{inv.invoice_number ?? inv.id}</td>
-                  <td className="px-6 py-4 font-medium text-black dark:text-white whitespace-nowrap">{inv.client}</td>
+                  {!isClient && <td className="px-6 py-4 font-medium text-black dark:text-white whitespace-nowrap">{inv.client}</td>}
                   <td className="px-6 py-4 text-zinc-400 hidden lg:table-cell whitespace-nowrap">{inv.issued}</td>
                   <td className="px-6 py-4 text-zinc-400 hidden lg:table-cell whitespace-nowrap">{inv.due}</td>
                   <td className="px-6 py-4 text-right font-medium text-black dark:text-white tabular-nums whitespace-nowrap">{inv.amount}</td>

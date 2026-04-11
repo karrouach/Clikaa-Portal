@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { X, ShieldCheck, Loader2, CheckCircle2 } from 'lucide-react'
+import { X, ShieldCheck, Loader2, CheckCircle2, Download, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -69,6 +69,7 @@ export function ContractViewModal({ contract, onClose, onSigned, isAdminView = f
   const [agreed, setAgreed] = useState(false)
   const [sigName, setSigName] = useState('')
   const [isPending, startTransition] = useTransition()
+  const [pdfLoading, setPdfLoading] = useState(false)
 
   const canSign = agreed && sigName.trim().length > 0
 
@@ -125,10 +126,152 @@ export function ContractViewModal({ contract, onClose, onSigned, isAdminView = f
                   </div>
                   <h2 className="text-lg font-semibold text-black dark:text-white truncate">{contract.title}</h2>
                 </div>
-                <DialogPrimitive.Close className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-150">
-                  <X size={15} strokeWidth={1.5} />
-                  <span className="sr-only">Close</span>
-                </DialogPrimitive.Close>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    disabled={pdfLoading}
+                    onClick={async () => {
+                      if (!contract) return
+                      setPdfLoading(true)
+                      try {
+                        const { default: jsPDF } = await import('jspdf')
+                        const doc = new jsPDF('p', 'mm', 'a4')
+
+                        const W = 210, ml = 20, mr = 20
+                        const cw = W - ml - mr
+                        const black  = [9, 9, 11]    as const
+                        const gray   = [113, 113, 122] as const
+                        const light  = [228, 228, 231] as const
+
+                        let y = 28
+
+                        // ── Brand header ──────────────────────────────────
+                        doc.setFont('helvetica', 'bold')
+                        doc.setFontSize(18)
+                        doc.setTextColor(...black)
+                        doc.text('Clikaa', ml, y)
+
+                        doc.setFont('helvetica', 'normal')
+                        doc.setFontSize(9)
+                        doc.setTextColor(...gray)
+                        y += 6
+                        doc.text('Creative Studio', ml, y)
+
+                        y += 6
+                        doc.setDrawColor(...light)
+                        doc.setLineWidth(0.3)
+                        doc.line(ml, y, W - mr, y)
+                        y += 10
+
+                        // ── Contract title ────────────────────────────────
+                        doc.setFont('helvetica', 'bold')
+                        doc.setFontSize(16)
+                        doc.setTextColor(...black)
+                        const titleLines = doc.splitTextToSize(contract.title, cw) as string[]
+                        doc.text(titleLines, ml, y)
+                        y += titleLines.length * 8 + 4
+
+                        doc.setDrawColor(...light)
+                        doc.setLineWidth(0.3)
+                        doc.line(ml, y, W - mr, y)
+                        y += 10
+
+                        // ── Body text ─────────────────────────────────────
+                        const lines = contract.body_text.split('\n')
+                        for (const raw of lines) {
+                          const line = raw.trim()
+
+                          if (!line) { y += 4; continue }
+
+                          // h1
+                          if (line.startsWith('# ')) {
+                            if (y > 260) { doc.addPage(); y = 20 }
+                            doc.setFont('helvetica', 'bold')
+                            doc.setFontSize(14)
+                            doc.setTextColor(...black)
+                            const wrapped = doc.splitTextToSize(line.slice(2), cw) as string[]
+                            doc.text(wrapped, ml, y)
+                            y += wrapped.length * 7 + 4
+                            continue
+                          }
+
+                          // h2
+                          if (line.startsWith('## ')) {
+                            if (y > 260) { doc.addPage(); y = 20 }
+                            doc.setFont('helvetica', 'bold')
+                            doc.setFontSize(12)
+                            doc.setTextColor(...black)
+                            const wrapped = doc.splitTextToSize(line.slice(3), cw) as string[]
+                            doc.text(wrapped, ml, y)
+                            y += wrapped.length * 6.5 + 3
+                            continue
+                          }
+
+                          // h3
+                          if (line.startsWith('### ')) {
+                            if (y > 265) { doc.addPage(); y = 20 }
+                            doc.setFont('helvetica', 'bold')
+                            doc.setFontSize(10.5)
+                            doc.setTextColor(...black)
+                            const wrapped = doc.splitTextToSize(line.slice(4), cw) as string[]
+                            doc.text(wrapped, ml, y)
+                            y += wrapped.length * 6 + 2
+                            continue
+                          }
+
+                          // bullet
+                          if (line.startsWith('- ')) {
+                            doc.setFont('helvetica', 'normal')
+                            doc.setFontSize(10)
+                            doc.setTextColor(...gray)
+                            const bulletText = line.slice(2).replace(/\*\*([^*]+)\*\*/g, '$1')
+                            const wrapped = doc.splitTextToSize('• ' + bulletText, cw - 4) as string[]
+                            if (y + wrapped.length * 5.5 > 277) { doc.addPage(); y = 20 }
+                            doc.text(wrapped, ml + 4, y)
+                            y += wrapped.length * 5.5 + 1.5
+                            continue
+                          }
+
+                          // paragraph
+                          doc.setFont('helvetica', 'normal')
+                          doc.setFontSize(10)
+                          doc.setTextColor(...gray)
+                          const plain = line.replace(/\*\*([^*]+)\*\*/g, '$1')
+                          const wrapped = doc.splitTextToSize(plain, cw) as string[]
+                          if (y + wrapped.length * 5.5 > 277) { doc.addPage(); y = 20 }
+                          doc.text(wrapped, ml, y)
+                          y += wrapped.length * 5.5 + 2
+                        }
+
+                        // ── Footer ────────────────────────────────────────
+                        const pageCount = doc.getNumberOfPages()
+                        for (let p = 1; p <= pageCount; p++) {
+                          doc.setPage(p)
+                          doc.setFont('helvetica', 'normal')
+                          doc.setFontSize(8)
+                          doc.setTextColor(212, 212, 216)
+                          doc.text(contract.title, ml, 287)
+                          doc.text(`Page ${p} of ${pageCount}`, W - mr, 287, { align: 'right' })
+                        }
+
+                        const slug = contract.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()
+                        doc.save(`${slug}.pdf`)
+                        toast.success('PDF downloaded')
+                      } catch {
+                        toast.error('Failed to generate PDF')
+                      } finally {
+                        setPdfLoading(false)
+                      }
+                    }}
+                    className="flex items-center gap-2 h-8 px-3 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <Download size={14} strokeWidth={1.5} />
+                    <span className="hidden sm:inline">{pdfLoading ? 'Generating…' : 'Download PDF'}</span>
+                  </button>
+                  <DialogPrimitive.Close className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-150">
+                    <X size={15} strokeWidth={1.5} />
+                    <span className="sr-only">Close</span>
+                  </DialogPrimitive.Close>
+                </div>
               </div>
 
               {/* Scrollable body */}
@@ -188,6 +331,12 @@ export function ContractViewModal({ contract, onClose, onSigned, isAdminView = f
                           : <><CheckCircle2 size={15} strokeWidth={1.5} /> Sign &amp; Accept</>
                         }
                       </Button>
+
+                      {/* Trust micro-copy */}
+                      <p className="text-xs text-center text-gray-400 dark:text-zinc-500 mt-3 flex items-center justify-center gap-1">
+                        <Lock size={11} strokeWidth={1.5} className="shrink-0" />
+                        Secured by Clikaa. This is a legally binding electronic signature.
+                      </p>
                     </div>
                   </div>
                 )}

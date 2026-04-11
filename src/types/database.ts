@@ -841,6 +841,7 @@ export type Attachment = Database['public']['Tables']['attachments']['Row']
 export type ContractTemplate = Database['public']['Tables']['contract_templates']['Row']
 export type Contract = Database['public']['Tables']['contracts']['Row']
 export type ContractWithRecipient = Contract & { recipient: { full_name: string | null } | null }
+export type ContractWithWorkspace = Contract & { workspace?: { name: string } | null }
 export type ContractStatus = Contract['status']
 
 export type Conversation = Database['public']['Tables']['conversations']['Row']

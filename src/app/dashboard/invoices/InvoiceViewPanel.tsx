@@ -67,6 +67,17 @@ function formatNow() {
   return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+function humanizeEvent(event: string): string {
+  if (event === 'Invoice created') return 'Invoice issued by Clikaa'
+  if (event === 'Sent to client') return 'Sent to your inbox'
+  if (event === 'Viewed by client') return 'Viewed by you'
+  if (event === 'Payment received') return 'Payment confirmed'
+  if (event === 'Payment reminder sent') return 'Reminder sent via email'
+  if (event === 'Client marked as paid — awaiting confirmation') return 'Payment submitted — awaiting confirmation'
+  if (event.startsWith('Status changed to')) return event.replace('Status changed to', 'Status updated to')
+  return event
+}
+
 // ─── InvoiceViewPanel ─────────────────────────────────────────────────────────
 interface InvoiceViewPanelProps {
   invoice: Invoice | null
@@ -629,7 +640,13 @@ export function InvoiceViewPanel({
                       <span className="text-sm text-zinc-500">Subtotal</span>
                       <span className="text-sm text-black dark:text-white tabular-nums">{fmt(subtotal)}</span>
                     </div>
-                    <div className="flex items-center justify-between pt-1">
+                    {taxPct > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-500">Tax ({taxPct}%)</span>
+                        <span className="text-sm text-black dark:text-white tabular-nums">{fmt(subtotal * taxPct / 100)}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800 pt-2">
                       <span className="text-sm font-semibold text-black dark:text-white">Total</span>
                       <span className="text-lg font-semibold text-black dark:text-white tabular-nums">
                         {invoice.amount}
@@ -658,13 +675,28 @@ export function InvoiceViewPanel({
                             'absolute -left-[11px] top-[5px] w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-[#1A1A1A]',
                             i === 0 ? 'bg-black dark:bg-white' : 'bg-zinc-300 dark:bg-zinc-600',
                           )} />
-                          <p className="text-sm text-black dark:text-white leading-snug">{item.event}</p>
+                          <p className="text-sm text-black dark:text-white leading-snug">
+                            {isClient ? humanizeEvent(item.event) : item.event}
+                          </p>
                           <p className="text-xs text-zinc-400 mt-0.5">{item.date}</p>
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
+
+                {/* Pay Now CTA — client only, hidden for paid/draft/processing */}
+                {isClient && invoice.status !== 'paid' && invoice.status !== 'draft' && invoice.status !== 'processing' && (
+                  <div className="px-6 pb-8">
+                    <button
+                      onClick={handleClientMarkAsPaid}
+                      disabled={markPaidLoading}
+                      className="w-full py-3.5 bg-zinc-900 dark:bg-white text-white dark:text-black text-sm font-medium rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+                    >
+                      {markPaidLoading ? 'Submitting…' : `Pay ${invoice.amount}`}
+                    </button>
+                  </div>
+                )}
 
               </div>
             </>

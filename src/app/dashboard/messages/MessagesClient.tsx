@@ -65,6 +65,13 @@ function timeAgo(iso: string): string {
   return `${days}d ago`
 }
 
+function toSnippet(body: string): string {
+  return body
+    .replace(/📎 \[.+?\]\(https?:\/\/.+?\)/g, '📎 Attachment')
+    .replace(/\n+/g, ' ')
+    .trim()
+}
+
 export function MessagesClient({ initialConversations, currentUserId }: Props) {
   const searchParams = useSearchParams()
   const [conversations, setConversations] = useState<ConvItem[]>(initialConversations)
@@ -93,6 +100,9 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
   // Inbox search & filter
   const [inboxSearch, setInboxSearch]   = useState('')
   const [inboxFilter, setInboxFilter]   = useState<'all' | 'unread' | 'archived'>('all')
+
+  // Sidebar snippets — latest message body per conversation
+  const [snippets, setSnippets] = useState<Record<string, string>>({})
 
   // File upload
   const [attachFile, setAttachFile] = useState<File | null>(null)
@@ -131,12 +141,16 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
       .eq('conversation_id', selectedId)
       .order('created_at', { ascending: true })
       .then(({ data }) => {
-        setMessages((data ?? []) as MsgItem[])
+        const msgs = (data ?? []) as MsgItem[]
+        setMessages(msgs)
         setLoadingMsgs(false)
         markConversationRead(selectedId)
         setConversations((prev) =>
           prev.map((c) => c.id === selectedId ? { ...c, unread_count: 0 } : c)
         )
+        if (msgs.length > 0) {
+          setSnippets((prev) => ({ ...prev, [selectedId]: msgs[msgs.length - 1].body }))
+        }
       })
   }, [selectedId])
 
@@ -163,13 +177,10 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         async (payload) => {
-          console.log('Realtime Message Received!', payload)
           const raw = payload.new as MsgItem
-          // Skip own optimistic messages
           if (raw.sender_id === currentUserId) return
 
           if (raw.conversation_id === selectedIdRef.current) {
-            // Fetch sender profile then append to thread
             const { data: senderData } = await supabase
               .from('profiles')
               .select('full_name, email, avatar_url')
@@ -177,7 +188,7 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
               .single()
             setMessages((prevMessages) => [...prevMessages, { ...raw, sender: senderData ?? null }])
           }
-          // Bubble conversation to top and bump unread if not active
+          setSnippets((prev) => ({ ...prev, [raw.conversation_id]: raw.body }))
           setConversations((prev) =>
             prev
               .map((c) => c.id === raw.conversation_id
@@ -219,17 +230,18 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'conversations' },
         (payload) => {
-          const raw = payload.new as { id: string; updated_at: string }
+          const raw = payload.new as { id: string; updated_at: string; archived: boolean }
           setConversations((prev) =>
             prev
-              .map((c) => c.id === raw.id ? { ...c, updated_at: raw.updated_at } : c)
+              .map((c) => c.id === raw.id
+                ? { ...c, updated_at: raw.updated_at, archived: raw.archived ?? c.archived }
+                : c
+              )
               .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
           )
         }
       )
-      .subscribe((status) => {
-        console.log('Supabase Realtime Status:', status)
-      })
+      .subscribe()
 
     return () => { supabase.removeChannel(channel) }
   }, [currentUserId])
@@ -253,6 +265,27 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
   useEffect(() => {
     if (searchOpen) runSearch('')
   }, [searchOpen, runSearch])
+
+  // ── Fetch latest message snippet per conversation on mount ───────────────
+  useEffect(() => {
+    const ids = initialConversations.map((c) => c.id)
+    if (ids.length === 0) return
+    const supabase = createClient()
+    supabase
+      .from('messages')
+      .select('conversation_id, body, created_at')
+      .in('conversation_id', ids)
+      .order('created_at', { ascending: false })
+      .limit(ids.length * 3)
+      .then(({ data }) => {
+        const map: Record<string, string> = {}
+        for (const msg of (data ?? [])) {
+          if (!map[msg.conversation_id]) map[msg.conversation_id] = msg.body
+        }
+        setSnippets(map)
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── File upload helper ───────────────────────────────────────────────────
   async function uploadAttachment(convId: string): Promise<string | null> {
@@ -294,6 +327,7 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
         sender: null,
       }
       setMessages((prev) => [...prev, optimistic])
+      setSnippets((prev) => ({ ...prev, [selectedId]: body }))
       const result = await replyToConversation(selectedId, body)
       if (result?.error) toast.error(result.error)
     })
@@ -555,12 +589,9 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
                             </p>
                             <span className="text-[10px] text-zinc-400 shrink-0 tabular-nums">{timeAgo(conv.updated_at)}</span>
                           </div>
-                          {/* Bottom row: subject preview */}
-                          <p className={cn(
-                            'text-xs truncate mt-0.5',
-                            hasUnread ? 'text-zinc-600 dark:text-zinc-300' : 'text-zinc-400'
-                          )}>
-                            {conv.subject || 'No subject'}
+                          {/* Bottom row: latest message snippet */}
+                          <p className="text-xs text-gray-500 dark:text-zinc-400 truncate mt-0.5">
+                            {snippets[conv.id] ? toSnippet(snippets[conv.id]) : (conv.subject || 'No subject')}
                           </p>
                         </div>
 
@@ -624,42 +655,51 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
                 <p className="text-sm text-zinc-400">No messages in this conversation.</p>
               </div>
             ) : (
-              messages.map((msg) => {
+              messages.map((msg, idx) => {
                 const isCurrentUser = msg.sender_id === currentUserId
                 const senderName = msg.sender?.full_name || msg.sender?.email || (isCurrentUser ? 'You' : 'Client')
                 const initials = getInitials(senderName)
+                const nextMsg = messages[idx + 1]
+                const isLastInGroup = !nextMsg || nextMsg.sender_id !== msg.sender_id
                 return (
-                  <div key={msg.id} className={cn('flex gap-3', isCurrentUser && 'flex-row-reverse')}>
-                    {msg.sender?.avatar_url ? (
-                      <img src={msg.sender.avatar_url} alt="" className="shrink-0 w-7 h-7 rounded-full object-cover" />
-                    ) : (
-                      <div className={cn(
-                        'shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold',
-                        isCurrentUser ? 'bg-black text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
-                      )}>
-                        {initials || <User size={12} />}
-                      </div>
-                    )}
+                  <div key={msg.id} className={cn('flex gap-2', isCurrentUser ? 'flex-row-reverse' : 'flex-row')}>
+                    {/* Avatar — only shown on last bubble in a cluster */}
+                    <div className="w-7 self-end shrink-0">
+                      {isLastInGroup && (
+                        msg.sender?.avatar_url ? (
+                          <img src={msg.sender.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                        ) : (
+                          <div className={cn(
+                            'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold',
+                            isCurrentUser ? 'bg-zinc-900 dark:bg-white text-white dark:text-black' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                          )}>
+                            {initials || <User size={12} />}
+                          </div>
+                        )
+                      )}
+                    </div>
                     <div className={cn('max-w-[70%]', isCurrentUser && 'items-end flex flex-col')}>
                       <div className={cn(
-                        'rounded-xl px-3.5 py-2.5 text-sm leading-relaxed',
+                        'rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
                         isCurrentUser
-                          ? 'bg-black text-white rounded-tr-sm'
-                          : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded-tl-sm'
+                          ? 'bg-zinc-900 dark:bg-white text-white dark:text-black rounded-br-sm'
+                          : 'bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 rounded-bl-sm'
                       )}>
                         {msg.body.split('\n').map((line, li) => {
                           const m = line.match(/^📎 \[(.+?)\]\((https?:\/\/.+?)\)$/)
                           if (m) return (
-                            <a key={li} href={m[2]} target="_blank" rel="noopener noreferrer" className={cn('flex items-center gap-1 underline underline-offset-2 text-xs mt-1', isCurrentUser ? 'text-zinc-300' : 'text-zinc-500')}>
+                            <a key={li} href={m[2]} target="_blank" rel="noopener noreferrer" className={cn('flex items-center gap-1 underline underline-offset-2 text-xs mt-1', isCurrentUser ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-500')}>
                               <Paperclip size={10} strokeWidth={1.5} className="shrink-0" />{m[1]}
                             </a>
                           )
                           return line ? <span key={li} className="block">{line}</span> : null
                         })}
                       </div>
-                      <p className="text-[10px] text-zinc-400 mt-1 px-1">
-                        {isCurrentUser ? 'You' : senderName} · {timeAgo(msg.created_at)}
-                      </p>
+                      {isLastInGroup && (
+                        <p className="text-[10px] text-zinc-400 mt-1 px-1">
+                          {isCurrentUser ? 'You' : senderName} · {timeAgo(msg.created_at)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )
@@ -668,9 +708,9 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
             <div ref={threadEndRef} />
           </div>
 
-          <form onSubmit={handleReply} className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+          <form onSubmit={handleReply} className="px-4 py-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
             {attachFile && (
-              <div className="flex items-center gap-2 px-2 py-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-600 dark:text-zinc-400">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-full text-xs text-zinc-600 dark:text-zinc-400">
                 <Paperclip size={11} strokeWidth={1.5} className="shrink-0 text-zinc-400" />
                 <span className="truncate flex-1">{attachFile.name}</span>
                 <button type="button" onClick={() => { setAttachFile(null); if (attachRef.current) attachRef.current.value = '' }} className="shrink-0 text-zinc-400 hover:text-red-500">
@@ -678,12 +718,12 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
                 </button>
               </div>
             )}
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2 rounded-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 px-3 py-1.5">
               <input ref={attachRef} type="file" className="hidden" onChange={(e) => setAttachFile(e.target.files?.[0] ?? null)} />
               <button
                 type="button"
                 onClick={() => attachRef.current?.click()}
-                className="h-9 w-9 flex items-center justify-center text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors shrink-0"
+                className="flex items-center justify-center text-zinc-400 hover:text-black dark:hover:text-white transition-colors shrink-0"
                 title="Attach file"
               >
                 <Paperclip size={14} strokeWidth={1.5} />
@@ -692,16 +732,22 @@ export function MessagesClient({ initialConversations, currentUserId }: Props) {
                 type="text"
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
-                placeholder="Type a reply…"
-                className="flex-1 h-9 px-3 text-sm bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:bg-white dark:focus:bg-zinc-800 transition-colors placeholder:text-zinc-400"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    e.currentTarget.form?.requestSubmit()
+                  }
+                }}
+                placeholder="Reply…"
+                className="flex-1 bg-transparent text-sm text-zinc-900 dark:text-white focus:outline-none placeholder:text-zinc-400"
                 disabled={isPending || uploading}
               />
               <button
                 type="submit"
                 disabled={isPending || uploading || (!reply.trim() && !attachFile)}
-                className="h-9 w-9 flex items-center justify-center bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                className="flex items-center justify-center w-7 h-7 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-full hover:bg-zinc-700 dark:hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
               >
-                {(isPending || uploading) ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} strokeWidth={1.5} />}
+                {(isPending || uploading) ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} strokeWidth={1.5} />}
               </button>
             </div>
           </form>
